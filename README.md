@@ -38,6 +38,14 @@ dsoinabox integrates the following security scanners:
 
 ## Quick Start
 
+### Installation
+
+Install dsoinabox using pip:
+
+```bash
+pip install dsoinabox
+```
+
 ### Docker Usage
 
 The recommended way to use dsoinabox is via Docker:

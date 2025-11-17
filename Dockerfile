@@ -34,8 +34,18 @@ RUN set -eux; \
 # Opengrep (SAST)
 RUN set -eux; \
     curl -fsSL https://raw.githubusercontent.com/opengrep/opengrep/main/install.sh -o /tmp/opengrep-install.sh; \
-    bash /tmp/opengrep-install.sh; \
-    test -x /root/.opengrep/cli/latest/opengrep; \
+    bash /tmp/opengrep-install.sh || (echo "ERROR: opengrep installer failed with exit code $?"; exit 1); \
+    if [ ! -d /root/.opengrep/cli/latest/ ]; then \
+        echo "ERROR: opengrep installation directory /root/.opengrep/cli/latest/ does not exist"; \
+        exit 1; \
+    fi; \
+    ls -la /root/.opengrep/cli/latest/; \
+    if [ ! -x /root/.opengrep/cli/latest/opengrep ]; then \
+        echo "ERROR: opengrep binary is not executable at /root/.opengrep/cli/latest/opengrep"; \
+        echo "Directory contents:"; \
+        ls -la /root/.opengrep/cli/latest/; \
+        exit 1; \
+    fi; \
     install -m 0755 /root/.opengrep/cli/latest/opengrep /out/opengrep
 
 ############################
