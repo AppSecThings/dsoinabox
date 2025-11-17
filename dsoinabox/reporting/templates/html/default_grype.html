@@ -1,0 +1,367 @@
+{% if grype_data %}
+  {% set matches = grype_data.get('matches', []) %}
+  <section class="section" id="grype-section" aria-labelledby="grype-title">
+    <div class="section__head">
+      <h2 id="grype-title">Grype — SCA Findings</h2>
+
+      {% if matches %}
+        {# --- quick stats --- #}
+        {% set sev_counts = {'critical':0,'high':0,'medium':0,'low':0,'negligible':0,'unknown':0} %}
+        {% for m in matches %}
+          {% set vuln = m.vulnerability if m.vulnerability is defined else {} %}
+          {% set sev = (vuln.severity | default('unknown')) | lower %}
+          {% if sev in sev_counts %}{% set _ = sev_counts.__setitem__(sev, sev_counts[sev] + 1) %}{% else %}{% set _ = sev_counts.__setitem__('unknown', sev_counts['unknown'] + 1) %}{% endif %}
+        {% endfor %}
+        <div>
+          <span class="chip chip--neutral">Total: {{ matches|length }}</span>
+          <span class="chip chip--bad">Critical: {{ sev_counts.critical }}</span>
+          <span class="chip chip--bad">High: {{ sev_counts.high }}</span>
+          <span class="chip chip--neutral">Medium: {{ sev_counts.medium }}</span>
+          <span class="chip chip--ok">Low: {{ sev_counts.low }}</span>
+          <span class="chip">Negligible: {{ sev_counts.negligible }}</span>
+          <span class="chip">Unknown: {{ sev_counts.unknown }}</span>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if matches %}
+      <div class="section__body">
+        <div class="table-wrap" role="region" aria-label="Grype SCA matches (scrollable)">
+          <table>
+            <thead>
+              <tr>
+                <th style="min-width:14rem">Package</th>
+                <th style="width:8rem">Version</th>
+                <th style="width:8rem">Type</th>
+                <th style="min-width:14rem">Location</th>
+                <th style="min-width:12rem">Vulnerability</th>
+                <th style="width:8rem">Severity</th>
+                <th style="min-width:10rem">Fix</th>
+                <th style="min-width:12rem">Waiver</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for m in matches %}
+                {# Handle artifact/package differences defensively #}
+                {% set art = m.artifact if m.artifact is defined else m.get('package', {}) %}
+                {% set vuln = m.vulnerability if m.vulnerability is defined else {} %}
+                {% set loc = (art.locations[0] if art.locations is defined and art.locations else {}) %}
+                {% set loc_path = loc.realPath if loc.realPath is defined else (loc.path if loc.path is defined else '') %}
+
+                {# Fix versions (array) or state #}
+                {% set fix = vuln.fix if vuln.fix is defined else {} %}
+                {% set fix_versions = fix.versions if fix.versions is defined else [] %}
+                {% set fix_state = fix.state if fix.state is defined else '' %}
+
+                {% set sev_raw = vuln.severity | default('Unknown') %}
+                {% set sev = sev_raw | lower %}
+                {% set sev_chip =
+                  'chip--bad' if sev in ['critical','high'] else
+                  ('chip--neutral' if sev == 'medium' else
+                   ('chip--ok' if sev in ['low','negligible'] else '')) %}
+
+                {# Additional details for expansion #}
+                {% set description = vuln.description if vuln.description is defined else '' %}
+                {% set cvss = vuln.cvss if vuln.cvss is defined else [] %}
+                {% set epss = vuln.epss if vuln.epss is defined else [] %}
+                {% set cwes = vuln.cwes if vuln.cwes is defined else [] %}
+                {% set related_vulns = m.relatedVulnerabilities if m.relatedVulnerabilities is defined else [] %}
+                {% set match_details = m.matchDetails if m.matchDetails is defined else [] %}
+                {% set purl = art.purl if art.purl is defined else '' %}
+                {% set cpes = art.cpes if art.cpes is defined else [] %}
+                {% set licenses = art.licenses if art.licenses is defined else [] %}
+                {% set namespace = vuln.namespace if vuln.namespace is defined else '' %}
+                {% set risk = vuln.risk if vuln.risk is defined else '' %}
+                {% set fingerprints = m.fingerprints if m.fingerprints is defined else {} %}
+                {% set fingerprint_list = [] %}
+                {% if fingerprints.pkg %}{% set _ = fingerprint_list.append(('pkg', fingerprints.pkg)) %}{% endif %}
+                {% if fingerprints.ctx %}{% set _ = fingerprint_list.append(('ctx', fingerprints.ctx)) %}{% endif %}
+                {% if fingerprints.exact %}{% set _ = fingerprint_list.append(('exact', fingerprints.exact)) %}{% endif %}
+                {% set default_fp = '' %}
+                {# Default to ctx fingerprint if available, otherwise first available #}
+                {% if fingerprints.ctx %}
+                  {% set default_fp = fingerprints.ctx %}
+                {% elif fingerprints.ctx_soft %}
+                  {% set default_fp = fingerprints.ctx_soft %}
+                {% elif fingerprint_list|length > 0 %}
+                  {% set default_fp = fingerprint_list[0][1] %}
+                {% endif %}
+
+                <tr class="row-expandable" {% if fingerprint_list|length > 0 %}data-fingerprints='{{ fingerprint_list|map(attribute=1)|list|tojson }}'{% endif %}>
+                  <td>{{ art.name | default('') | e }}</td>
+                  <td>{{ art.version | default('') | e }}</td>
+                  <td>{{ art.type | default('') | e }}</td>
+                  <td>{{ loc_path | e }}</td>
+
+                  <td>
+                    {% if ref_url %}
+                      <a href="{{ ref_url | e }}" target="_blank" rel="noopener">
+                        {{ vuln.id | default('') | e }}
+                      </a>
+                    {% else %}
+                      {{ vuln.id | default('') | e }}
+                    {% endif %}
+                  </td>
+
+                  <td>
+                    <span class="chip {{ sev_chip }}">{{ sev_raw | e }}</span>
+                  </td>
+
+                  <td>
+                    {% if fix_versions and fix_versions|length > 0 %}
+                      {{ fix_versions | join(', ') | e }}
+                    {% elif fix_state %}
+                      {{ fix_state | capitalize | e }}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
+
+                  <td>
+                    {% if fingerprint_list|length > 0 %}
+                    <div class="waiver-controls">
+                      <select class="waiver-select">
+                        <option value="">—</option>
+                        <option value="false_positive">False Positive</option>
+                        <option value="risk_acceptance">Risk Acceptance</option>
+                        <option value="policy_waiver">Policy Waiver</option>
+                      </select>
+                      <div class="waiver-fields">
+                        <label class="waiver-label">Fingerprint (optional)</label>
+                        <select class="waiver-input waiver-fingerprint">
+                          {% for fp_type, fp_value in fingerprint_list %}
+                          <option value="{{ fp_value }}" {% if fp_value == default_fp %}selected{% endif %}>
+                            {{ fp_type|upper }}: {{ fp_value[:40] }}{% if fp_value|length > 40 %}...{% endif %}
+                          </option>
+                          {% endfor %}
+                        </select>
+                        <label class="waiver-label">Reason (optional)</label>
+                        <input type="text" class="waiver-input waiver-reason" placeholder="Enter reason...">
+                        <label class="waiver-label">Expires At (optional)</label>
+                        <div style="display: flex; gap: 4px;">
+                          <input type="date" class="waiver-input waiver-expires-date" style="flex: 1;">
+                          <input type="time" class="waiver-input waiver-expires-time" style="flex: 1;">
+                        </div>
+                      </div>
+                    </div>
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
+                </tr>
+                <tr class="row-details">
+                  <td colspan="8">
+                    <div class="details-content">
+                      {% if description %}
+                      <div class="details-section">
+                        <h4>Description</h4>
+                        <p style="margin: 0; line-height: 1.6;">{{ description | e }}</p>
+                      </div>
+                      {% endif %}
+
+                      <div class="details-section">
+                        <h4>Vulnerability Details</h4>
+                        <dl class="details-grid">
+                          {% if vuln.id %}
+                          <dt>Vulnerability ID:</dt>
+                          <dd><code>{{ vuln.id | e }}</code></dd>
+                          {% endif %}
+                          {% if namespace %}
+                          <dt>Namespace:</dt>
+                          <dd><code>{{ namespace | e }}</code></dd>
+                          {% endif %}
+                          {% if sev_raw %}
+                          <dt>Severity:</dt>
+                          <dd><span class="chip {{ sev_chip }}">{{ sev_raw | e }}</span></dd>
+                          {% endif %}
+                          {% if risk %}
+                          <dt>Risk Score:</dt>
+                          <dd><span class="chip">{{ "%.2f"|format(risk) }}</span></dd>
+                          {% endif %}
+                          {% if ref_url %}
+                          <dt>Data Source:</dt>
+                          <dd><a href="{{ ref_url | e }}" target="_blank" rel="noopener">{{ ref_url | e }}</a></dd>
+                          {% endif %}
+                        </dl>
+                      </div>
+
+                      {% if cvss %}
+                      <div class="details-section">
+                        <h4>CVSS Scores</h4>
+                        <dl class="details-grid">
+                          {% for c in cvss %}
+                            {% if c.version %}
+                            <dt>CVSS {{ c.version }}:</dt>
+                            <dd>
+                              {% if c.metrics and c.metrics.baseScore is defined %}
+                              <span class="chip chip--bad">{{ c.metrics.baseScore }}</span>
+                              {% endif %}
+                              {% if c.vector %}
+                              <code style="margin-left: 8px; font-size: 11px;">{{ c.vector | e }}</code>
+                              {% endif %}
+                            </dd>
+                            {% endif %}
+                          {% endfor %}
+                        </dl>
+                      </div>
+                      {% endif %}
+
+                      {% if epss %}
+                      <div class="details-section">
+                        <h4>EPSS Scores</h4>
+                        <dl class="details-grid">
+                          {% for e in epss %}
+                            {% if e.epss is defined %}
+                            <dt>EPSS Score:</dt>
+                            <dd>
+                              <span class="chip">{{ "%.4f"|format(e.epss) }}</span>
+                              {% if e.percentile is defined %}
+                              <span class="chip" style="margin-left: 6px;">Percentile: {{ "%.5f"|format(e.percentile) }}</span>
+                              {% endif %}
+                            </dd>
+                            {% endif %}
+                          {% endfor %}
+                        </dl>
+                      </div>
+                      {% endif %}
+
+                      {% if cwes %}
+                      <div class="details-section">
+                        <h4>CWE</h4>
+                        <dl class="details-grid">
+                          <dt>CWE IDs:</dt>
+                          <dd>
+                            <div class="tag-list">
+                              {% for cwe_item in cwes %}
+                                {% if cwe_item.cwe is defined %}
+                                <span class="chip chip--neutral">CWE-{{ cwe_item.cwe }}</span>
+                                {% endif %}
+                              {% endfor %}
+                            </div>
+                          </dd>
+                        </dl>
+                      </div>
+                      {% endif %}
+
+                      <div class="details-section">
+                        <h4>Package Details</h4>
+                        <dl class="details-grid">
+                          {% if art.name %}
+                          <dt>Package:</dt>
+                          <dd><code>{{ art.name | e }}</code></dd>
+                          {% endif %}
+                          {% if art.version %}
+                          <dt>Version:</dt>
+                          <dd><code>{{ art.version | e }}</code></dd>
+                          {% endif %}
+                          {% if art.type %}
+                          <dt>Type:</dt>
+                          <dd>{{ art.type | e }}</dd>
+                          {% endif %}
+                          {% if purl %}
+                          <dt>PURL:</dt>
+                          <dd><code>{{ purl | e }}</code></dd>
+                          {% endif %}
+                          {% if loc_path %}
+                          <dt>Location:</dt>
+                          <dd><code>{{ loc_path | e }}</code></dd>
+                          {% endif %}
+                          {% if licenses %}
+                          <dt>Licenses:</dt>
+                          <dd>
+                            <div class="tag-list">
+                              {% for lic in licenses %}
+                                {% if lic.value is defined %}
+                                <span class="chip">{{ lic.value | e }}</span>
+                                {% endif %}
+                              {% endfor %}
+                            </div>
+                          </dd>
+                          {% endif %}
+                        </dl>
+                      </div>
+
+                      {% if fix_versions or fix_state %}
+                      <div class="details-section">
+                        <h4>Fix Information</h4>
+                        <dl class="details-grid">
+                          {% if fix_versions and fix_versions|length > 0 %}
+                          <dt>Fixed Versions:</dt>
+                          <dd>
+                            <div class="tag-list">
+                              {% for fv in fix_versions %}
+                              <span class="chip chip--ok">{{ fv | e }}</span>
+                              {% endfor %}
+                            </div>
+                          </dd>
+                          {% elif fix_state %}
+                          <dt>Fix State:</dt>
+                          <dd><span class="chip">{{ fix_state | capitalize | e }}</span></dd>
+                          {% endif %}
+                        </dl>
+                      </div>
+                      {% endif %}
+
+                      {% if related_vulns %}
+                      <div class="details-section">
+                        <h4>Related Vulnerabilities</h4>
+                        <dl class="details-grid">
+                          <dt>Related:</dt>
+                          <dd>
+                            <ul style="margin: 0; padding-left: 20px; list-style: disc;">
+                              {% for rv in related_vulns %}
+                                {% if rv.id is defined %}
+                                <li>
+                                  <code>{{ rv.id | e }}</code>
+                                  {% if rv.description %}
+                                  <span style="color: var(--muted); margin-left: 8px;">{{ rv.description[:100] | e }}{% if rv.description|length > 100 %}...{% endif %}</span>
+                                  {% endif %}
+                                </li>
+                                {% endif %}
+                              {% endfor %}
+                            </ul>
+                          </dd>
+                        </dl>
+                      </div>
+                      {% endif %}
+
+                      {% if fingerprints %}
+                      <div class="details-section">
+                        <h4>Fingerprints</h4>
+                        <dl class="details-grid">
+                          {% if fingerprints.pkg %}
+                          <dt>Package Fingerprint:</dt>
+                          <dd><code style="font-size: 11px;">{{ fingerprints.pkg | e }}</code></dd>
+                          {% endif %}
+                          {% if fingerprints.exact %}
+                          <dt>Exact Fingerprint:</dt>
+                          <dd><code style="font-size: 11px;">{{ fingerprints.exact | e }}</code></dd>
+                          {% endif %}
+                          {% if fingerprints.ctx %}
+                          <dt>Context Fingerprint:</dt>
+                          <dd><code style="font-size: 11px;">{{ fingerprints.ctx | e }}</code></dd>
+                          {% endif %}
+                        </dl>
+                        <p style="margin: 8px 0 0 0; font-size: 11px; color: var(--muted); line-height: 1.4;">
+                          <strong>Fingerprint Types:</strong><br>
+                          <strong>PKG:</strong> Package-level identifier derived from vulnerability ID and package coordinate. Stable across environments and locations.<br>
+                          <strong>EXACT:</strong> Location-bound identifier derived from vulnerability ID, source hint, location hash, and package version. Binds tightly to a specific environment.<br>
+                          <strong>CTX:</strong> Contextual identifier derived from vulnerability ID, package hash, and context hash. Remains valid through small changes.
+                        </p>
+                      </div>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% else %}
+      <div class="section__body">
+        <em>No SCA findings.</em>
+      </div>
+    {% endif %}
+  </section>
+{% endif %}

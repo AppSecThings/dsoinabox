@@ -1,0 +1,130 @@
+{% if syft_data %}
+  <section class="section" id="syft-section" aria-labelledby="syft-title">
+    <div class="section__head">
+      <h2 id="syft-title">Syft — SBOM Report</h2>
+      {# small summary chips once items computed #}
+      {% set items =
+        syft_data.artifacts
+        if syft_data.artifacts is defined
+        else (syft_data.packages
+              if syft_data.packages is defined
+              else (syft_data.components
+                    if syft_data.components is defined
+                    else [])) %}
+      <div>
+        <span class="chip chip--neutral">Components: {{ items|length }}</span>
+        {% if syft_data.source is defined and syft_data.source.type is defined %}
+          <span class="chip">{{ syft_data.source.type|default('source') }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Figure out which SBOM shape we were given #}
+    {% set format =
+        'syft-json'
+        if syft_data.artifacts is defined
+        else ('spdx-json'
+              if syft_data.packages is defined
+              else ('cyclonedx-json'
+                    if syft_data.components is defined
+                    else 'unknown')) %}
+
+    <div class="section__body">
+      <p class="meta" class="meta meta-margin">
+        Detected SBOM format: <strong>{{ format }}</strong>
+        {% if syft_data.source is defined and syft_data.source.type is defined %}
+          • Source: {{ syft_data.source.type|default('') }}{% if syft_data.source.target is defined %} ({{ syft_data.source.target|default('') }}){% endif %}
+        {% endif %}
+        {% if syft_data.descriptor is defined and syft_data.descriptor.version is defined %}
+          • Syft: {{ syft_data.descriptor.name|default('syft') }} {{ syft_data.descriptor.version|default('') }}
+        {% endif %}
+      </p>
+
+      <div class="table-wrap" role="region" aria-label="SBOM components (scrollable)">
+        <table>
+          <thead>
+            <tr>
+              <th class="th-min-width-16rem">Component</th>
+              <th class="th-min-width-10rem">License</th>
+              <th class="th-width-8rem">Version</th>
+              <th class="th-width-10rem">Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+              {# --------------------------
+                Normalized fields per format
+                -------------------------- #}
+              {% if format == 'syft-json' %}
+                {% set name = item.name|default('—') %}
+                {% set version = item.version|default('—') %}
+                {% set ctype = item.type|default(item.language|default('—')) %}
+                {# licenses: list of objects with "value" or strings #}
+                {% if item.licenses is defined and item.licenses %}
+                  {% set lic = (item.licenses | map(attribute='value') | select('string') | list) %}
+                  {% if not lic or lic|length == 0 %}
+                    {% set lic = item.licenses | map('string') | list %}
+                  {% endif %}
+                  {% set license = (lic | reject('equalto', None) | join(', ')) %}
+                {% else %}
+                  {% set license = '—' %}
+                {% endif %}
+
+              {% elif format == 'spdx-json' %}
+                {% set name = item.name|default('—') %}
+                {% set version = item.versionInfo|default('—') %}
+                {% set ctype = item.supplier|default('—') %}
+                {# prefer concluded, then declared #}
+                {% set license = item.licenseConcluded
+                                if item.licenseConcluded is defined and item.licenseConcluded
+                                else (item.licenseDeclared
+                                      if item.licenseDeclared is defined and item.licenseDeclared
+                                      else '—') %}
+
+              {% elif format == 'cyclonedx-json' %}
+                {% set name = item.name|default('—') %}
+                {% set version = item.version|default('—') %}
+                {% set ctype = item.type|default(item.group|default('—')) %}
+                {# CycloneDX licenses can be expressions or objects like {"license":{"id":"MIT"}} #}
+                {% if item.licenses is defined and item.licenses %}
+                  {% set lic_ids = [] %}
+                  {% for l in item.licenses %}
+                    {% if l.expression is defined and l.expression %}
+                      {% set _ = lic_ids.append(l.expression) %}
+                    {% elif l.license is defined %}
+                      {% if l.license.id is defined and l.license.id %}
+                        {% set _ = lic_ids.append(l.license.id) %}
+                      {% elif l.license.name is defined and l.license.name %}
+                        {% set _ = lic_ids.append(l.license.name) %}
+                      {% endif %}
+                    {% endif %}
+                  {% endfor %}
+                  {% set license = (lic_ids | join(', ')) if lic_ids else '—' %}
+                {% else %}
+                  {% set license = '—' %}
+                {% endif %}
+
+              {% else %}
+                {% set name = item.name|default('—') %}
+                {% set version = item.version|default('—') %}
+                {% set ctype = item.type|default('—') %}
+                {% set license = item.license|default('—') %}
+              {% endif %}
+
+              <tr>
+                <td>{{ name }}</td>
+                <td>{{ license if license else '—' }}</td>
+                <td>{{ version }}</td>
+                <td>{{ ctype }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if items|length == 0 %}
+        <p><em>No components found in SBOM payload.</em></p>
+      {% endif %}
+    </div>
+  </section>
+{% endif %}

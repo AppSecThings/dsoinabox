@@ -1,0 +1,40 @@
+schema_version: "1.0" #optional.  If not specified, the schema is assumed to be <latest>
+
+meta: # optional - all values here are optional, and are not used for any scanning or evaluation.
+  owner: "Security Engineering"
+  created_by: "alice@example.com"
+  created_at: "2025-11-08T14:20:00Z"
+  last_reviewed_at: "2025-11-08T14:20:00Z"
+  notes: "Initial waiver set for MVP"
+  ticket: "SEC-1420"
+
+#regarding datetimes: two formats are supported, and may be used in any date time field:
+#1) ISO 8601 format: "2025-11-08T14:20:00Z"
+#2) YYYY-MM-DD format: "2025-11-08"
+
+# Matching syntax: repo-root–relative, .gitignore-style globs
+# These are evaluated during the OUTPUT phase (not changing scanner behavior).
+path_exclusions: #optional
+  - pattern: "third_party/**"
+    reason: "Vendored code" # optional - reason for the exclusion
+    expires_at: "2026-01-31T00:00:00Z" # optional - date the exclusion expires
+  - pattern: "docs/**/*.md"
+    tools: ["trufflehog", "opengrep"] # optional - tools to apply the exception to.  Options explicit tools: trufflehog, opengrep, syft, grype.  Tool categories:  sast, sbom, sca, secret. Or: all. Default is 'all'
+
+# Finding-level waivers keyed by fingerprint (exact match)
+# fingerprint format (already implemented by you):
+#   <tool>:<fp_version>:<fp_type>:<fp_data...>
+finding_waivers: #optional
+  - fingerprint: "og:1:CTX:html.security.audit.missing-integrity.missing-integrity:0c065896:a9ef9d591c62c38b:R:a3d1696c"
+    type: "false_positive"        # required - reason for the exception: false_positive | risk_acceptance | policy_waiver
+    reason: "Static context proved safe" # optional - reason for the exception
+    expires_at: "2026-05-01T00:00:00Z" # optional, but strongly recommended - date the exception expires
+    created_by: "alice@example.com" # optional - who created the exception
+    created_at: "2025-11-01" # optional - date the exception was created
+    meta_ticket: "SEC-1420" # optional - ticket number for the exception
+
+  - fingerprint: "trivy:1:CVE:CVE-2024-12345:pkg:maven/com.acme:lib@1.2.3"
+    type: "risk_acceptance"
+    reason: "Mitigated by network policy; pending upstream patch"
+    expires_at: "2026-02-01T00:00:00Z"
+    ticket: "SEC-1501"

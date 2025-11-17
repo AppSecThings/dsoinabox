@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Consolidated Security Report</title>
+  <style>
+    :root{
+      --bg: #0b0f15;
+      --panel: #111826;
+      --muted: #8aa0b4;
+      --text: #e6eef6;
+      --accent: #4cc3ff;
+      --accent-2: #9bffdc;
+      --border: #223041;
+      --table-stripe: rgba(255,255,255,0.03);
+      --chip-ok: #12b886;
+      --chip-bad: #e8590c;
+      --chip-neutral: #4dabf7;
+      --code-bg: #0d1522;
+      --shadow: 0 1px 0 rgba(255,255,255,0.02), 0 6px 24px rgba(0,0,0,0.25);
+    }
+    @media (prefers-color-scheme: light){
+      :root{
+        --bg: #f6f8fb;
+        --panel: #ffffff;
+        --muted: #637485;
+        --text: #1e2937;
+        --accent: #0ea5e9;
+        --accent-2: #10b981;
+        --border: #e5eef6;
+        --table-stripe: #f8fafc;
+        --chip-ok: #16a34a;
+        --chip-bad: #dc2626;
+        --chip-neutral: #2563eb;
+        --code-bg: #f1f5f9;
+        --shadow: 0 1px 0 rgba(0,0,0,0.02), 0 6px 24px rgba(0,0,0,0.08);
+      }
+    }
+
+    /* Base */
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      background: radial-gradient(1200px 800px at 10% -20%, rgba(76,195,255,0.12), transparent 40%),
+                  radial-gradient(1000px 900px at 110% 10%, rgba(155,255,220,0.12), transparent 45%),
+                  var(--bg);
+      color: var(--text);
+      font: 14px/1.6 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Layout */
+    .container{
+      max-width: 1400px;
+      margin: 32px auto 80px;
+      padding: 0 20px;
+    }
+
+    /* Header */
+    .report-header{
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 22px 22px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      backdrop-filter: blur(8px);
+    }
+    .title-row{
+      display:flex; align-items:center; gap:14px; flex-wrap: wrap;
+    }
+    .title-row h1{
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0.2px;
+    }
+    .badges{
+      display:flex; gap:8px; flex-wrap: wrap;
+    }
+    .badge{
+      display:inline-flex; align-items:center; gap:6px;
+      padding: 4px 10px; border-radius: 999px; font-weight: 600;
+      border: 1px solid var(--border); background: var(--panel);
+    }
+    .badge--accent{ border-color: color-mix(in oklab, var(--accent) 40%, var(--border)); }
+    .badge-dot{ width:8px; height:8px; border-radius:50%; background: var(--accent); }
+
+    .meta{
+      margin-top:10px; color: var(--muted); font-size:12px;
+    }
+
+    /* Sections */
+    .section{
+      margin-top: 24px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .section__head{
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.05), transparent 70%),
+        var(--panel);
+    }
+    .section__head h2{
+      margin:0; font-size:16px; letter-spacing:0.2px;
+    }
+    .section__body{ padding: 8px 16px 16px; }
+
+    /* Table */
+    .table-wrap{
+      overflow:auto; border: 1px solid var(--border); border-radius: 10px;
+    }
+    table{
+      width:100%; border-collapse: collapse; min-width: 640px;
+    }
+    thead th{
+      position: sticky; top: 0; z-index: 1;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      text-align:left; font-weight:700; padding:12px 10px; font-size:13px;
+      border-bottom: 1px solid var(--border);
+    }
+    tbody td{
+      padding: 10px; border-top: 1px solid var(--border); vertical-align: top;
+      word-break: break-word;
+    }
+    tbody tr:nth-child(odd){ background: var(--table-stripe); }
+
+    /* Expandable rows */
+    .row-expandable{
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .row-expandable:hover{
+      background-color: color-mix(in oklab, var(--accent) 8%, var(--table-stripe)) !important;
+    }
+    .row-expandable td:first-child{
+      position: relative;
+      padding-left: 28px;
+    }
+    .row-expandable td:first-child::before{
+      content: '▶';
+      position: absolute;
+      left: 10px;
+      font-size: 10px;
+      color: var(--muted);
+      transition: transform 0.2s ease;
+    }
+    .row-expandable.expanded td:first-child::before{
+      transform: rotate(90deg);
+    }
+    .row-details{
+      display: none;
+      background: color-mix(in oklab, var(--panel) 95%, var(--accent));
+    }
+    .row-details.expanded{
+      display: table-row;
+    }
+    .row-details td{
+      padding: 16px 10px 16px 28px;
+      border-top: 1px solid var(--border);
+      background: color-mix(in oklab, var(--panel) 98%, var(--accent));
+    }
+    .details-content{
+      max-width: 100%;
+    }
+    .details-section{
+      margin-bottom: 16px;
+    }
+    .details-section:last-child{
+      margin-bottom: 0;
+    }
+    .details-section h4{
+      margin: 0 0 8px 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .details-grid{
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px 16px;
+      font-size: 13px;
+    }
+    .details-grid dt{
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .details-grid dd{
+      margin: 0;
+      color: var(--text);
+    }
+    .code-block{
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin: 8px 0;
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .code-block code{
+      background: transparent;
+      border: none;
+      padding: 0;
+    }
+    .tag-list{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 4px 0;
+    }
+
+    /* Chips / Tags */
+    .chip{
+      display:inline-flex; align-items:center; gap:6px;
+      padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      white-space: nowrap;
+    }
+    .chip--ok{ color: var(--chip-ok); border-color: color-mix(in oklab, var(--chip-ok) 40%, var(--border)); }
+    .chip--bad{ color: var(--chip-bad); border-color: color-mix(in oklab, var(--chip-bad) 40%, var(--border)); }
+    .chip--neutral{ color: var(--chip-neutral); border-color: color-mix(in oklab, var(--chip-neutral) 40%, var(--border)); }
+
+    /* Code */
+    code, pre code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2px 6px;
+      font-size: 12px;
+    }
+
+    /* Utilities */
+    .kvs{ margin:0; padding:0; list-style:none; display:grid; grid-template-columns: 1fr 2fr; gap: 0; border: 1px solid var(--border); border-radius: 10px; overflow:hidden;}
+    .kvs li{ display: contents; }
+    .kvs span{ padding:10px; border-top:1px solid var(--border); }
+    .kvs span.key{ background: var(--table-stripe); font-weight:700; color: var(--muted); }
+    .kvs span.val{ background: transparent; }
+
+    /* Waiver Controls */
+    .export-waivers-btn {
+      padding: 8px 16px;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .export-waivers-btn:hover {
+      background: color-mix(in oklab, var(--accent) 90%, black);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .waiver-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 200px;
+    }
+    .waiver-select {
+      padding: 6px 8px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .waiver-select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .waiver-fields {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .waiver-fields.visible {
+      display: flex;
+    }
+    .waiver-input {
+      padding: 6px 8px;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 12px;
+      font-family: inherit;
+    }
+    .waiver-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .waiver-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Footer */
+    .footer{
+      margin: 26px 0;
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px;
+    }
+
+    /* Print */
+    @media print{
+      .report-header{ position: static; box-shadow: none; }
+      .section{ break-inside: avoid; box-shadow: none; }
+      a{ text-decoration: underline; }
+      .container{ margin: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="report-header" role="banner">
+      <div class="title-row">
+        <img src="{% include 'dsoiab_logo_base64.txt' %}"
+             alt="DSOIAB Logo"
+             style="height:96px;max-width:320px;width:auto;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.09);" />
+        <h1>Consolidated Security Report</h1>
+        <div class="badges">
+          {% if report_context and report_context.branch %}
+            <span class="badge"><span class="badge-dot"></span> {{ report_context.branch }}</span>
+          {% endif %}
+          {% if report_context and report_context.commit %}
+            <span class="badge badge--accent">Commit: {{ report_context.commit[:7] }}</span>
+          {% endif %}
+          {% if report_context and report_context.generated_at %}
+            <span class="badge">Generated: {{ report_context.generated_at }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="meta" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          {% if report_context and report_context.repo_url %}
+            Source: <a href="{{ report_context.repo_url }}">{{ report_context.repo_url }}</a>
+          {% endif %}
+        </div>
+        <button id="export-waivers-btn" class="export-waivers-btn" style="display: none;">
+          Export Waivers
+        </button>
+      </div>
+    </header>
+
+    <!-- Git Repo Info -->
+    {% if git_repo_info %}
+    <section class="section" id="git-repo-info">
+      <div class="section__head">
+        <h2>Git Repository</h2>
+      </div>
+      <div class="section__body">
+        <ul class="kvs" aria-label="Repository key values">
+          {% for key, value in git_repo_info.items() %}
+          <li>
+            <span class="key">{{ key }}</span>
+            <span class="val">{{ value }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </section>
+    {% endif %}
+
+    {% include "default_syft.html" %}
+    {% include "default_grype.html" %}
+    {% include "default_trufflehog.html" %}
+    {% include "default_opengrep.html" %}
+    {% include "default_checkov.html" %}
+
+    <p class="footer">Generated by internal tooling • Confidential</p>
+  </div>
+{%- if waiver_data %}
+  <!-- Store existing waivers and benchmarks in hidden script tag -->
+  <script type="application/json" id="existing-waiver-data" style="display: none;">
+    {{ waiver_data | tojson }}
+  </script>
+{%- endif %}
+
+  <script>
+    (function() {
+      // Handle expandable rows
+      document.addEventListener('click', function(e) {
+        const row = e.target.closest('.row-expandable');
+        if (!row) return;
+        
+        // Don't expand if clicking on waiver controls
+        if (e.target.closest('.waiver-controls')) return;
+        
+        const detailsRow = row.nextElementSibling;
+        if (!detailsRow || !detailsRow.classList.contains('row-details')) return;
+        
+        const isExpanded = row.classList.contains('expanded');
+        
+        if (isExpanded) {
+          row.classList.remove('expanded');
+          detailsRow.classList.remove('expanded');
+        } else {
+          row.classList.add('expanded');
+          detailsRow.classList.add('expanded');
+        }
+      });
+
+      // Handle waiver dropdown changes
+      document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('waiver-select')) {
+          const controls = e.target.closest('.waiver-controls');
+          const fields = controls.querySelector('.waiver-fields');
+          const value = e.target.value;
+          
+          if (value && value !== '') {
+            fields.classList.add('visible');
+          } else {
+            fields.classList.remove('visible');
+            // Clear fields when hiding
+            fields.querySelectorAll('.waiver-input').forEach(input => input.value = '');
+          }
+          
+          // Show export button if any waiver is selected
+          updateExportButtonVisibility();
+        }
+      });
+
+      // Update export button visibility
+      function updateExportButtonVisibility() {
+        const selects = document.querySelectorAll('.waiver-select');
+        let hasWaivers = false;
+        selects.forEach(select => {
+          if (select.value && select.value !== '') {
+            hasWaivers = true;
+          }
+        });
+        const exportBtn = document.getElementById('export-waivers-btn');
+        if (exportBtn) {
+          exportBtn.style.display = hasWaivers ? 'block' : 'none';
+        }
+      }
+
+      // Export waivers function
+      document.getElementById('export-waivers-btn')?.addEventListener('click', function() {
+        // Load existing waivers and benchmarks from hidden script tag
+        let existingWaiverData = null;
+        const existingWaiverScript = document.getElementById('existing-waiver-data');
+        if (existingWaiverScript) {
+          try {
+            existingWaiverData = JSON.parse(existingWaiverScript.textContent);
+          } catch (e) {
+            console.error('Failed to parse existing waiver data:', e);
+          }
+        }
+        
+        // Collect existing finding_waivers (excluding benchmarks)
+        const existingFindingWaivers = existingWaiverData?.finding_waivers || [];
+        const existingBenchmarks = existingWaiverData?.benchmark || [];
+        
+        // Collect new waivers from UI
+        const newWaivers = [];
+        const findingRows = document.querySelectorAll('tr[data-fingerprints]');
+        
+        findingRows.forEach(row => {
+          const controls = row.querySelector('.waiver-controls');
+          if (!controls) return;
+          
+          const select = controls.querySelector('.waiver-select');
+          const type = select?.value;
+          
+          if (!type || type === '') return;
+          
+          // Get selected fingerprint from dropdown
+          const fingerprintSelect = controls.querySelector('.waiver-fingerprint');
+          const fingerprint = fingerprintSelect?.value;
+          
+          if (!fingerprint) return;
+          
+          const waiver = {
+            fingerprint: fingerprint,
+            type: type
+          };
+          
+          const reasonInput = controls.querySelector('.waiver-reason');
+          if (reasonInput && reasonInput.value.trim()) {
+            waiver.reason = reasonInput.value.trim();
+          }
+          
+          const expiresDateInput = controls.querySelector('.waiver-expires-date');
+          const expiresTimeInput = controls.querySelector('.waiver-expires-time');
+          
+          // If date is provided, use it (default time to midnight if not provided)
+          if (expiresDateInput && expiresDateInput.value) {
+            const dateValue = expiresDateInput.value; // Format: YYYY-MM-DD
+            const timeValue = expiresTimeInput && expiresTimeInput.value ? expiresTimeInput.value : '00:00'; // Format: HH:mm
+            
+            // Combine date and time, defaulting to midnight if time not provided
+            const dateTimeString = dateValue + 'T' + timeValue + ':00'; // Add seconds
+            const date = new Date(dateTimeString);
+            
+            if (!isNaN(date.getTime())) {
+              waiver.expires_at = date.toISOString();
+            }
+          }
+          
+          // Separate benchmarks from finding waivers
+          if (type === 'benchmark') {
+            // Benchmarks will be added to benchmark section
+            newWaivers.push({...waiver, isBenchmark: true});
+          } else {
+            newWaivers.push(waiver);
+          }
+        });
+        
+        // Separate new waivers into finding_waivers and benchmarks
+        const newFindingWaivers = newWaivers.filter(w => !w.isBenchmark).map(({isBenchmark, ...w}) => w);
+        const newBenchmarks = newWaivers.filter(w => w.isBenchmark).map(({isBenchmark, ...w}) => w);
+        
+        // Merge existing and new waivers/benchmarks
+        const allFindingWaivers = [...existingFindingWaivers, ...newFindingWaivers];
+        const allBenchmarks = [...existingBenchmarks, ...newBenchmarks];
+        
+        // If no waivers or benchmarks to export, show alert
+        if (allFindingWaivers.length === 0 && allBenchmarks.length === 0) {
+          alert('No waivers or benchmarks to export.');
+          return;
+        }
+        
+        // Build YAML structure
+        const yamlData = {
+          schema_version: existingWaiverData?.schema_version || '1.0',
+          meta: existingWaiverData?.meta || {
+            created_at: new Date().toISOString()
+          }
+        };
+        
+        // Only include finding_waivers if there are any
+        if (allFindingWaivers.length > 0) {
+          yamlData.finding_waivers = allFindingWaivers;
+        }
+        
+        // Only include benchmark if there are any
+        if (allBenchmarks.length > 0) {
+          yamlData.benchmark = allBenchmarks;
+        }
+        
+        // Convert to YAML (simple implementation)
+        function escapeYamlString(str) {
+          // Escape backslashes and quotes, and handle newlines
+          return str
+            .replace(/\\/g, '\\\\')
+            .replace(/"/g, '\\"')
+            .replace(/\n/g, '\\n');
+        }
+        
+        let yaml = `schema_version: "${yamlData.schema_version}"\n\n`;
+        yaml += 'meta:\n';
+        if (yamlData.meta.created_at) {
+          yaml += `  created_at: "${yamlData.meta.created_at}"\n`;
+        }
+        if (yamlData.meta.updated_at) {
+          yaml += `  updated_at: "${yamlData.meta.updated_at}"\n`;
+        }
+        yaml += '\n';
+        
+        // Add finding_waivers section if present
+        if (yamlData.finding_waivers && yamlData.finding_waivers.length > 0) {
+          yaml += 'finding_waivers:\n';
+          yamlData.finding_waivers.forEach(waiver => {
+            yaml += `  - fingerprint: "${escapeYamlString(waiver.fingerprint)}"\n`;
+            yaml += `    type: "${escapeYamlString(waiver.type)}"\n`;
+            if (waiver.reason) {
+              yaml += `    reason: "${escapeYamlString(waiver.reason)}"\n`;
+            }
+            if (waiver.expires_at) {
+              yaml += `    expires_at: "${waiver.expires_at}"\n`;
+            }
+          });
+          yaml += '\n';
+        }
+        
+        // Add benchmark section if present
+        if (yamlData.benchmark && yamlData.benchmark.length > 0) {
+          yaml += 'benchmark:\n';
+          yamlData.benchmark.forEach(benchmark => {
+            yaml += `  - fingerprint: "${escapeYamlString(benchmark.fingerprint)}"\n`;
+            yaml += `    type: "benchmark"\n`;
+            if (benchmark.reason) {
+              yaml += `    reason: "${escapeYamlString(benchmark.reason)}"\n`;
+            }
+            if (benchmark.expires_at) {
+              yaml += `    expires_at: "${benchmark.expires_at}"\n`;
+            }
+          });
+        }
+        
+        // Download file
+        const blob = new Blob([yaml], { type: 'text/yaml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `waivers_${new Date().toISOString().split('T')[0]}.yaml`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+
+      // Initial check for export button visibility
+      updateExportButtonVisibility();
+    })();
+  </script>
+</body>
+</html>

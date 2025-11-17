@@ -1,0 +1,300 @@
+{% if opengrep_data %}
+    <section class="section" id="opengrep-section" aria-labelledby="opengrep-title">
+    {% set findings = opengrep_data.results %}
+
+    {# ----- Quick rollups ----- #}
+    {% set sev_counts = {'critical':0,'high':0,'medium':0,'low':0,'info':0,'unknown':0} %}
+    {% set file_counts = {} %}
+    {% set rule_ids = {} %}
+
+    {% for f in findings %}
+        {% set path = f.path | default('') %}
+        {% set _ = file_counts.__setitem__(path, (file_counts.get(path, 0) + 1)) %}
+
+        {% set rid = f.check_id | default('') %}
+        {% if rid %}
+        {% set _ = rule_ids.__setitem__(rid, True) %}
+        {% endif %}
+
+        {% set sev = (f.extra.severity | default('unknown')) | lower %}
+        {% if sev == 'warning' %}
+        {% set _ = sev_counts.__setitem__('medium', sev_counts['medium'] + 1) %}
+        {% elif sev == 'error' %}
+        {% set _ = sev_counts.__setitem__('high', sev_counts['high'] + 1) %}
+        {% elif sev in sev_counts %}
+        {% set _ = sev_counts.__setitem__(sev, sev_counts[sev] + 1) %}
+        {% else %}
+        {% set _ = sev_counts.__setitem__('unknown', sev_counts['unknown'] + 1) %}
+        {% endif %}
+    {% endfor %}
+
+    <div class="section__head">
+        <h2 id="opengrep-title">OpenGrep — SAST Findings</h2>
+        {% if findings %}
+            <div>
+            <span class="chip chip--neutral">Total: {{ findings|length }}</span>
+            <span class="chip">Files: {{ file_counts|length }}</span>
+            <span class="chip">Rules: {{ rule_ids|length }}</span>
+            <span class="chip chip--bad">Critical: {{ sev_counts.critical }}</span>
+            <span class="chip chip--bad">High | Error: {{ sev_counts.high }}</span>
+            <span class="chip chip--neutral">Medium | Warning: {{ sev_counts.medium }}</span>
+            <span class="chip chip--ok">Low: {{ sev_counts.low }}</span>
+            <span class="chip">Info: {{ sev_counts.info }}</span>
+            <span class="chip">Unknown: {{ sev_counts.unknown }}</span>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if findings %}
+        <div class="section__body">
+            {# Optional: quick “top offenders” blurb #}
+            {% set top_files = file_counts.items() | list | sort(attribute=1, reverse=True) %}
+            {% if top_files and top_files|length > 0 %}
+            <p class="meta" style="margin:0 0 8px 0;">
+                Heaviest files:
+                {% for kv in top_files[:3] %}
+                <strong>{{ kv[0] | e }}</strong> ({{ kv[1] }}){% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+            {% endif %}
+
+            <div class="table-wrap" role="region" aria-label="OpenGrep SAST findings (scrollable)">
+            <table>
+                <thead>
+                <tr>
+                    <th style="min-width:16rem">File</th>
+                    <th style="width:6rem">Line</th>
+                    <th style="min-width:12rem">Rule / Check ID</th>
+                    <th style="min-width:20rem">Message</th>
+                    <th style="width:8rem">Severity</th>
+                    <th style="min-width:12rem">Waiver</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for finding in findings %}
+                    {% set path = finding.path | default('') %}
+                    {% set line = (finding.start.line if finding.start is defined and finding.start and finding.start.line is defined else '') %}
+                    {% set rid = finding.check_id | default('') %}
+                    {% set msg = (finding.extra.message if finding.extra is defined and finding.extra and finding.extra.message is defined else '') %}
+                    {% set sev_raw = (finding.extra.severity if finding.extra is defined and finding.extra and finding.extra.severity is defined else 'Unknown') %}
+                    {% set sev = sev_raw | lower %}
+                    {% set sev_chip =
+                    'chip--bad' if sev in ['critical','high'] else
+                    ('chip--neutral' if sev == 'medium' else
+                    ('chip--ok' if sev in ['low','info'] else '')) %}
+                    {% set extra = finding.extra if finding.extra is defined else {} %}
+                    {% set metadata = extra.metadata if extra.metadata is defined else {} %}
+                    {% set lines = extra.lines if extra.lines is defined else '' %}
+                    {% set cwe = metadata.cwe if metadata.cwe is defined else [] %}
+                    {% set owasp = metadata.owasp if metadata.owasp is defined else [] %}
+                    {% set references = metadata.references if metadata.references is defined else [] %}
+                    {% set source = metadata.source if metadata.source is defined else '' %}
+                    {% set shortlink = metadata.shortlink if metadata.shortlink is defined else '' %}
+                    {% set vulnerability_class = metadata.vulnerability_class if metadata.vulnerability_class is defined else [] %}
+                    {% set confidence = metadata.confidence if metadata.confidence is defined else '' %}
+                    {% set likelihood = metadata.likelihood if metadata.likelihood is defined else '' %}
+                    {% set impact = metadata.impact if metadata.impact is defined else '' %}
+                    {% set fingerprints = finding.fingerprints if finding.fingerprints is defined else {} %}
+                    {% set fingerprint_list = [] %}
+                    {% if fingerprints.rule %}{% set _ = fingerprint_list.append(('rule', fingerprints.rule)) %}{% endif %}
+                    {% if fingerprints.ctx %}{% set _ = fingerprint_list.append(('ctx', fingerprints.ctx)) %}{% endif %}
+                    {% if fingerprints.exact %}{% set _ = fingerprint_list.append(('exact', fingerprints.exact)) %}{% endif %}
+                    {% set default_fp = '' %}
+                    {# Default to ctx fingerprint if available, otherwise first available #}
+                    {% if fingerprints.ctx %}
+                      {% set default_fp = fingerprints.ctx %}
+                    {% elif fingerprint_list|length > 0 %}
+                      {% set default_fp = fingerprint_list[0][1] %}
+                    {% endif %}
+
+                    <tr class="row-expandable" {% if fingerprint_list|length > 0 %}data-fingerprints='{{ fingerprint_list|map(attribute=1)|list|tojson }}'{% endif %}>
+                    <td>{{ path | e }}</td>
+                    <td>{{ line | e }}</td>
+                    <td>{{ rid | e }}</td>
+                    <td>{{ msg | e }}</td>
+                    <td><span class="chip {{ sev_chip }}">{{ sev_raw | default('Unknown') | e }}</span></td>
+                    <td>
+                      {% if fingerprint_list|length > 0 %}
+                      <div class="waiver-controls">
+                        <select class="waiver-select">
+                          <option value="">—</option>
+                          <option value="false_positive">False Positive</option>
+                          <option value="risk_acceptance">Risk Acceptance</option>
+                          <option value="policy_waiver">Policy Waiver</option>
+                        </select>
+                        <div class="waiver-fields">
+                          <label class="waiver-label">Fingerprint (optional)</label>
+                          <select class="waiver-input waiver-fingerprint">
+                            {% for fp_type, fp_value in fingerprint_list %}
+                            <option value="{{ fp_value }}" {% if fp_value == default_fp %}selected{% endif %}>
+                              {{ fp_type|upper }}: {{ fp_value[:40] }}{% if fp_value|length > 40 %}...{% endif %}
+                            </option>
+                            {% endfor %}
+                          </select>
+                          <label class="waiver-label">Reason (optional)</label>
+                          <input type="text" class="waiver-input waiver-reason" placeholder="Enter reason...">
+                          <label class="waiver-label">Expires At (optional)</label>
+                          <div style="display: flex; gap: 4px;">
+                            <input type="date" class="waiver-input waiver-expires-date" style="flex: 1;">
+                            <input type="time" class="waiver-input waiver-expires-time" style="flex: 1;">
+                          </div>
+                        </div>
+                      </div>
+                      {% else %}
+                        —
+                      {% endif %}
+                    </td>
+                    </tr>
+                    <tr class="row-details">
+                    <td colspan="6">
+                        <div class="details-content">
+                            {% if lines %}
+                            <div class="details-section">
+                                <h4>Code Context</h4>
+                                <div class="code-block">
+                                    <code>{{ lines | e }}</code>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if msg %}
+                            <div class="details-section">
+                                <h4>Description</h4>
+                                <p style="margin: 0; line-height: 1.6;">{{ msg | e }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="details-section">
+                                <h4>Details</h4>
+                                <dl class="details-grid">
+                                    {% if rid %}
+                                    <dt>Rule ID:</dt>
+                                    <dd><code>{{ rid | e }}</code></dd>
+                                    {% endif %}
+                                    {% if path %}
+                                    <dt>File:</dt>
+                                    <dd><code>{{ path | e }}</code></dd>
+                                    {% endif %}
+                                    {% if line %}
+                                    <dt>Line:</dt>
+                                    <dd>{{ line | e }}</dd>
+                                    {% endif %}
+                                    {% if confidence %}
+                                    <dt>Confidence:</dt>
+                                    <dd><span class="chip">{{ confidence | e }}</span></dd>
+                                    {% endif %}
+                                    {% if likelihood %}
+                                    <dt>Likelihood:</dt>
+                                    <dd><span class="chip">{{ likelihood | e }}</span></dd>
+                                    {% endif %}
+                                    {% if impact %}
+                                    <dt>Impact:</dt>
+                                    <dd><span class="chip">{{ impact | e }}</span></dd>
+                                    {% endif %}
+                                </dl>
+                            </div>
+                            
+                            {% if cwe or owasp or vulnerability_class %}
+                            <div class="details-section">
+                                <h4>Classifications</h4>
+                                <dl class="details-grid">
+                                    {% if cwe %}
+                                    <dt>CWE:</dt>
+                                    <dd>
+                                        <div class="tag-list">
+                                            {% for c in cwe %}
+                                            <span class="chip chip--neutral">{{ c | e }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </dd>
+                                    {% endif %}
+                                    {% if owasp %}
+                                    <dt>OWASP:</dt>
+                                    <dd>
+                                        <div class="tag-list">
+                                            {% for o in owasp %}
+                                            <span class="chip chip--neutral">{{ o | e }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </dd>
+                                    {% endif %}
+                                    {% if vulnerability_class %}
+                                    <dt>Vulnerability Class:</dt>
+                                    <dd>
+                                        <div class="tag-list">
+                                            {% for vc in vulnerability_class %}
+                                            <span class="chip chip--neutral">{{ vc | e }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </dd>
+                                    {% endif %}
+                                </dl>
+                            </div>
+                            {% endif %}
+                            
+                            {% if references or source or shortlink %}
+                            <div class="details-section">
+                                <h4>References</h4>
+                                <dl class="details-grid">
+                                    {% if source %}
+                                    <dt>Source:</dt>
+                                    <dd><a href="{{ source | e }}" target="_blank" rel="noopener">{{ source | e }}</a></dd>
+                                    {% endif %}
+                                    {% if shortlink %}
+                                    <dt>Shortlink:</dt>
+                                    <dd><a href="{{ shortlink | e }}" target="_blank" rel="noopener">{{ shortlink | e }}</a></dd>
+                                    {% endif %}
+                                    {% if references %}
+                                    <dt>References:</dt>
+                                    <dd>
+                                        <ul style="margin: 0; padding-left: 20px; list-style: disc;">
+                                            {% for ref in references %}
+                                            <li><a href="{{ ref | e }}" target="_blank" rel="noopener">{{ ref | e }}</a></li>
+                                            {% endfor %}
+                                        </ul>
+                                    </dd>
+                                    {% endif %}
+                                </dl>
+                            </div>
+                            {% endif %}
+
+                            {% if fingerprints %}
+                            <div class="details-section">
+                                <h4>Fingerprints</h4>
+                                <dl class="details-grid">
+                                    {% if fingerprints.rule %}
+                                    <dt>Rule Fingerprint:</dt>
+                                    <dd><code style="font-size: 11px;">{{ fingerprints.rule | e }}</code></dd>
+                                    {% endif %}
+                                    {% if fingerprints.exact %}
+                                    <dt>Exact Fingerprint:</dt>
+                                    <dd><code style="font-size: 11px;">{{ fingerprints.exact | e }}</code></dd>
+                                    {% endif %}
+                                    {% if fingerprints.ctx %}
+                                    <dt>Context Fingerprint:</dt>
+                                    <dd><code style="font-size: 11px;">{{ fingerprints.ctx | e }}</code></dd>
+                                    {% endif %}
+                                </dl>
+                                <p style="margin: 8px 0 0 0; font-size: 11px; color: var(--muted); line-height: 1.4;">
+                                    <strong>Fingerprint Types:</strong><br>
+                                    <strong>RULE:</strong> Rule-based identifier derived from rule ID and normalized code structure. Stable across file moves and commits.<br>
+                                    <strong>EXACT:</strong> Location-bound identifier derived from rule ID, file content hash, and byte span. Binds tightly to a specific file revision.<br>
+                                    <strong>CTX:</strong> Contextual identifier derived from rule ID, relative file path, and redacted context window. Remains valid through small edits.
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="section__body">
+            <em>No SAST findings..</em>
+        </div>
+    {% endif %}
+    </section>
+{% endif %}

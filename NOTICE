@@ -1,0 +1,11 @@
+DevSecOps in a Box bundles the following third-party tools:
+
+- TruffleHog (GPL-3.0) — https://github.com/trufflesecurity/trufflehog
+- Syft (Apache 2.0) — https://github.com/anchore/syft
+- Grype (Apache 2.0) — https://github.com/anchore/grype
+- OpenGrep (LGPL-2.1) — https://github.com/opengrep/opengrep
+- Checkov (Apache 2.0) — https://github.com/bridgecrewio/checkov
+
+This project is licensed under Apache 2.0.
+See LICENSE for details.
+

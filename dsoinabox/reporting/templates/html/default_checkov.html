@@ -1,0 +1,320 @@
+{% if checkov_data %}
+    <section class="section" id="checkov-section" aria-labelledby="checkov-title">
+    {% set runs = checkov_data.runs | default([]) %}
+    {% set findings = runs[0].results | default([]) if runs else [] %}
+
+    {# ----- Quick rollups ----- #}
+    {% set sev_counts = {'critical':0,'high':0,'medium':0,'low':0,'info':0,'unknown':0} %}
+    {% set file_counts = {} %}
+    {% set rule_ids = {} %}
+
+    {% for f in findings %}
+        {% set location = f.locations[0] if f.locations and f.locations|length > 0 else {} %}
+        {% set physical_location = location.physicalLocation if location.physicalLocation is defined else {} %}
+        {% set artifact_location = physical_location.artifactLocation if physical_location.artifactLocation is defined else {} %}
+        {% set path = artifact_location.uri | default('') %}
+        {% if path %}
+        {% set _ = file_counts.__setitem__(path, (file_counts.get(path, 0) + 1)) %}
+        {% endif %}
+
+        {% set rid = f.ruleId | default('') %}
+        {% if rid %}
+        {% set _ = rule_ids.__setitem__(rid, True) %}
+        {% endif %}
+
+        {# Extract severity from SARIF level and security-severity #}
+        {% set level = (f.level | default('error')) | lower %}
+        {% set sev = 'high' %}
+        {% if level == 'error' %}
+        {% set sev = 'high' %}
+        {% elif level == 'warning' %}
+        {% set sev = 'medium' %}
+        {% elif level == 'note' %}
+        {% set sev = 'low' %}
+        {% elif level == 'none' %}
+        {% set sev = 'info' %}
+        {% endif %}
+        
+        {# Check for security-severity in rule properties #}
+        {% set rule_index = f.ruleIndex | default(-1) %}
+        {% if rule_index >= 0 and runs and runs[0].tool and runs[0].tool.driver and runs[0].tool.driver.rules %}
+        {% set rules = runs[0].tool.driver.rules %}
+        {% if rule_index < rules|length %}
+        {% set rule = rules[rule_index] %}
+        {% set props = rule.properties | default({}) %}
+        {% if 'security-severity' in props %}
+        {% set sec_severity = props['security-severity'] %}
+        {% if sec_severity >= 9.0 %}
+        {% set sev = 'critical' %}
+        {% elif sec_severity >= 7.0 %}
+        {% set sev = 'high' %}
+        {% elif sec_severity >= 4.0 %}
+        {% set sev = 'medium' %}
+        {% else %}
+        {% set sev = 'low' %}
+        {% endif %}
+        {% endif %}
+        {% endif %}
+        {% endif %}
+
+        {% if sev in sev_counts %}
+        {% set _ = sev_counts.__setitem__(sev, sev_counts[sev] + 1) %}
+        {% else %}
+        {% set _ = sev_counts.__setitem__('unknown', sev_counts['unknown'] + 1) %}
+        {% endif %}
+    {% endfor %}
+
+    <div class="section__head">
+        <h2 id="checkov-title">Checkov — IaC Findings</h2>
+        {% if findings %}
+            <div>
+            <span class="chip chip--neutral">Total: {{ findings|length }}</span>
+            <span class="chip">Files: {{ file_counts|length }}</span>
+            <span class="chip">Rules: {{ rule_ids|length }}</span>
+            <span class="chip chip--bad">Critical: {{ sev_counts.critical }}</span>
+            <span class="chip chip--bad">High: {{ sev_counts.high }}</span>
+            <span class="chip chip--neutral">Medium: {{ sev_counts.medium }}</span>
+            <span class="chip chip--ok">Low: {{ sev_counts.low }}</span>
+            <span class="chip">Info: {{ sev_counts.info }}</span>
+            <span class="chip">Unknown: {{ sev_counts.unknown }}</span>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if findings %}
+        <div class="section__body">
+            {# Optional: quick "top offenders" blurb #}
+            {% set top_files = file_counts.items() | list | sort(attribute=1, reverse=True) %}
+            {% if top_files and top_files|length > 0 %}
+            <p class="meta" style="margin:0 0 8px 0;">
+                Heaviest files:
+                {% for kv in top_files[:3] %}
+                <strong>{{ kv[0] | e }}</strong> ({{ kv[1] }}){% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+            {% endif %}
+
+            <div class="table-wrap" role="region" aria-label="Checkov IaC findings (scrollable)">
+            <table>
+                <thead>
+                <tr>
+                    <th style="min-width:16rem">File</th>
+                    <th style="width:6rem">Line</th>
+                    <th style="min-width:12rem">Rule ID</th>
+                    <th style="min-width:20rem">Message</th>
+                    <th style="width:8rem">Severity</th>
+                    <th style="min-width:12rem">Waiver</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for finding in findings %}
+                    {% set location = finding.locations[0] if finding.locations and finding.locations|length > 0 else {} %}
+                    {% set physical_location = location.physicalLocation if location.physicalLocation is defined else {} %}
+                    {% set artifact_location = physical_location.artifactLocation if physical_location.artifactLocation is defined else {} %}
+                    {% set path = artifact_location.uri | default('') %}
+                    {% set region = physical_location.region if physical_location.region is defined else {} %}
+                    {% set line = region.startLine | default('') %}
+                    {% set rid = finding.ruleId | default('') %}
+                    {% set message = finding.message if finding.message is defined else {} %}
+                    {% set msg = message.text if message.text is defined else (message if message is string else '') %}
+                    {% set level = (finding.level | default('error')) | lower %}
+                    
+                    {# Determine severity #}
+                    {% set sev = 'medium' %}
+                    {% if level == 'error' %}
+                    {% set sev = 'high' %}
+                    {% elif level == 'warning' %}
+                    {% set sev = 'medium' %}
+                    {% elif level == 'note' %}
+                    {% set sev = 'low' %}
+                    {% elif level == 'none' %}
+                    {% set sev = 'info' %}
+                    {% endif %}
+                    
+                    {# Check for security-severity in rule properties #}
+                    {% set rule_index = finding.ruleIndex | default(-1) %}
+                    {% if rule_index >= 0 and runs and runs[0].tool and runs[0].tool.driver and runs[0].tool.driver.rules %}
+                    {% set rules = runs[0].tool.driver.rules %}
+                    {% if rule_index < rules|length %}
+                    {% set rule = rules[rule_index] %}
+                    {% set props = rule.properties | default({}) %}
+                    {% if 'security-severity' in props %}
+                    {% set sec_severity = props['security-severity'] %}
+                    {% if sec_severity >= 9.0 %}
+                    {% set sev = 'critical' %}
+                    {% elif sec_severity >= 7.0 %}
+                    {% set sev = 'high' %}
+                    {% elif sec_severity >= 4.0 %}
+                    {% set sev = 'medium' %}
+                    {% else %}
+                    {% set sev = 'low' %}
+                    {% endif %}
+                    {% endif %}
+                    {% endif %}
+                    {% endif %}
+                    
+                    {% set sev_chip =
+                    'chip--bad' if sev in ['critical','high'] else
+                    ('chip--neutral' if sev == 'medium' else
+                    ('chip--ok' if sev in ['low','info'] else '')) %}
+                    
+                    {% set snippet = region.snippet.text if region.snippet and region.snippet.text is defined else '' %}
+                    {% set fingerprints = finding.fingerprints if finding.fingerprints is defined else {} %}
+                    {% set fingerprint_list = [] %}
+                    {% if fingerprints.rule %}{% set _ = fingerprint_list.append(('rule', fingerprints.rule)) %}{% endif %}
+                    {% if fingerprints.ctx %}{% set _ = fingerprint_list.append(('ctx', fingerprints.ctx)) %}{% endif %}
+                    {% if fingerprints.exact %}{% set _ = fingerprint_list.append(('exact', fingerprints.exact)) %}{% endif %}
+                    {% set default_fp = '' %}
+                    {# Default to ctx fingerprint if available, otherwise first available #}
+                    {% if fingerprints.ctx %}
+                      {% set default_fp = fingerprints.ctx %}
+                    {% elif fingerprint_list|length > 0 %}
+                      {% set default_fp = fingerprint_list[0][1] %}
+                    {% endif %}
+                    
+                    {# Get rule details if available #}
+                    {% set rule_name = '' %}
+                    {% set rule_help_uri = '' %}
+                    {% if rule_index >= 0 and runs and runs[0].tool and runs[0].tool.driver and runs[0].tool.driver.rules %}
+                    {% set rules = runs[0].tool.driver.rules %}
+                    {% if rule_index < rules|length %}
+                    {% set rule = rules[rule_index] %}
+                    {% set rule_name = rule.name | default('') %}
+                    {% set rule_help_uri = rule.helpUri | default('') %}
+                    {% endif %}
+                    {% endif %}
+
+                    <tr class="row-expandable" {% if fingerprint_list|length > 0 %}data-fingerprints='{{ fingerprint_list|map(attribute=1)|list|tojson }}'{% endif %}>
+                    <td>{{ path | e }}</td>
+                    <td>{{ line | e }}</td>
+                    <td>{{ rid | e }}</td>
+                    <td>{{ msg | e }}</td>
+                    <td><span class="chip {{ sev_chip }}">{{ sev | title | e }}</span></td>
+                    <td>
+                      {% if fingerprint_list|length > 0 %}
+                      <div class="waiver-controls">
+                        <select class="waiver-select">
+                          <option value="">—</option>
+                          <option value="false_positive">False Positive</option>
+                          <option value="risk_acceptance">Risk Acceptance</option>
+                          <option value="policy_waiver">Policy Waiver</option>
+                        </select>
+                        <div class="waiver-fields">
+                          <label class="waiver-label">Fingerprint (optional)</label>
+                          <select class="waiver-input waiver-fingerprint">
+                            {% for fp_type, fp_value in fingerprint_list %}
+                            <option value="{{ fp_value }}" {% if fp_value == default_fp %}selected{% endif %}>
+                              {{ fp_type|upper }}: {{ fp_value[:40] }}{% if fp_value|length > 40 %}...{% endif %}
+                            </option>
+                            {% endfor %}
+                          </select>
+                          <label class="waiver-label">Reason (optional)</label>
+                          <input type="text" class="waiver-input waiver-reason" placeholder="Enter reason...">
+                          <label class="waiver-label">Expires At (optional)</label>
+                          <div style="display: flex; gap: 4px;">
+                            <input type="date" class="waiver-input waiver-expires-date" style="flex: 1;">
+                            <input type="time" class="waiver-input waiver-expires-time" style="flex: 1;">
+                          </div>
+                        </div>
+                      </div>
+                      {% else %}
+                        —
+                      {% endif %}
+                    </td>
+                    </tr>
+                    <tr class="row-details">
+                    <td colspan="6">
+                        <div class="details-content">
+                            {% if snippet %}
+                            <div class="details-section">
+                                <h4>Code Context</h4>
+                                <div class="code-block">
+                                    <code>{{ snippet | e }}</code>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if msg %}
+                            <div class="details-section">
+                                <h4>Description</h4>
+                                <p style="margin: 0; line-height: 1.6;">{{ msg | e }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="details-section">
+                                <h4>Details</h4>
+                                <dl class="details-grid">
+                                    {% if rid %}
+                                    <dt>Rule ID:</dt>
+                                    <dd><code>{{ rid | e }}</code></dd>
+                                    {% endif %}
+                                    {% if rule_name %}
+                                    <dt>Rule Name:</dt>
+                                    <dd>{{ rule_name | e }}</dd>
+                                    {% endif %}
+                                    {% if path %}
+                                    <dt>File:</dt>
+                                    <dd><code>{{ path | e }}</code></dd>
+                                    {% endif %}
+                                    {% if line %}
+                                    <dt>Line:</dt>
+                                    <dd>{{ line | e }}</dd>
+                                    {% endif %}
+                                    {% if level %}
+                                    <dt>SARIF Level:</dt>
+                                    <dd><span class="chip">{{ level | title | e }}</span></dd>
+                                    {% endif %}
+                                </dl>
+                            </div>
+                            
+                            {% if rule_help_uri %}
+                            <div class="details-section">
+                                <h4>References</h4>
+                                <dl class="details-grid">
+                                    <dt>Help URI:</dt>
+                                    <dd><a href="{{ rule_help_uri | e }}" target="_blank" rel="noopener">{{ rule_help_uri | e }}</a></dd>
+                                </dl>
+                            </div>
+                            {% endif %}
+
+                            {% if fingerprints %}
+                            <div class="details-section">
+                                <h4>Fingerprints</h4>
+                                <dl class="details-grid">
+                                    {% if fingerprints.rule %}
+                                    <dt>Rule Fingerprint:</dt>
+                                    <dd><code style="font-size: 11px;">{{ fingerprints.rule | e }}</code></dd>
+                                    {% endif %}
+                                    {% if fingerprints.exact %}
+                                    <dt>Exact Fingerprint:</dt>
+                                    <dd><code style="font-size: 11px;">{{ fingerprints.exact | e }}</code></dd>
+                                    {% endif %}
+                                    {% if fingerprints.ctx %}
+                                    <dt>Context Fingerprint:</dt>
+                                    <dd><code style="font-size: 11px;">{{ fingerprints.ctx | e }}</code></dd>
+                                    {% endif %}
+                                </dl>
+                                <p style="margin: 8px 0 0 0; font-size: 11px; color: var(--muted); line-height: 1.4;">
+                                    <strong>Fingerprint Types:</strong><br>
+                                    <strong>RULE:</strong> Rule-based identifier derived from rule ID and normalized file path. Stable across file moves and commits.<br>
+                                    <strong>EXACT:</strong> Location-bound identifier derived from rule ID, normalized file path, and line numbers. Binds tightly to a specific file revision.<br>
+                                    <strong>CTX:</strong> Contextual identifier derived from rule ID, normalized relative file path, and code snippet hash. Remains valid through small edits.
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="section__body">
+            <em>No IaC findings.</em>
+        </div>
+    {% endif %}
+    </section>
+{% endif %}
+

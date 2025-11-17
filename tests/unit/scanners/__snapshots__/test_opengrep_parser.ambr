@@ -1,0 +1,44 @@
+# serializer version: 1
+# name: TestOpenGrepParserNormalization.test_snapshot_normalized_findings
+  list([
+    dict({
+      'extras': dict({
+        'check_id': 'python.lang.security.audit.insecure-temp-file.mkstemp',
+        'end_line': 15,
+      }),
+      'file': 'src/main.py',
+      'fingerprint': 'og:1:RULE:python.lang.security.audit.insecure-temp-file.mkstemp:812bc73714b5cf3f35747a06847157370cf95192:R:a3d1696c',
+      'line': 15,
+      'message': 'Use of insecure temporary file creation',
+      'rule_id': 'python.lang.security.audit.insecure-temp-file.mkstemp',
+      'severity': 'HIGH',
+      'tool': 'opengrep',
+    }),
+    dict({
+      'extras': dict({
+        'check_id': 'python.lang.security.audit.weak-cryptographic-key.weak-crypto-key',
+        'end_line': 42,
+      }),
+      'file': 'src/utils.py',
+      'fingerprint': 'og:1:RULE:python.lang.security.audit.weak-cryptographic-key.weak-crypto-key:fe94be9c11de4223d1bd51aea08b96b5356cb503:R:a3d1696c',
+      'line': 42,
+      'message': 'Weak cryptographic key detected',
+      'rule_id': 'python.lang.security.audit.weak-cryptographic-key.weak-crypto-key',
+      'severity': 'MEDIUM',
+      'tool': 'opengrep',
+    }),
+    dict({
+      'extras': dict({
+        'check_id': 'python.lang.best-practices.use-defensive-copy',
+        'end_line': 8,
+      }),
+      'file': 'src/main.py',
+      'fingerprint': 'og:1:RULE:python.lang.best-practices.use-defensive-copy:54ab552fcbf62e411dc6df51c46e2b4518687e91:R:a3d1696c',
+      'line': 8,
+      'message': 'Consider using defensive copy',
+      'rule_id': 'python.lang.best-practices.use-defensive-copy',
+      'severity': 'LOW',
+      'tool': 'opengrep',
+    }),
+  ])
+# ---

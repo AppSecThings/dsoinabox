@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dsoinabox"
+dynamic = ["version"]
+description = "DSO in a Box"
+requires-python = ">=3.8"
+dependencies = [
+    "tabulate",
+    "cyclonedx-python-lib",
+    "pyyaml",
+    "pydantic",
+    "jinja2",
+]
+
+[project.scripts]
+dsoinabox = "dsoinabox.cli:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "freezegun",
+    "hypothesis",
+    "syrupy",
+    "typing-extensions",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+]
+addopts = "-q"
+strict_markers = true
+
+[tool.coverage.run]
+source = ["dsoinabox"]
+branch = true
+omit = ["dsoinabox/**/__main__.py"]
+
+[tool.coverage.report]
+fail_under = 85
+
+[tool.setuptools_scm]
+version_scheme = "semver"
+local_scheme = "no-local-version"
+

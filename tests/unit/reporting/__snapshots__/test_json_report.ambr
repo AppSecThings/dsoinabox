@@ -1,0 +1,939 @@
+# serializer version: 1
+# name: TestJSONReportGeneration.test_json_report_snapshot
+  dict({
+    'checkov_data': dict({
+      '$schema': 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json',
+      'runs': list([
+        dict({
+          'artifacts': list([
+            dict({
+              'location': dict({
+                'uri': 'main.tf',
+                'uriBaseId': 'ROOTPATH',
+              }),
+            }),
+            dict({
+              'location': dict({
+                'uri': 'ec2.tf',
+                'uriBaseId': 'ROOTPATH',
+              }),
+            }),
+            dict({
+              'location': dict({
+                'uri': 'storage.tf',
+                'uriBaseId': 'ROOTPATH',
+              }),
+            }),
+          ]),
+          'results': list([
+            dict({
+              'level': 'note',
+              'locations': list([
+                dict({
+                  'physicalLocation': dict({
+                    'artifactLocation': dict({
+                      'uri': 'storage.tf',
+                      'uriBaseId': 'ROOTPATH',
+                    }),
+                    'region': dict({
+                      'endColumn': 2,
+                      'endLine': 12,
+                      'startColumn': 1,
+                      'startLine': 8,
+                    }),
+                  }),
+                }),
+              ]),
+              'message': dict({
+                'text': "Resource 'aws_s3_bucket.backup' should have server-side encryption enabled",
+              }),
+              'properties': dict({
+                'checkovCheckId': 'CKV_AWS_145',
+                'checkovCheckName': 'S3BucketEncryption',
+                'guideline': 'https://docs.bridgecrew.io/docs/s3_14-server-side-encryption',
+                'severity': 'LOW',
+              }),
+              'ruleId': 'CKV_AWS_145',
+            }),
+            dict({
+              'level': 'error',
+              'locations': list([
+                dict({
+                  'physicalLocation': dict({
+                    'artifactLocation': dict({
+                      'uri': 'main.tf',
+                      'uriBaseId': 'ROOTPATH',
+                    }),
+                    'region': dict({
+                      'endColumn': 2,
+                      'endLine': 10,
+                      'startColumn': 1,
+                      'startLine': 5,
+                    }),
+                  }),
+                }),
+              ]),
+              'message': dict({
+                'text': "Resource 'aws_s3_bucket.example' should have versioning enabled",
+              }),
+              'properties': dict({
+                'checkovCheckId': 'CKV_AWS_21',
+                'checkovCheckName': 'S3BucketVersioningEnabled',
+                'guideline': 'https://docs.bridgecrew.io/docs/s3_16-enable-versioning',
+                'severity': 'HIGH',
+              }),
+              'ruleId': 'CKV_AWS_21',
+            }),
+            dict({
+              'level': 'warning',
+              'locations': list([
+                dict({
+                  'physicalLocation': dict({
+                    'artifactLocation': dict({
+                      'uri': 'ec2.tf',
+                      'uriBaseId': 'ROOTPATH',
+                    }),
+                    'region': dict({
+                      'endColumn': 2,
+                      'endLine': 25,
+                      'startColumn': 1,
+                      'startLine': 15,
+                    }),
+                  }),
+                }),
+              ]),
+              'message': dict({
+                'text': "Resource 'aws_instance.web' should not have IMDSv1 enabled",
+              }),
+              'properties': dict({
+                'checkovCheckId': 'CKV_AWS_79',
+                'checkovCheckName': 'EC2InstanceMetadataOptions',
+                'guideline': 'https://docs.bridgecrew.io/docs/bc_aws_general_31',
+                'severity': 'MEDIUM',
+              }),
+              'ruleId': 'CKV_AWS_79',
+            }),
+          ]),
+          'tool': dict({
+            'driver': dict({
+              'name': 'Checkov',
+              'rules': list([
+                dict({
+                  'helpUri': 'https://docs.bridgecrew.io/docs/s3_16-enable-versioning',
+                  'id': 'CKV_AWS_21',
+                  'shortDescription': dict({
+                    'text': 'Ensure all data stored in the S3 bucket have versioning enabled',
+                  }),
+                }),
+                dict({
+                  'helpUri': 'https://docs.bridgecrew.io/docs/bc_aws_general_31',
+                  'id': 'CKV_AWS_79',
+                  'shortDescription': dict({
+                    'text': 'Ensure Instance Metadata Service Version 1 is not enabled',
+                  }),
+                }),
+                dict({
+                  'helpUri': 'https://docs.bridgecrew.io/docs/s3_14-server-side-encryption',
+                  'id': 'CKV_AWS_145',
+                  'shortDescription': dict({
+                    'text': 'Ensure that S3 buckets have server-side encryption enabled',
+                  }),
+                }),
+              ]),
+              'version': '2.1.0',
+            }),
+          }),
+        }),
+      ]),
+      'version': '2.1.0',
+    }),
+    'git_repo_info': dict({
+      'branch': 'main',
+      'commit': 'abc123def456',
+      'commit_message': 'Test commit',
+      'remote_url': 'https://github.com/example/repo.git',
+    }),
+    'grype_data': dict({
+      'distro': dict({
+        'name': 'debian',
+        'version': '11',
+      }),
+      'matches': list([
+        dict({
+          'artifact': dict({
+            'locations': list([
+              dict({
+                'path': 'requirements.txt',
+              }),
+            ]),
+            'name': 'example-library',
+            'purl': 'pkg:pypi/example-library@1.2.1',
+            'type': 'python',
+            'version': '1.2.1',
+          }),
+          'matchDetails': list([
+            dict({
+              'found': dict({
+                'versionConstraint': '>= 1.0.0, < 1.2.3',
+              }),
+              'matcher': 'python-matcher',
+              'searchedBy': dict({
+                'namespace': list([
+                  'nvd:cpe',
+                ]),
+                'package': dict({
+                  'name': 'example-library',
+                  'version': '1.2.1',
+                }),
+              }),
+              'type': 'exact-indirect-match',
+            }),
+          ]),
+          'vulnerability': dict({
+            'cvss': list([
+              dict({
+                'metrics': dict({
+                  'baseScore': 9.8,
+                  'exploitabilityScore': 3.9,
+                  'impactScore': 5.9,
+                }),
+                'vector': 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H',
+                'version': '3.1',
+              }),
+            ]),
+            'dataSource': 'https://nvd.nist.gov/vuln/detail/CVE-2023-12345',
+            'description': 'Remote code execution vulnerability in example-library',
+            'fix': dict({
+              'state': 'fixed',
+              'versions': list([
+                '1.2.3',
+                '1.2.4',
+              ]),
+            }),
+            'id': 'CVE-2023-12345',
+            'namespace': 'nvd:cpe',
+            'severity': 'CRITICAL',
+          }),
+        }),
+        dict({
+          'artifact': dict({
+            'locations': list([
+              dict({
+                'path': 'requirements.txt',
+              }),
+            ]),
+            'name': 'another-package',
+            'purl': 'pkg:pypi/another-package@2.0.0',
+            'type': 'python',
+            'version': '2.0.0',
+          }),
+          'matchDetails': list([
+            dict({
+              'found': dict({
+                'versionConstraint': '>= 2.0.0, < 2.0.1',
+              }),
+              'matcher': 'python-matcher',
+              'searchedBy': dict({
+                'namespace': list([
+                  'nvd:cpe',
+                ]),
+                'package': dict({
+                  'name': 'another-package',
+                  'version': '2.0.0',
+                }),
+              }),
+              'type': 'exact-indirect-match',
+            }),
+          ]),
+          'vulnerability': dict({
+            'cvss': list([
+              dict({
+                'metrics': dict({
+                  'baseScore': 6.5,
+                  'exploitabilityScore': 2.5,
+                  'impactScore': 3.6,
+                }),
+                'vector': 'CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N',
+                'version': '3.1',
+              }),
+            ]),
+            'dataSource': 'https://nvd.nist.gov/vuln/detail/CVE-2023-54321',
+            'description': 'Information disclosure in another-package',
+            'fix': dict({
+              'state': 'fixed',
+              'versions': list([
+                '2.0.1',
+              ]),
+            }),
+            'id': 'CVE-2023-54321',
+            'namespace': 'nvd:cpe',
+            'severity': 'HIGH',
+          }),
+        }),
+        dict({
+          'artifact': dict({
+            'locations': list([
+              dict({
+                'path': 'requirements.txt',
+              }),
+            ]),
+            'name': 'low-severity-pkg',
+            'purl': 'pkg:pypi/low-severity-pkg@0.5.1',
+            'type': 'python',
+            'version': '0.5.1',
+          }),
+          'matchDetails': list([
+            dict({
+              'found': dict({
+                'versionConstraint': '>= 0.5.0, < 0.5.2',
+              }),
+              'matcher': 'python-matcher',
+              'searchedBy': dict({
+                'namespace': list([
+                  'nvd:cpe',
+                ]),
+                'package': dict({
+                  'name': 'low-severity-pkg',
+                  'version': '0.5.1',
+                }),
+              }),
+              'type': 'exact-indirect-match',
+            }),
+          ]),
+          'vulnerability': dict({
+            'cvss': list([
+              dict({
+                'metrics': dict({
+                  'baseScore': 5.3,
+                  'exploitabilityScore': 1.8,
+                  'impactScore': 3.4,
+                }),
+                'vector': 'CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L',
+                'version': '3.1',
+              }),
+            ]),
+            'dataSource': 'https://nvd.nist.gov/vuln/detail/CVE-2023-99999',
+            'description': 'Local privilege escalation in low-severity-pkg',
+            'fix': dict({
+              'state': 'fixed',
+              'versions': list([
+                '0.5.2',
+              ]),
+            }),
+            'id': 'CVE-2023-99999',
+            'namespace': 'nvd:cpe',
+            'severity': 'MEDIUM',
+          }),
+        }),
+      ]),
+      'source': dict({
+        'target': dict({
+          'userInput': '<ROOT>/path/to/project',
+        }),
+        'type': 'directory',
+      }),
+    }),
+    'metadata': dict({
+      'git_repo_info': dict({
+        'branch': 'main',
+        'commit': 'abc123def456',
+        'commit_message': 'Test commit',
+        'remote_url': 'https://github.com/example/repo.git',
+      }),
+      'scan_timestamp': '<TIMESTAMP>',
+    }),
+    'opengrep_data': dict({
+      '$schema': 'https://semgrep.dev/s/ci',
+      'errors': list([
+      ]),
+      'paths': dict({
+        'scanned': list([
+          'src/main.py',
+          'src/utils.py',
+        ]),
+      }),
+      'results': list([
+        dict({
+          'check_id': 'python.lang.best-practices.use-defensive-copy',
+          'end': dict({
+            'col': 25,
+            'line': 8,
+          }),
+          'extra': dict({
+            'lines': 'data = user_input',
+            'metavars': dict({
+            }),
+            'severity': 'LOW',
+          }),
+          'message': 'Consider using defensive copy',
+          'metadata': dict({
+            'category': 'best-practices',
+          }),
+          'path': 'src/main.py',
+          'rule_id': 'python.lang.best-practices.use-defensive-copy',
+          'start': dict({
+            'col': 12,
+            'line': 8,
+          }),
+        }),
+        dict({
+          'check_id': 'python.lang.security.audit.insecure-temp-file.mkstemp',
+          'end': dict({
+            'col': 30,
+            'line': 15,
+          }),
+          'extra': dict({
+            'lines': 'temp_file = tempfile.mkstemp()',
+            'metavars': dict({
+              'X': dict({
+                'abstract_content': 'tempfile.mkstemp',
+              }),
+            }),
+            'severity': 'HIGH',
+          }),
+          'message': 'Use of insecure temporary file creation',
+          'metadata': dict({
+            'category': 'security',
+            'cwe': 'CWE-377: Insecure Temporary File',
+          }),
+          'path': 'src/main.py',
+          'rule_id': 'python.lang.security.audit.insecure-temp-file.mkstemp',
+          'start': dict({
+            'col': 5,
+            'line': 15,
+          }),
+        }),
+        dict({
+          'check_id': 'python.lang.security.audit.weak-cryptographic-key.weak-crypto-key',
+          'end': dict({
+            'col': 45,
+            'line': 42,
+          }),
+          'extra': dict({
+            'lines': 'key = hashlib.md5(password.encode()).hexdigest()',
+            'metavars': dict({
+              'X': dict({
+                'abstract_content': 'hashlib.md5',
+              }),
+            }),
+            'severity': 'MEDIUM',
+          }),
+          'message': 'Weak cryptographic key detected',
+          'metadata': dict({
+            'category': 'security',
+            'cwe': 'CWE-326: Inadequate Encryption Strength',
+          }),
+          'path': 'src/utils.py',
+          'rule_id': 'python.lang.security.audit.weak-cryptographic-key.weak-crypto-key',
+          'start': dict({
+            'col': 10,
+            'line': 42,
+          }),
+        }),
+      ]),
+      'stats': dict({
+        'errorfiles': 0,
+        'okfiles': 2,
+        'total': 2,
+      }),
+      'version': '1.0.0',
+    }),
+    'syft_data': None,
+    'trufflehog_data': list([
+      dict({
+        'DetectorName': 'AWS',
+        'Raw': 'AKIAIOSFODNN7EXAMPLE',
+        'RawV2': dict({
+          'redacted': 'AKIA***REDACTED***',
+        }),
+        'Redacted': 'AKIA***REDACTED***',
+        'SourceMetadata': dict({
+          'Data': dict({
+            'Git': dict({
+              'commit': 'abc123def456',
+              'email': 'dev@example.com',
+              'file': 'config/credentials.env',
+              'line': 5,
+              'timestamp': '<TIMESTAMP>',
+            }),
+          }),
+        }),
+        'Verified': True,
+      }),
+      dict({
+        'DetectorName': 'URI',
+        'Raw': 'https://api.example.com/v1/secret-key-12345',
+        'RawV2': dict({
+          'redacted': 'https://api.example.com/v1/***REDACTED***',
+        }),
+        'Redacted': 'https://api.example.com/v1/***REDACTED***',
+        'SourceMetadata': dict({
+          'Data': dict({
+            'Git': dict({
+              'commit': 'abc123def456',
+              'email': 'dev@example.com',
+              'file': 'config/secrets.yaml',
+              'line': 12,
+              'timestamp': '<TIMESTAMP>',
+            }),
+          }),
+        }),
+        'Verified': True,
+      }),
+      dict({
+        'DetectorName': 'Generic',
+        'Raw': 'password123',
+        'RawV2': dict({
+          'redacted': '***REDACTED***',
+        }),
+        'Redacted': '***REDACTED***',
+        'SourceMetadata': dict({
+          'Data': dict({
+            'Filesystem': dict({
+              'file': 'test/data.txt',
+              'line': 3,
+            }),
+          }),
+        }),
+        'Verified': False,
+      }),
+    ]),
+  })
+# ---
+# name: TestNDJSONReportGeneration.test_ndjson_report_snapshot
+  list([
+    dict({
+      'git_repo_info': dict({
+        'branch': 'main',
+        'commit': 'abc123def456',
+        'commit_message': 'Test commit',
+        'remote_url': 'https://github.com/example/repo.git',
+      }),
+      'scan_timestamp': '<TIMESTAMP>',
+      'type': 'metadata',
+    }),
+    dict({
+      'finding': dict({
+        'DetectorName': 'URI',
+        'Raw': 'https://api.example.com/v1/secret-key-12345',
+        'RawV2': dict({
+          'redacted': 'https://api.example.com/v1/***REDACTED***',
+        }),
+        'Redacted': 'https://api.example.com/v1/***REDACTED***',
+        'SourceMetadata': dict({
+          'Data': dict({
+            'Git': dict({
+              'commit': 'abc123def456',
+              'email': 'dev@example.com',
+              'file': 'config/secrets.yaml',
+              'line': 12,
+              'timestamp': '<TIMESTAMP>',
+            }),
+          }),
+        }),
+        'Verified': True,
+      }),
+      'type': 'trufflehog',
+    }),
+    dict({
+      'finding': dict({
+        'DetectorName': 'AWS',
+        'Raw': 'AKIAIOSFODNN7EXAMPLE',
+        'RawV2': dict({
+          'redacted': 'AKIA***REDACTED***',
+        }),
+        'Redacted': 'AKIA***REDACTED***',
+        'SourceMetadata': dict({
+          'Data': dict({
+            'Git': dict({
+              'commit': 'abc123def456',
+              'email': 'dev@example.com',
+              'file': 'config/credentials.env',
+              'line': 5,
+              'timestamp': '<TIMESTAMP>',
+            }),
+          }),
+        }),
+        'Verified': True,
+      }),
+      'type': 'trufflehog',
+    }),
+    dict({
+      'finding': dict({
+        'DetectorName': 'Generic',
+        'Raw': 'password123',
+        'RawV2': dict({
+          'redacted': '***REDACTED***',
+        }),
+        'Redacted': '***REDACTED***',
+        'SourceMetadata': dict({
+          'Data': dict({
+            'Filesystem': dict({
+              'file': 'test/data.txt',
+              'line': 3,
+            }),
+          }),
+        }),
+        'Verified': False,
+      }),
+      'type': 'trufflehog',
+    }),
+    dict({
+      'finding': dict({
+        'check_id': 'python.lang.security.audit.insecure-temp-file.mkstemp',
+        'end': dict({
+          'col': 30,
+          'line': 15,
+        }),
+        'extra': dict({
+          'lines': 'temp_file = tempfile.mkstemp()',
+          'metavars': dict({
+            'X': dict({
+              'abstract_content': 'tempfile.mkstemp',
+            }),
+          }),
+          'severity': 'HIGH',
+        }),
+        'message': 'Use of insecure temporary file creation',
+        'metadata': dict({
+          'category': 'security',
+          'cwe': 'CWE-377: Insecure Temporary File',
+        }),
+        'path': 'src/main.py',
+        'rule_id': 'python.lang.security.audit.insecure-temp-file.mkstemp',
+        'start': dict({
+          'col': 5,
+          'line': 15,
+        }),
+      }),
+      'type': 'opengrep',
+    }),
+    dict({
+      'finding': dict({
+        'check_id': 'python.lang.security.audit.weak-cryptographic-key.weak-crypto-key',
+        'end': dict({
+          'col': 45,
+          'line': 42,
+        }),
+        'extra': dict({
+          'lines': 'key = hashlib.md5(password.encode()).hexdigest()',
+          'metavars': dict({
+            'X': dict({
+              'abstract_content': 'hashlib.md5',
+            }),
+          }),
+          'severity': 'MEDIUM',
+        }),
+        'message': 'Weak cryptographic key detected',
+        'metadata': dict({
+          'category': 'security',
+          'cwe': 'CWE-326: Inadequate Encryption Strength',
+        }),
+        'path': 'src/utils.py',
+        'rule_id': 'python.lang.security.audit.weak-cryptographic-key.weak-crypto-key',
+        'start': dict({
+          'col': 10,
+          'line': 42,
+        }),
+      }),
+      'type': 'opengrep',
+    }),
+    dict({
+      'finding': dict({
+        'check_id': 'python.lang.best-practices.use-defensive-copy',
+        'end': dict({
+          'col': 25,
+          'line': 8,
+        }),
+        'extra': dict({
+          'lines': 'data = user_input',
+          'metavars': dict({
+          }),
+          'severity': 'LOW',
+        }),
+        'message': 'Consider using defensive copy',
+        'metadata': dict({
+          'category': 'best-practices',
+        }),
+        'path': 'src/main.py',
+        'rule_id': 'python.lang.best-practices.use-defensive-copy',
+        'start': dict({
+          'col': 12,
+          'line': 8,
+        }),
+      }),
+      'type': 'opengrep',
+    }),
+    dict({
+      'finding': dict({
+        'artifact': dict({
+          'locations': list([
+            dict({
+              'path': 'requirements.txt',
+            }),
+          ]),
+          'name': 'example-library',
+          'purl': 'pkg:pypi/example-library@1.2.1',
+          'type': 'python',
+          'version': '1.2.1',
+        }),
+        'matchDetails': list([
+          dict({
+            'found': dict({
+              'versionConstraint': '>= 1.0.0, < 1.2.3',
+            }),
+            'matcher': 'python-matcher',
+            'searchedBy': dict({
+              'namespace': list([
+                'nvd:cpe',
+              ]),
+              'package': dict({
+                'name': 'example-library',
+                'version': '1.2.1',
+              }),
+            }),
+            'type': 'exact-indirect-match',
+          }),
+        ]),
+        'vulnerability': dict({
+          'cvss': list([
+            dict({
+              'metrics': dict({
+                'baseScore': 9.8,
+                'exploitabilityScore': 3.9,
+                'impactScore': 5.9,
+              }),
+              'vector': 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H',
+              'version': '3.1',
+            }),
+          ]),
+          'dataSource': 'https://nvd.nist.gov/vuln/detail/CVE-2023-12345',
+          'description': 'Remote code execution vulnerability in example-library',
+          'fix': dict({
+            'state': 'fixed',
+            'versions': list([
+              '1.2.3',
+              '1.2.4',
+            ]),
+          }),
+          'id': 'CVE-2023-12345',
+          'namespace': 'nvd:cpe',
+          'severity': 'CRITICAL',
+        }),
+      }),
+      'type': 'grype',
+    }),
+    dict({
+      'finding': dict({
+        'artifact': dict({
+          'locations': list([
+            dict({
+              'path': 'requirements.txt',
+            }),
+          ]),
+          'name': 'another-package',
+          'purl': 'pkg:pypi/another-package@2.0.0',
+          'type': 'python',
+          'version': '2.0.0',
+        }),
+        'matchDetails': list([
+          dict({
+            'found': dict({
+              'versionConstraint': '>= 2.0.0, < 2.0.1',
+            }),
+            'matcher': 'python-matcher',
+            'searchedBy': dict({
+              'namespace': list([
+                'nvd:cpe',
+              ]),
+              'package': dict({
+                'name': 'another-package',
+                'version': '2.0.0',
+              }),
+            }),
+            'type': 'exact-indirect-match',
+          }),
+        ]),
+        'vulnerability': dict({
+          'cvss': list([
+            dict({
+              'metrics': dict({
+                'baseScore': 6.5,
+                'exploitabilityScore': 2.5,
+                'impactScore': 3.6,
+              }),
+              'vector': 'CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N',
+              'version': '3.1',
+            }),
+          ]),
+          'dataSource': 'https://nvd.nist.gov/vuln/detail/CVE-2023-54321',
+          'description': 'Information disclosure in another-package',
+          'fix': dict({
+            'state': 'fixed',
+            'versions': list([
+              '2.0.1',
+            ]),
+          }),
+          'id': 'CVE-2023-54321',
+          'namespace': 'nvd:cpe',
+          'severity': 'HIGH',
+        }),
+      }),
+      'type': 'grype',
+    }),
+    dict({
+      'finding': dict({
+        'artifact': dict({
+          'locations': list([
+            dict({
+              'path': 'requirements.txt',
+            }),
+          ]),
+          'name': 'low-severity-pkg',
+          'purl': 'pkg:pypi/low-severity-pkg@0.5.1',
+          'type': 'python',
+          'version': '0.5.1',
+        }),
+        'matchDetails': list([
+          dict({
+            'found': dict({
+              'versionConstraint': '>= 0.5.0, < 0.5.2',
+            }),
+            'matcher': 'python-matcher',
+            'searchedBy': dict({
+              'namespace': list([
+                'nvd:cpe',
+              ]),
+              'package': dict({
+                'name': 'low-severity-pkg',
+                'version': '0.5.1',
+              }),
+            }),
+            'type': 'exact-indirect-match',
+          }),
+        ]),
+        'vulnerability': dict({
+          'cvss': list([
+            dict({
+              'metrics': dict({
+                'baseScore': 5.3,
+                'exploitabilityScore': 1.8,
+                'impactScore': 3.4,
+              }),
+              'vector': 'CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L',
+              'version': '3.1',
+            }),
+          ]),
+          'dataSource': 'https://nvd.nist.gov/vuln/detail/CVE-2023-99999',
+          'description': 'Local privilege escalation in low-severity-pkg',
+          'fix': dict({
+            'state': 'fixed',
+            'versions': list([
+              '0.5.2',
+            ]),
+          }),
+          'id': 'CVE-2023-99999',
+          'namespace': 'nvd:cpe',
+          'severity': 'MEDIUM',
+        }),
+      }),
+      'type': 'grype',
+    }),
+    dict({
+      'finding': dict({
+        'level': 'error',
+        'locations': list([
+          dict({
+            'physicalLocation': dict({
+              'artifactLocation': dict({
+                'uri': 'main.tf',
+                'uriBaseId': 'ROOTPATH',
+              }),
+              'region': dict({
+                'endColumn': 2,
+                'endLine': 10,
+                'startColumn': 1,
+                'startLine': 5,
+              }),
+            }),
+          }),
+        ]),
+        'message': dict({
+          'text': "Resource 'aws_s3_bucket.example' should have versioning enabled",
+        }),
+        'properties': dict({
+          'checkovCheckId': 'CKV_AWS_21',
+          'checkovCheckName': 'S3BucketVersioningEnabled',
+          'guideline': 'https://docs.bridgecrew.io/docs/s3_16-enable-versioning',
+          'severity': 'HIGH',
+        }),
+        'ruleId': 'CKV_AWS_21',
+      }),
+      'type': 'checkov',
+    }),
+    dict({
+      'finding': dict({
+        'level': 'warning',
+        'locations': list([
+          dict({
+            'physicalLocation': dict({
+              'artifactLocation': dict({
+                'uri': 'ec2.tf',
+                'uriBaseId': 'ROOTPATH',
+              }),
+              'region': dict({
+                'endColumn': 2,
+                'endLine': 25,
+                'startColumn': 1,
+                'startLine': 15,
+              }),
+            }),
+          }),
+        ]),
+        'message': dict({
+          'text': "Resource 'aws_instance.web' should not have IMDSv1 enabled",
+        }),
+        'properties': dict({
+          'checkovCheckId': 'CKV_AWS_79',
+          'checkovCheckName': 'EC2InstanceMetadataOptions',
+          'guideline': 'https://docs.bridgecrew.io/docs/bc_aws_general_31',
+          'severity': 'MEDIUM',
+        }),
+        'ruleId': 'CKV_AWS_79',
+      }),
+      'type': 'checkov',
+    }),
+    dict({
+      'finding': dict({
+        'level': 'note',
+        'locations': list([
+          dict({
+            'physicalLocation': dict({
+              'artifactLocation': dict({
+                'uri': 'storage.tf',
+                'uriBaseId': 'ROOTPATH',
+              }),
+              'region': dict({
+                'endColumn': 2,
+                'endLine': 12,
+                'startColumn': 1,
+                'startLine': 8,
+              }),
+            }),
+          }),
+        ]),
+        'message': dict({
+          'text': "Resource 'aws_s3_bucket.backup' should have server-side encryption enabled",
+        }),
+        'properties': dict({
+          'checkovCheckId': 'CKV_AWS_145',
+          'checkovCheckName': 'S3BucketEncryption',
+          'guideline': 'https://docs.bridgecrew.io/docs/s3_14-server-side-encryption',
+          'severity': 'LOW',
+        }),
+        'ruleId': 'CKV_AWS_145',
+      }),
+      'type': 'checkov',
+    }),
+  ])
+# ---

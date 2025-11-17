@@ -1,0 +1,343 @@
+
+                            {% if checkov_data %}
+    <section class="section" id="checkov-section" aria-labelledby="checkov-title">
+    {% set runs = checkov_data.runs | default([]) %}
+    {% set findings = runs[0].results | default([]) if runs else [] %}
+
+    {# ----- Quick rollups ----- #}
+    {% set sev_counts = {'critical':0,'high':0,'medium':0,'low':0,'info':0,'unknown':0} %}
+    {% set file_counts = {} %}
+    {% set rule_ids = {} %}
+
+    {% for f in findings %}
+        {% set location = f.locations[0] if f.locations and f.locations|length > 0 else {} %}
+        {% set physical_location = location.physicalLocation if location.physicalLocation is defined else {} %}
+        {% set artifact_location = physical_location.artifactLocation if physical_location.artifactLocation is defined else {} %}
+        {% set path = artifact_location.uri | default('') %}
+        
+                            {% if path %}
+        {% set _ = file_counts.__setitem__(path, (file_counts.get(path, 0) + 1)) %}
+        
+                            {% endif %}
+
+        {% set rid = f.ruleId | default('') %}
+        
+                            {% if rid %}
+        {% set _ = rule_ids.__setitem__(rid, True) %}
+        
+                            {% endif %}
+
+        {# Extract severity from SARIF level and security-severity #}
+        {% set level = (f.level | default('error')) | lower %}
+        {% set sev = 'high' %}
+        
+                            {% if level == 'error' %}
+        {% set sev = 'high' %}
+        {% elif level == 'warning' %}
+        {% set sev = 'medium' %}
+        {% elif level == 'note' %}
+        {% set sev = 'low' %}
+        {% elif level == 'none' %}
+        {% set sev = 'info' %}
+        
+                            {% endif %}
+        
+        {# Check for security-severity in rule properties #}
+        {% set rule_index = f.ruleIndex | default(-1) %}
+        
+                            {% if rule_index >= 0 and runs and runs[0].tool and runs[0].tool.driver and runs[0].tool.driver.rules %}
+        {% set rules = runs[0].tool.driver.rules %}
+        
+                            {% if rule_index < rules|length %}
+        {% set rule = rules[rule_index] %}
+        {% set props = rule.properties | default({}) %}
+        
+                            {% if 'security-severity' in props %}
+        {% set sec_severity = props['security-severity'] %}
+        
+                            {% if sec_severity >= 9.0 %}
+        {% set sev = 'critical' %}
+        {% elif sec_severity >= 7.0 %}
+        {% set sev = 'high' %}
+        {% elif sec_severity >= 4.0 %}
+        {% set sev = 'medium' %}
+        {% else %}
+        {% set sev = 'low' %}
+        
+                            {% endif %}
+        
+                            {% endif %}
+        
+                            {% endif %}
+        
+                            {% endif %}
+
+        
+                            {% if sev in sev_counts %}
+        {% set _ = sev_counts.__setitem__(sev, sev_counts[sev] + 1) %}
+        {% else %}
+        {% set _ = sev_counts.__setitem__('unknown', sev_counts['unknown'] + 1) %}
+        
+                            {% endif %}
+    {% endfor %}
+
+    <div class="section__head">
+        <h2 id="checkov-title">Checkov — IaC Findings</h2>
+        
+                            {% if findings %}
+            <div>
+            <span class="chip chip--neutral">Total: {{ findings|length }}</span>
+            <span class="chip">Files: {{ file_counts|length }}</span>
+            <span class="chip">Rules: {{ rule_ids|length }}</span>
+            <span class="chip chip--bad">Critical: {{ sev_counts.critical }}</span>
+            <span class="chip chip--bad">High: {{ sev_counts.high }}</span>
+            <span class="chip chip--neutral">Medium: {{ sev_counts.medium }}</span>
+            <span class="chip chip--ok">Low: {{ sev_counts.low }}</span>
+            <span class="chip">Info: {{ sev_counts.info }}</span>
+            <span class="chip">Unknown: {{ sev_counts.unknown }}</span>
+            </div>
+        
+                            {% endif %}
+    </div>
+
+    
+                            {% if findings %}
+        <div class="section__body">
+            {# Optional: quick "top offenders" blurb #}
+            {% set top_files = file_counts.items() | list | sort(attribute=1, reverse=True) %}
+            
+                            {% if top_files and top_files|length > 0 %}
+            <p class="meta" >
+                Heaviest files:
+                {% for kv in top_files[:3] %}
+                <strong>{{ kv[0] | e }}</strong> ({{ kv[1] }})
+                            {% if not loop.last %}, 
+                            {% endif %}
+                {% endfor %}
+            </p>
+            
+                            {% endif %}
+
+            <div class="table-wrap" role="region" aria-label="Checkov IaC findings (scrollable)">
+            <table>
+                <thead>
+                <tr>
+                    <th >File</th>
+                    <th >Line</th>
+                    <th >Rule ID</th>
+                    <th >Message</th>
+                    <th >Severity</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for finding in findings %}
+                    {% set location = finding.locations[0] if finding.locations and finding.locations|length > 0 else {} %}
+                    {% set physical_location = location.physicalLocation if location.physicalLocation is defined else {} %}
+                    {% set artifact_location = physical_location.artifactLocation if physical_location.artifactLocation is defined else {} %}
+                    {% set path = artifact_location.uri | default('') %}
+                    {% set region = physical_location.region if physical_location.region is defined else {} %}
+                    {% set line = region.startLine | default('') %}
+                    {% set rid = finding.ruleId | default('') %}
+                    {% set message = finding.message if finding.message is defined else {} %}
+                    {% set msg = message.text if message.text is defined else (message if message is string else '') %}
+                    {% set level = (finding.level | default('error')) | lower %}
+                    
+                    {# Determine severity #}
+                    {% set sev = 'medium' %}
+                    
+                            {% if level == 'error' %}
+                    {% set sev = 'high' %}
+                    {% elif level == 'warning' %}
+                    {% set sev = 'medium' %}
+                    {% elif level == 'note' %}
+                    {% set sev = 'low' %}
+                    {% elif level == 'none' %}
+                    {% set sev = 'info' %}
+                    
+                            {% endif %}
+                    
+                    {# Check for security-severity in rule properties #}
+                    {% set rule_index = finding.ruleIndex | default(-1) %}
+                    
+                            {% if rule_index >= 0 and runs and runs[0].tool and runs[0].tool.driver and runs[0].tool.driver.rules %}
+                    {% set rules = runs[0].tool.driver.rules %}
+                    
+                            {% if rule_index < rules|length %}
+                    {% set rule = rules[rule_index] %}
+                    {% set props = rule.properties | default({}) %}
+                    
+                            {% if 'security-severity' in props %}
+                    {% set sec_severity = props['security-severity'] %}
+                    
+                            {% if sec_severity >= 9.0 %}
+                    {% set sev = 'critical' %}
+                    {% elif sec_severity >= 7.0 %}
+                    {% set sev = 'high' %}
+                    {% elif sec_severity >= 4.0 %}
+                    {% set sev = 'medium' %}
+                    {% else %}
+                    {% set sev = 'low' %}
+                    
+                            {% endif %}
+                    
+                            {% endif %}
+                    
+                            {% endif %}
+                    
+                            {% endif %}
+                    
+                    {% set sev_chip =
+                    'chip--bad' if sev in ['critical','high'] else
+                    ('chip--neutral' if sev == 'medium' else
+                    ('chip--ok' if sev in ['low','info'] else '')) %}
+                    
+                    {% set snippet = region.snippet.text if region.snippet and region.snippet.text is defined else '' %}
+                    {% set fingerprints = finding.fingerprints if finding.fingerprints is defined else {} %}
+                    
+                    {# Get rule details if available #}
+                    {% set rule_name = '' %}
+                    {% set rule_help_uri = '' %}
+                    
+                            {% if rule_index >= 0 and runs and runs[0].tool and runs[0].tool.driver and runs[0].tool.driver.rules %}
+                    {% set rules = runs[0].tool.driver.rules %}
+                    
+                            {% if rule_index < rules|length %}
+                    {% set rule = rules[rule_index] %}
+                    {% set rule_name = rule.name | default('') %}
+                    {% set rule_help_uri = rule.helpUri | default('') %}
+                    
+                            {% endif %}
+                    
+                            {% endif %}
+
+                    <tr>
+                    <td>{{ path | e }}</td>
+                    <td>{{ line | e }}</td>
+                    <td>{{ rid | e }}</td>
+                    <td>{{ msg | e }}</td>
+                    <td><span class="chip {{ sev_chip }}">{{ sev | title | e }}</span></td>
+                </tr>
+                <tr>
+                    <td colspan="5">
+                        <details class="row-details-block">
+                            <summary class="row-details-summary">{{ path | e }}</summary>
+                            <div class="details-content">
+                            {% if snippet %}
+                            <div class="details-section">
+                                <h4>Code Context</h4>
+                                <div class="code-block">
+                                    <code>{{ snippet | e }}</code>
+                                </div>
+                            </div>
+                            
+                            {% endif %}
+                            
+                            
+                            {% if msg %}
+                            <div class="details-section">
+                                <h4>Description</h4>
+                                <p class="p-description">{{ msg | e }}</p>
+                            </div>
+                            
+                            {% endif %}
+                            
+                            <div class="details-section">
+                                <h4>Details</h4>
+                                <dl class="details-grid">
+                                    
+                            {% if rid %}
+                                    <dt>Rule ID:</dt>
+                                    <dd><code>{{ rid | e }}</code></dd>
+                                    
+                            {% endif %}
+                                    
+                            {% if rule_name %}
+                                    <dt>Rule Name:</dt>
+                                    <dd>{{ rule_name | e }}</dd>
+                                    
+                            {% endif %}
+                                    
+                            {% if path %}
+                                    <dt>File:</dt>
+                                    <dd><code>{{ path | e }}</code></dd>
+                                    
+                            {% endif %}
+                                    
+                            {% if line %}
+                                    <dt>Line:</dt>
+                                    <dd>{{ line | e }}</dd>
+                                    
+                            {% endif %}
+                                    
+                            {% if level %}
+                                    <dt>SARIF Level:</dt>
+                                    <dd><span class="chip">{{ level | title | e }}</span></dd>
+                                    
+                            {% endif %}
+                                </dl>
+                            </div>
+                            
+                            
+                            {% if rule_help_uri %}
+                            <div class="details-section">
+                                <h4>References</h4>
+                                <dl class="details-grid">
+                                    <dt>Help URI:</dt>
+                                    <dd><a href="{{ rule_help_uri | e }}" target="_blank" rel="noopener">{{ rule_help_uri | e }}</a></dd>
+                                </dl>
+                            </div>
+                            
+                            {% endif %}
+
+                            
+                            {% if fingerprints %}
+                            <div class="details-section">
+                                <h4>Fingerprints</h4>
+                                <dl class="details-grid">
+                                    
+                            {% if fingerprints.rule %}
+                                    <dt>Rule Fingerprint:</dt>
+                                    <dd><code >{{ fingerprints.rule | e }}</code></dd>
+                                    
+                            {% endif %}
+                                    
+                            {% if fingerprints.exact %}
+                                    <dt>Exact Fingerprint:</dt>
+                                    <dd><code >{{ fingerprints.exact | e }}</code></dd>
+                                    
+                            {% endif %}
+                                    
+                            {% if fingerprints.ctx %}
+                                    <dt>Context Fingerprint:</dt>
+                                    <dd><code >{{ fingerprints.ctx | e }}</code></dd>
+                                    
+                            {% endif %}
+                                </dl>
+                                <p class="p-description">
+                                    <strong>Fingerprint Types:</strong><br>
+                                    <strong>RULE:</strong> Rule-based identifier derived from rule ID and normalized file path. Stable across file moves and commits.<br>
+                                    <strong>EXACT:</strong> Location-bound identifier derived from rule ID, normalized file path, and line numbers. Binds tightly to a specific file revision.<br>
+                                    <strong>CTX:</strong> Contextual identifier derived from rule ID, normalized relative file path, and code snippet hash. Remains valid through small edits.
+                                </p>
+                            </div>
+                            
+                            {% endif %}
+                            </div>
+                        </details>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="section__body">
+            <em>No IaC findings.</em>
+        </div>
+    
+                            {% endif %}
+    </section>
+
+                            {% endif %}
+

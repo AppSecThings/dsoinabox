@@ -1,0 +1,224 @@
+
+                            {% if trufflehog_data %}
+    <section class="section" id="trufflehog-section" aria-labelledby="th-title">
+    <div class="section__head">
+        <h2 id="th-title">TruffleHog — Secrets Findings</h2>
+        <div>
+        <span class="chip chip--neutral">Total: {{ trufflehog_data|length }}</span>
+        {% set verified_count = trufflehog_data | selectattr('Verified') | list | length %}
+        <span class="chip chip--ok">Verified: {{ verified_count }}</span>
+        <span class="chip chip--bad">Unverified: {{ trufflehog_data|length - verified_count }}</span>
+        </div>
+    </div>
+    <div class="section__body">
+        <div class="table-wrap" role="region" aria-label="TruffleHog findings (scrollable)">
+        <table>
+            <thead>
+            <tr>
+                <th >File</th>
+                <th >Line</th>
+                <th >Detector</th>
+                <th >Redacted Secret</th>
+                <th >Verified</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for finding in trufflehog_data %}
+                {% set source_meta = finding.SourceMetadata if finding.SourceMetadata is defined else {} %}
+                {% set data = source_meta.Data if source_meta.Data is defined else {} %}
+                {% set git_data = data.Git if data.Git is defined else {} %}
+                {% set fs_data = data.Filesystem if data.Filesystem is defined else {} %}
+                {% set file_path = git_data.file if git_data.file else (fs_data.file_path if fs_data.file_path else (fs_data.path if fs_data.path else '')) %}
+                {% set line = git_data.line if git_data.line else (fs_data.line if fs_data.line else finding.line if finding.line is defined else '') %}
+                {% set detector = finding.DetectorName if finding.DetectorName is defined else '' %}
+                {% set redacted = finding.Redacted if finding.Redacted is defined else '' %}
+                {% set verified = finding.Verified if finding.Verified is defined else False %}
+                {% set fingerprints = finding.fingerprints if finding.fingerprints is defined else {} %}
+                {% set location_status = finding.location_status if finding.location_status is defined else '' %}
+                {% set approx_line = finding.approx_line if finding.approx_line is defined else '' %}
+                {% set redacted_v2 = finding.RedactedV2 if finding.RedactedV2 is defined else '' %}
+                {% set detector_type = finding.DetectorType if finding.DetectorType is defined else '' %}
+                {% set decoder_name = finding.DecoderName if finding.DecoderName is defined else '' %}
+                {% set verified_at = finding.VerifiedAt if finding.VerifiedAt is defined else '' %}
+                {% set repository = git_data.repository if git_data.repository is defined else '' %}
+                {% set commit = git_data.commit if git_data.commit is defined else '' %}
+
+            <tr>
+                    <td>
+                {{ file_path | e }}
+                </td>
+                <td>
+                {{ line | e }}
+                </td>
+                <td>{{ detector | e }}</td>
+                <td><code>{{ redacted | e }}</code></td>
+                <td>
+                
+                            {% if verified %}
+                    <span class="chip chip--ok" title="Verified true">✅ Verified</span>
+                {% else %}
+                    <span class="chip chip--bad" title="Verified false">❌ Unverified</span>
+                
+                            {% endif %}
+                </td>
+                </tr>
+                <tr>
+                    <td colspan="5">
+                        <details class="row-details-block">
+                            <summary class="row-details-summary">{{ file_path | e }}</summary>
+                            <div class="details-content">
+                                <div class="details-section">
+                            <h4>Secret Details</h4>
+                            <dl class="details-grid">
+                                
+                            {% if detector %}
+                                <dt>Detector:</dt>
+                                <dd><code>{{ detector | e }}</code></dd>
+                                
+                            {% endif %}
+                                
+                            {% if detector_type %}
+                                <dt>Detector Type:</dt>
+                                <dd>{{ detector_type | e }}</dd>
+                                
+                            {% endif %}
+                                
+                            {% if decoder_name %}
+                                <dt>Decoder:</dt>
+                                <dd>{{ decoder_name | e }}</dd>
+                                
+                            {% endif %}
+                                
+                            {% if redacted %}
+                                <dt>Redacted Secret:</dt>
+                                <dd><code>{{ redacted | e }}</code></dd>
+                                
+                            {% endif %}
+                                
+                            {% if redacted_v2 %}
+                                <dt>Redacted (V2):</dt>
+                                <dd><code>{{ redacted_v2 | e }}</code></dd>
+                                
+                            {% endif %}
+                                
+                            {% if verified is defined %}
+                                <dt>Verified:</dt>
+                                <dd>
+                                    
+                            {% if verified %}
+                                    <span class="chip chip--ok">✅ Verified</span>
+                                    {% else %}
+                                    <span class="chip chip--bad">❌ Unverified</span>
+                                    
+                            {% endif %}
+                                </dd>
+                                
+                            {% endif %}
+                                
+                            {% if verified_at %}
+                                <dt>Verified At:</dt>
+                                <dd>{{ verified_at | e }}</dd>
+                                
+                            {% endif %}
+                            </dl>
+                        </div>
+
+                        <div class="details-section">
+                            <h4>Location Details</h4>
+                            <dl class="details-grid">
+                                
+                            {% if file_path %}
+                                <dt>File:</dt>
+                                <dd><code>{{ file_path | e }}</code></dd>
+                                
+                            {% endif %}
+                                
+                            {% if line %}
+                                <dt>Line:</dt>
+                                <dd>{{ line | e }}</dd>
+                                
+                            {% endif %}
+                                
+                            {% if approx_line %}
+                                <dt>Approximate Line:</dt>
+                                <dd>{{ approx_line | e }}</dd>
+                                
+                            {% endif %}
+                                
+                            {% if location_status %}
+                                <dt>Location Status:</dt>
+                                <dd>
+                                    <span class="chip 
+                            {% if location_status == 'FOUND_EXACT' %}chip--ok{% elif location_status == 'UNLOCATABLE' %}chip--bad{% else %}chip--neutral
+                            {% endif %}">
+                                        {{ location_status | e }}
+                                    </span>
+                                </dd>
+                                
+                            {% endif %}
+                                
+                            {% if repository %}
+                                <dt>Repository:</dt>
+                                <dd><code>{{ repository | e }}</code></dd>
+                                
+                            {% endif %}
+                                
+                            {% if commit %}
+                                <dt>Commit:</dt>
+                                <dd><code>{{ commit[:12] | e }}</code></dd>
+                                
+                            {% endif %}
+                            </dl>
+                        </div>
+
+                        
+                            {% if fingerprints %}
+                        <div class="details-section">
+                            <h4>Fingerprints</h4>
+                            <dl class="details-grid">
+                                
+                            {% if fingerprints.secret %}
+                                <dt>Secret Fingerprint:</dt>
+                                <dd><code >{{ fingerprints.secret | e }}</code></dd>
+                                
+                            {% endif %}
+                                
+                            {% if fingerprints.exact %}
+                                <dt>Exact Fingerprint:</dt>
+                                <dd><code >{{ fingerprints.exact | e }}</code></dd>
+                                
+                            {% endif %}
+                                
+                            {% if fingerprints.ctx %}
+                                <dt>Context Fingerprint:</dt>
+                                <dd><code >{{ fingerprints.ctx | e }}</code></dd>
+                                
+                            {% endif %}
+                                
+                            {% if fingerprints.ctx_soft %}
+                                <dt>Soft Context Fingerprint:</dt>
+                                <dd><code >{{ fingerprints.ctx_soft | e }}</code></dd>
+                                
+                            {% endif %}
+                            </dl>
+                            <p class="p-description">
+                                <strong>Fingerprint Types:</strong><br>
+                                <strong>SECRET:</strong> Hash-based identifier derived from the normalized secret value. Stable across file moves and commits, safe to store publicly.<br>
+                                <strong>EXACT:</strong> Location-bound identifier derived from detector name, file content hash, and byte span. Binds tightly to a specific file revision.<br>
+                                <strong>CTX:</strong> Contextual identifier derived from detector name, relative file path, and redacted context window. Remains valid through small edits.
+                            </p>
+                        </div>
+                        
+                            {% endif %}
+                            </div>
+                        </details>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    </section>
+
+                            {% endif %}
