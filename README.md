@@ -46,7 +46,7 @@ The recommended way to use dsoinabox is via Docker:
 docker run --rm \
   -v /path/to/your/code:/scan_target \
   -v /path/to/reports:/reports \
-  dsoinabox \
+  appsecthings/dsoinabox:latest \
   --show_findings false \
   -t all \
   -o sarif,html \
@@ -57,9 +57,9 @@ docker run --rm \
 
 ```bash
 docker run --rm \
-  -v ../repos/requests:/scan_target \
-  -v ../test_dir/dsoinabox_reports:/reports \
-  dsoinabox \
+  -v /path/to/your/code:/scan_target \
+  -v /path/to/reports:/reports \
+  appsecthings/dsoinabox:latest \
   --show_findings false \
   -t all \
   -o sarif,html \
@@ -73,6 +73,34 @@ This command:
 - Generates reports in both SARIF and HTML formats (`-o sarif,html`)
 - Suppresses CLI output of findings (`--show_findings false`)
 - Preserves raw tool output files (`--tool_output`)
+
+### Running on macOS (Apple Silicon)
+
+The published Docker image is built for `amd64` architecture. When running on Apple Silicon (M1/M2/M3) Macs, you need to specify the platform:
+
+```bash
+docker run --rm --platform linux/amd64 \
+  -v /path/to/your/code:/scan_target \
+  -v /path/to/reports:/reports \
+  appsecthings/dsoinabox:latest \
+  --show_findings false \
+  -t all \
+  -o html
+```
+
+**Example: Scanning a Repository on Mac**
+
+```bash
+docker run --rm --platform linux/amd64 \
+  -v /path/to/your/code:/scan_target \
+  -v /path/to/reports:/reports \
+  appsecthings/dsoinabox:latest \
+  --show_findings false \
+  -t all \
+  -o html
+```
+
+The `--platform linux/amd64` flag tells Docker to run the amd64 image using emulation. The rest of the command syntax is identical to Linux usage.
 
 ### Direct Usage (Non-Docker)
 
@@ -375,7 +403,7 @@ Threshold violations occur when:
 docker run --rm \
   -v $(pwd):/scan_target \
   -v $(pwd)/reports:/reports \
-  dsoinabox \
+  appsecthings/dsoinabox:latest \
   -t all \
   -o html
 ```
@@ -386,7 +414,7 @@ docker run --rm \
 docker run --rm \
   -v $(pwd):/scan_target \
   -v $(pwd)/reports:/reports \
-  dsoinabox \
+  appsecthings/dsoinabox:latest \
   -t SAST,SECRET \
   -o json,html
 ```
@@ -397,7 +425,7 @@ docker run --rm \
 docker run --rm \
   -v $(pwd):/scan_target \
   -v $(pwd)/reports:/reports \
-  dsoinabox \
+  appsecthings/dsoinabox:latest \
   --show_findings false \
   -t all \
   -o sarif \
@@ -415,7 +443,7 @@ This will fail the pipeline if:
 docker run --rm \
   -v $(pwd):/scan_target \
   -v $(pwd)/reports:/reports \
-  dsoinabox \
+  appsecthings/dsoinabox:latest \
   -t checkov \
   --checkov_args "--framework terraform --skip-check CKV_AWS_123"
 ```
@@ -426,7 +454,7 @@ docker run --rm \
 docker run --rm \
   -v $(pwd):/scan_target \
   -v $(pwd)/reports:/reports \
-  dsoinabox \
+  appsecthings/dsoinabox:latest \
   -t all \
   -o html \
   --waiver_file .dsoinabox_waivers.yaml
@@ -438,7 +466,7 @@ docker run --rm \
 docker run --rm \
   -v $(pwd):/scan_target \
   -v $(pwd)/reports:/reports \
-  dsoinabox \
+  appsecthings/dsoinabox:latest \
   -t all \
   -o html \
   --benchmark
