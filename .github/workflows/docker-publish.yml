@@ -82,24 +82,13 @@ jobs:
             # For dev branch: use a dev tag based on the full SHA
             type=raw,value=dev-${{ github.sha }}
 
-      - name: Prepare final tags and labels
-        id: final-meta
-        run: |
-          if [[ "${{ steps.is-release.outputs.is_release }}" == "true" ]]; then
-            echo "tags=${{ steps.meta-release.outputs.tags }}" >> "$GITHUB_OUTPUT"
-            echo "labels=${{ steps.meta-release.outputs.labels }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "tags=${{ steps.meta-dev.outputs.tags }}" >> "$GITHUB_OUTPUT"
-            echo "labels=${{ steps.meta-dev.outputs.labels }}" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Build and (optionally) push image
         uses: docker/build-push-action@v6
         with:
           # Push only for v* tags whose commit is on main
           push: ${{ steps.is-release.outputs.is_release == 'true' && steps.on-main.outputs.on_main == 'true' }}
-          tags: ${{ steps.final-meta.outputs.tags }}
-          labels: ${{ steps.final-meta.outputs.labels }}
+          tags: ${{ steps.meta-release.outputs.tags || steps.meta-dev.outputs.tags }}
+          labels: ${{ steps.meta-release.outputs.labels || steps.meta-dev.outputs.labels }}
 
       - name: Publish to PyPI
         if: steps.is-release.outputs.is_release == 'true' && steps.on-main.outputs.on_main == 'true'
