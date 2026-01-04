@@ -1,0 +1,20 @@
+{
+  "artifacts": [
+    {
+      "id": "test-package",
+      "name": "test-package",
+      "version": "1.0.0",
+      "type": "python",
+      "locations": [
+        {
+          "path": "requirements.txt"
+        }
+      ]
+    }
+  ],
+  "source": {
+    "type": "directory",
+    "target": "."
+  }
+}
+

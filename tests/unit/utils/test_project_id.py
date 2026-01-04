@@ -9,6 +9,7 @@ import subprocess
 from pathlib import Path
 
 from dsoinabox.utils.project_id import (
+    is_git,
     normalize_git_remote,
     get_initial_commit_hash,
     derive_project_id,
@@ -261,4 +262,42 @@ class TestDeriveProjectHmacKey:
             # Ensure uniqueness
             assert key not in keys.values()
             keys[project_id] = key
+
+
+class TestIsGit:
+    """Test is_git() function."""
+    
+    def test_is_git_returns_true_for_git_repo(self, tmp_path):
+        """Test that is_git returns True for a git repository."""
+        repo_path = tmp_path / "test_repo"
+        repo_path.mkdir()
+        
+        # Initialize git repo
+        subprocess.run(["git", "init"], cwd=repo_path, check=True, capture_output=True)
+        
+        result = is_git(str(repo_path))
+        assert result is True
+    
+    def test_is_git_returns_false_for_non_git_dir(self, tmp_path):
+        """Test that is_git returns False for a non-git directory."""
+        non_git_path = tmp_path / "not_a_repo"
+        non_git_path.mkdir()
+        
+        result = is_git(str(non_git_path))
+        assert result is False
+    
+    def test_is_git_returns_false_for_file(self, tmp_path):
+        """Test that is_git returns False for a file (not a directory)."""
+        file_path = tmp_path / "some_file.txt"
+        file_path.write_text("test")
+        
+        result = is_git(str(file_path))
+        assert result is False
+    
+    def test_is_git_returns_false_for_nonexistent_path(self, tmp_path):
+        """Test that is_git returns False for a nonexistent path."""
+        nonexistent_path = tmp_path / "nonexistent"
+        
+        result = is_git(str(nonexistent_path))
+        assert result is False
 

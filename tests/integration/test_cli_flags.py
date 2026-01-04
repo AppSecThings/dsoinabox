@@ -22,7 +22,7 @@ def test_cli_failure_threshold_none(tmp_project, fake_runner, monkeypatch):
         "--report_directory", str(tmp_project / "reports"),
         "--failure_threshold", "none",
         "--show_findings", "False",
-        "--project-id", "test-project",
+        "--project_id", "test-project",
     ])
     
     # Should succeed even with findings
@@ -42,7 +42,7 @@ def test_cli_failure_threshold_high(tmp_project, fake_runner, monkeypatch):
         "--report_directory", str(tmp_project / "reports"),
         "--failure_threshold", "high",
         "--show_findings", "False",
-        "--project-id", "test-project",
+        "--project_id", "test-project",
     ])
     
     # Should fail because fixture data contains HIGH severity findings
@@ -63,7 +63,7 @@ def test_cli_failure_threshold_low(tmp_project, fake_runner, monkeypatch):
         "--report_directory", str(tmp_project / "reports"),
         "--failure_threshold", "low",
         "--show_findings", "False",
-        "--project-id", "test-project",
+        "--project_id", "test-project",
     ])
     
     # Should fail because fixture data contains findings
@@ -83,7 +83,7 @@ def test_cli_tools_filter_include_single(tmp_project, fake_runner, monkeypatch):
         "--report_directory", str(tmp_project / "reports"),
         "--tools", "syft",
         "--show_findings", "False",
-        "--project-id", "test-project",
+        "--project_id", "test-project",
     ])
     
     assert exit_code == 0
@@ -115,7 +115,7 @@ def test_cli_tools_filter_category(tmp_project, fake_runner, monkeypatch):
         "--report_directory", str(tmp_project / "reports"),
         "--tools", "sast",
         "--show_findings", "False",
-        "--project-id", "test-project",
+        "--project_id", "test-project",
     ])
     
     assert exit_code == 0
@@ -165,7 +165,7 @@ def test_cli_waivers_file_prevents_failure(tmp_project, fake_runner, monkeypatch
         "--failure_threshold", "high",
         "--waiver_file", ".dsoinabox_waivers.yaml",
         "--show_findings", "False",
-        "--project-id", "test-project",
+        "--project_id", "test-project",
     ])
     
     # Note: The waiver may not match exactly, so we just verify the command runs
@@ -206,7 +206,7 @@ def test_cli_waivers_file_loading(tmp_project, fake_runner, monkeypatch):
         "--report_directory", str(tmp_project / "reports"),
         "--waiver_file", "custom_waivers.yaml",
         "--show_findings", "False",
-        "--project-id", "test-project",
+        "--project_id", "test-project",
     ])
     
     # Should succeed (waiver file loads correctly)
@@ -226,7 +226,7 @@ def test_cli_fail_on_secrets(tmp_project, fake_runner, monkeypatch):
         "--report_directory", str(tmp_project / "reports"),
         "--fail_on_secrets",
         "--show_findings", "False",
-        "--project-id", "test-project",
+        "--project_id", "test-project",
     ])
     
     # Should fail because trufflehog fixture contains secrets

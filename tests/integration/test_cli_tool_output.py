@@ -19,7 +19,7 @@ def test_cli_tool_output_default_false(tmp_project, fake_runner, monkeypatch):
         "--output", "json",
         "--report_directory", str(tmp_project / "reports"),
         "--show_findings", "False",
-        "--project-id", "test-project",
+        "--project_id", "test-project",
     ])
     
     assert exit_code == 0
@@ -46,7 +46,7 @@ def test_cli_tool_output_true_preserves_files(tmp_project, fake_runner, monkeypa
         "--report_directory", str(tmp_project / "reports"),
         "--tool_output",
         "--show_findings", "False",
-        "--project-id", "test-project",
+        "--project_id", "test-project",
     ])
     
     assert exit_code == 0
@@ -79,7 +79,7 @@ def test_cli_tool_output_with_multi_output(tmp_project, fake_runner, monkeypatch
         "--report_directory", str(tmp_project / "reports"),
         "--tool_output",
         "--show_findings", "False",
-        "--project-id", "test-project",
+        "--project_id", "test-project",
     ])
     
     assert exit_code == 0

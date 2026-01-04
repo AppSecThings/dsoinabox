@@ -324,7 +324,7 @@ class TrufflehogParser(BaseParser):
         if "Filesystem" in data:
             fs_data = data["Filesystem"]
             base = fs_data.get("base_path") or "."
-            path = fs_data.get("file_path") or fs_data.get("path")
+            path = fs_data.get("file") or fs_data.get("file_path") or fs_data.get("path")
             if path:
                 full_path = os.path.normpath(os.path.join(base, path)).replace("\\", "/")
                 return normalize_path(full_path)

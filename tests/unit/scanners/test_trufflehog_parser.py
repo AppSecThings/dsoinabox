@@ -595,4 +595,79 @@ class TestTrufflehogParserRobustness:
             # Verified field should be preserved if present
             if "Verified" in finding:
                 assert isinstance(finding["Verified"], bool) or finding["Verified"] is None
+    
+    def test_filesystem_file_field_priority(self, tmp_source_dir):
+        """Test that Filesystem.file field takes priority over file_path and path."""
+        source_dir = tmp_source_dir
+        test_file = Path(source_dir) / "test" / "file.txt"
+        test_file.parent.mkdir(parents=True, exist_ok=True)
+        test_file.write_text("secret123")
+        
+        # Test with 'file' field (should be used)
+        data_with_file = [
+            {
+                "DetectorName": "Generic",
+                "Raw": "secret123",
+                "SourceMetadata": {
+                    "Data": {
+                        "Filesystem": {
+                            "file": "test/file.txt",
+                            "file_path": "wrong/path.txt",
+                            "path": "also/wrong.txt",
+                            "line": 1
+                        }
+                    }
+                }
+            }
+        ]
+        
+        result = fingerprint_findings(data_with_file, source_dir)
+        assert len(result) == 1
+        finding = result[0]
+        assert "fingerprints" in finding
+        # Should successfully locate the file using 'file' field
+        assert finding.get("location_status") in {"FOUND_EXACT", "FOUND_AFTER_DECODE"}
+        
+        # Test with only 'file_path' field (should be used as fallback)
+        data_with_file_path = [
+            {
+                "DetectorName": "Generic",
+                "Raw": "secret123",
+                "SourceMetadata": {
+                    "Data": {
+                        "Filesystem": {
+                            "file_path": "test/file.txt",
+                            "path": "also/wrong.txt",
+                            "line": 1
+                        }
+                    }
+                }
+            }
+        ]
+        
+        result = fingerprint_findings(data_with_file_path, source_dir)
+        assert len(result) == 1
+        finding = result[0]
+        assert "fingerprints" in finding
+        
+        # Test with only 'path' field (should be used as last fallback)
+        data_with_path = [
+            {
+                "DetectorName": "Generic",
+                "Raw": "secret123",
+                "SourceMetadata": {
+                    "Data": {
+                        "Filesystem": {
+                            "path": "test/file.txt",
+                            "line": 1
+                        }
+                    }
+                }
+            }
+        ]
+        
+        result = fingerprint_findings(data_with_path, source_dir)
+        assert len(result) == 1
+        finding = result[0]
+        assert "fingerprints" in finding
 

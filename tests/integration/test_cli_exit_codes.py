@@ -92,7 +92,7 @@ class TestCLIExitCodes:
             "--report_directory", str(reports_dir),
             "--failure_threshold", "high",
             "--show_findings", "False",
-            "--project-id", "test-project",
+            "--project_id", "test-project",
         ])
         
         assert exit_code == 0, "Should pass when no findings above threshold"
@@ -138,7 +138,7 @@ class TestCLIExitCodes:
             "--output", "json",
             "--report_directory", str(tmp_project / "reports"),
             "--show_findings", "False",
-            "--project-id", "test-project",
+            "--project_id", "test-project",
         ])
         
         assert exit_code == 1, "Should exit 1 when tool fails"
@@ -183,7 +183,7 @@ class TestCLIExitCodes:
             "--report_directory", str(tmp_project / "reports"),
             "--waiver_file", "invalid_waivers.yaml",
             "--show_findings", "False",
-            "--project-id", "test-project",
+            "--project_id", "test-project",
         ])
         
         assert exit_code == 1, "Should exit 1 when waiver file is invalid"
@@ -200,7 +200,7 @@ class TestCLIExitCodes:
             "--report_directory", str(tmp_project / "reports"),
             "--waiver_file", "nonexistent_waivers.yaml",
             "--show_findings", "False",
-            "--project-id", "test-project",
+            "--project_id", "test-project",
         ])
         
         assert exit_code == 1, "Should exit 1 when specified waiver file doesn't exist"
@@ -217,7 +217,7 @@ class TestCLIExitCodes:
             "--report_directory", str(tmp_project / "reports"),
             # No --waiver_file specified (uses default .dsoinabox_waivers.yaml)
             "--show_findings", "False",
-            "--project-id", "test-project",
+            "--project_id", "test-project",
         ])
         
         # should succeed even if default waiver file doesn't exist
@@ -235,7 +235,7 @@ class TestCLIExitCodes:
             "--report_directory", str(tmp_project / "reports"),
             "--failure_threshold", "high",
             "--show_findings", "False",
-            "--project-id", "test-project",
+            "--project_id", "test-project",
         ])
         
         # fixture data contains HIGH severity findings, so should fail
@@ -253,7 +253,7 @@ class TestCLIExitCodes:
             "--report_directory", str(tmp_project / "reports"),
             "--fail_on_secrets",
             "--show_findings", "False",
-            "--project-id", "test-project",
+            "--project_id", "test-project",
         ])
         
         # fixture data contains secrets, so should fail
@@ -346,7 +346,7 @@ class TestCLIExitCodes:
             "--report_directory", str(tmp_project / "reports"),
             "--fail_on_secrets",
             "--show_findings", "False",
-            "--project-id", "test-project",
+            "--project_id", "test-project",
         ])
         
         assert exit_code == 0, "Should pass when no secrets found even with --fail_on_secrets"

@@ -492,187 +492,14 @@
                   
   
                   <tr class="row-expandable" >
-                    <td>example-library</td>
-                    <td>1.2.1</td>
+                    <td>test-package</td>
+                    <td>1.0.0</td>
                     <td>python</td>
-                    <td>requirements.txt</td>
+                    <td></td>
   
                     <td>
                       
-                        CVE-2023-12345
-                      
-                    </td>
-  
-                    <td>
-                      <span class="chip chip--bad">CRITICAL</span>
-                    </td>
-  
-                    <td>
-                      
-                        1.2.3, 1.2.4
-                      
-                    </td>
-  
-                    <td>
-                      
-                        —
-                      
-                    </td>
-                  </tr>
-                  <tr class="row-details">
-                    <td colspan="8">
-                      <div class="details-content">
-                        
-                        <div class="details-section">
-                          <h4>Description</h4>
-                          <p style="margin: 0; line-height: 1.6;">Remote code execution vulnerability in example-library</p>
-                        </div>
-                        
-  
-                        <div class="details-section">
-                          <h4>Vulnerability Details</h4>
-                          <dl class="details-grid">
-                            
-                            <dt>Vulnerability ID:</dt>
-                            <dd><code>CVE-2023-12345</code></dd>
-                            
-                            
-                            <dt>Namespace:</dt>
-                            <dd><code>nvd:cpe</code></dd>
-                            
-                            
-                            <dt>Severity:</dt>
-                            <dd><span class="chip chip--bad">CRITICAL</span></dd>
-                            
-                            
-                            
-                          </dl>
-                        </div>
-  
-                        
-                        <div class="details-section">
-                          <h4>CVSS Scores</h4>
-                          <dl class="details-grid">
-                            
-                              
-                              <dt>CVSS 3.1:</dt>
-                              <dd>
-                                
-                                <span class="chip chip--bad">9.8</span>
-                                
-                                
-                                <code style="margin-left: 8px; font-size: 11px;">CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H</code>
-                                
-                              </dd>
-                              
-                            
-                          </dl>
-                        </div>
-                        
-  
-                        
-  
-                        
-  
-                        <div class="details-section">
-                          <h4>Package Details</h4>
-                          <dl class="details-grid">
-                            
-                            <dt>Package:</dt>
-                            <dd><code>example-library</code></dd>
-                            
-                            
-                            <dt>Version:</dt>
-                            <dd><code>1.2.1</code></dd>
-                            
-                            
-                            <dt>Type:</dt>
-                            <dd>python</dd>
-                            
-                            
-                            <dt>PURL:</dt>
-                            <dd><code>pkg:pypi/example-library@1.2.1</code></dd>
-                            
-                            
-                            <dt>Location:</dt>
-                            <dd><code>requirements.txt</code></dd>
-                            
-                            
-                          </dl>
-                        </div>
-  
-                        
-                        <div class="details-section">
-                          <h4>Fix Information</h4>
-                          <dl class="details-grid">
-                            
-                            <dt>Fixed Versions:</dt>
-                            <dd>
-                              <div class="tag-list">
-                                
-                                <span class="chip chip--ok">1.2.3</span>
-                                
-                                <span class="chip chip--ok">1.2.4</span>
-                                
-                              </div>
-                            </dd>
-                            
-                          </dl>
-                        </div>
-                        
-  
-                        
-  
-                        
-                      </div>
-                    </td>
-                  </tr>
-                
-                  
-                  
-                  
-                  
-                  
-  
-                  
-                  
-                  
-                  
-  
-                  
-                  
-                  
-  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-  
-                  <tr class="row-expandable" >
-                    <td>another-package</td>
-                    <td>2.0.0</td>
-                    <td>python</td>
-                    <td>requirements.txt</td>
-  
-                    <td>
-                      
-                        CVE-2023-54321
+                        CVE-2024-1234
                       
                     </td>
   
@@ -682,7 +509,7 @@
   
                     <td>
                       
-                        2.0.1
+                        —
                       
                     </td>
   
@@ -698,7 +525,7 @@
                         
                         <div class="details-section">
                           <h4>Description</h4>
-                          <p style="margin: 0; line-height: 1.6;">Information disclosure in another-package</p>
+                          <p style="margin: 0; line-height: 1.6;">Test vulnerability</p>
                         </div>
                         
   
@@ -707,11 +534,8 @@
                           <dl class="details-grid">
                             
                             <dt>Vulnerability ID:</dt>
-                            <dd><code>CVE-2023-54321</code></dd>
+                            <dd><code>CVE-2024-1234</code></dd>
                             
-                            
-                            <dt>Namespace:</dt>
-                            <dd><code>nvd:cpe</code></dd>
                             
                             
                             <dt>Severity:</dt>
@@ -723,25 +547,6 @@
                         </div>
   
                         
-                        <div class="details-section">
-                          <h4>CVSS Scores</h4>
-                          <dl class="details-grid">
-                            
-                              
-                              <dt>CVSS 3.1:</dt>
-                              <dd>
-                                
-                                <span class="chip chip--bad">6.5</span>
-                                
-                                
-                                <code style="margin-left: 8px; font-size: 11px;">CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N</code>
-                                
-                              </dd>
-                              
-                            
-                          </dl>
-                        </div>
-                        
   
                         
   
@@ -752,44 +557,22 @@
                           <dl class="details-grid">
                             
                             <dt>Package:</dt>
-                            <dd><code>another-package</code></dd>
+                            <dd><code>test-package</code></dd>
                             
                             
                             <dt>Version:</dt>
-                            <dd><code>2.0.0</code></dd>
+                            <dd><code>1.0.0</code></dd>
                             
                             
                             <dt>Type:</dt>
                             <dd>python</dd>
                             
                             
-                            <dt>PURL:</dt>
-                            <dd><code>pkg:pypi/another-package@2.0.0</code></dd>
-                            
-                            
-                            <dt>Location:</dt>
-                            <dd><code>requirements.txt</code></dd>
                             
                             
                           </dl>
                         </div>
   
-                        
-                        <div class="details-section">
-                          <h4>Fix Information</h4>
-                          <dl class="details-grid">
-                            
-                            <dt>Fixed Versions:</dt>
-                            <dd>
-                              <div class="tag-list">
-                                
-                                <span class="chip chip--ok">2.0.1</span>
-                                
-                              </div>
-                            </dd>
-                            
-                          </dl>
-                        </div>
                         
   
                         
@@ -836,24 +619,24 @@
                   
   
                   <tr class="row-expandable" >
-                    <td>low-severity-pkg</td>
-                    <td>0.5.1</td>
+                    <td>test-package2</td>
+                    <td>2.0.0</td>
                     <td>python</td>
-                    <td>requirements.txt</td>
+                    <td></td>
   
                     <td>
                       
-                        CVE-2023-99999
+                        CVE-2024-5678
                       
                     </td>
   
                     <td>
-                      <span class="chip chip--neutral">MEDIUM</span>
+                      <span class="chip chip--bad">CRITICAL</span>
                     </td>
   
                     <td>
                       
-                        0.5.2
+                        —
                       
                     </td>
   
@@ -869,7 +652,7 @@
                         
                         <div class="details-section">
                           <h4>Description</h4>
-                          <p style="margin: 0; line-height: 1.6;">Local privilege escalation in low-severity-pkg</p>
+                          <p style="margin: 0; line-height: 1.6;">Test critical vulnerability</p>
                         </div>
                         
   
@@ -878,40 +661,18 @@
                           <dl class="details-grid">
                             
                             <dt>Vulnerability ID:</dt>
-                            <dd><code>CVE-2023-99999</code></dd>
+                            <dd><code>CVE-2024-5678</code></dd>
                             
-                            
-                            <dt>Namespace:</dt>
-                            <dd><code>nvd:cpe</code></dd>
                             
                             
                             <dt>Severity:</dt>
-                            <dd><span class="chip chip--neutral">MEDIUM</span></dd>
+                            <dd><span class="chip chip--bad">CRITICAL</span></dd>
                             
                             
                             
                           </dl>
                         </div>
   
-                        
-                        <div class="details-section">
-                          <h4>CVSS Scores</h4>
-                          <dl class="details-grid">
-                            
-                              
-                              <dt>CVSS 3.1:</dt>
-                              <dd>
-                                
-                                <span class="chip chip--bad">5.3</span>
-                                
-                                
-                                <code style="margin-left: 8px; font-size: 11px;">CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L</code>
-                                
-                              </dd>
-                              
-                            
-                          </dl>
-                        </div>
                         
   
                         
@@ -923,44 +684,149 @@
                           <dl class="details-grid">
                             
                             <dt>Package:</dt>
-                            <dd><code>low-severity-pkg</code></dd>
+                            <dd><code>test-package2</code></dd>
                             
                             
                             <dt>Version:</dt>
-                            <dd><code>0.5.1</code></dd>
+                            <dd><code>2.0.0</code></dd>
                             
                             
                             <dt>Type:</dt>
                             <dd>python</dd>
                             
                             
-                            <dt>PURL:</dt>
-                            <dd><code>pkg:pypi/low-severity-pkg@0.5.1</code></dd>
-                            
-                            
-                            <dt>Location:</dt>
-                            <dd><code>requirements.txt</code></dd>
                             
                             
                           </dl>
                         </div>
   
                         
+  
+                        
+  
+                        
+                      </div>
+                    </td>
+                  </tr>
+                
+                  
+                  
+                  
+                  
+                  
+  
+                  
+                  
+                  
+                  
+  
+                  
+                  
+                  
+  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+  
+                  <tr class="row-expandable" >
+                    <td>test-package3</td>
+                    <td>3.0.0</td>
+                    <td>python</td>
+                    <td></td>
+  
+                    <td>
+                      
+                        CVE-2024-9999
+                      
+                    </td>
+  
+                    <td>
+                      <span class="chip chip--neutral">MEDIUM</span>
+                    </td>
+  
+                    <td>
+                      
+                        —
+                      
+                    </td>
+  
+                    <td>
+                      
+                        —
+                      
+                    </td>
+                  </tr>
+                  <tr class="row-details">
+                    <td colspan="8">
+                      <div class="details-content">
+                        
                         <div class="details-section">
-                          <h4>Fix Information</h4>
+                          <h4>Description</h4>
+                          <p style="margin: 0; line-height: 1.6;">Test medium vulnerability</p>
+                        </div>
+                        
+  
+                        <div class="details-section">
+                          <h4>Vulnerability Details</h4>
                           <dl class="details-grid">
                             
-                            <dt>Fixed Versions:</dt>
-                            <dd>
-                              <div class="tag-list">
-                                
-                                <span class="chip chip--ok">0.5.2</span>
-                                
-                              </div>
-                            </dd>
+                            <dt>Vulnerability ID:</dt>
+                            <dd><code>CVE-2024-9999</code></dd>
+                            
+                            
+                            
+                            <dt>Severity:</dt>
+                            <dd><span class="chip chip--neutral">MEDIUM</span></dd>
+                            
+                            
                             
                           </dl>
                         </div>
+  
+                        
+  
+                        
+  
+                        
+  
+                        <div class="details-section">
+                          <h4>Package Details</h4>
+                          <dl class="details-grid">
+                            
+                            <dt>Package:</dt>
+                            <dd><code>test-package3</code></dd>
+                            
+                            
+                            <dt>Version:</dt>
+                            <dd><code>3.0.0</code></dd>
+                            
+                            
+                            <dt>Type:</dt>
+                            <dd>python</dd>
+                            
+                            
+                            
+                            
+                          </dl>
+                        </div>
+  
                         
   
                         
@@ -982,9 +848,9 @@
       <div class="section__head">
           <h2 id="th-title">TruffleHog — Secrets Findings</h2>
           <div>
-          <span class="chip chip--neutral">Total: 3</span>
+          <span class="chip chip--neutral">Total: 1</span>
           
-          <span class="chip chip--ok">Verified: 2</span>
+          <span class="chip chip--ok">Verified: 0</span>
           <span class="chip chip--bad">Unverified: 1</span>
           </div>
       </div>
@@ -1035,214 +901,10 @@
                   config<ROOT>/secrets.yaml
                   </td>
                   <td>
-                  12
-                  </td>
-                  <td>URI</td>
-                  <td><code>https://api.example.com/v1/***REDACTED***</code></td>
-                  <td>
-                  
-                      <span class="chip chip--ok" title="Verified true">✅ Verified</span>
-                  
-                  </td>
-                  <td>
-                    
-                      —
-                    
-                  </td>
-              </tr>
-              <tr class="row-details">
-                  <td colspan="6">
-                      <div class="details-content">
-                          <div class="details-section">
-                              <h4>Secret Details</h4>
-                              <dl class="details-grid">
-                                  
-                                  <dt>Detector:</dt>
-                                  <dd><code>URI</code></dd>
-                                  
-                                  
-                                  
-                                  
-                                  <dt>Redacted Secret:</dt>
-                                  <dd><code>https://api.example.com/v1/***REDACTED***</code></dd>
-                                  
-                                  
-                                  
-                                  <dt>Verified:</dt>
-                                  <dd>
-                                      
-                                      <span class="chip chip--ok">✅ Verified</span>
-                                      
-                                  </dd>
-                                  
-                                  
-                              </dl>
-                          </div>
-  
-                          <div class="details-section">
-                              <h4>Location Details</h4>
-                              <dl class="details-grid">
-                                  
-                                  <dt>File:</dt>
-                                  <dd><code>config<ROOT>/secrets.yaml</code></dd>
-                                  
-                                  
-                                  <dt>Line:</dt>
-                                  <dd>12</dd>
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  <dt>Commit:</dt>
-                                  <dd><code>abc123def456</code></dd>
-                                  
-                              </dl>
-                          </div>
-  
-                          
-                      </div>
-                  </td>
-              </tr>
-              
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-  
-              <tr class="row-expandable" >
-                  <td>
-                  config/credentials.env
-                  </td>
-                  <td>
                   5
                   </td>
                   <td>AWS</td>
                   <td><code>AKIA***REDACTED***</code></td>
-                  <td>
-                  
-                      <span class="chip chip--ok" title="Verified true">✅ Verified</span>
-                  
-                  </td>
-                  <td>
-                    
-                      —
-                    
-                  </td>
-              </tr>
-              <tr class="row-details">
-                  <td colspan="6">
-                      <div class="details-content">
-                          <div class="details-section">
-                              <h4>Secret Details</h4>
-                              <dl class="details-grid">
-                                  
-                                  <dt>Detector:</dt>
-                                  <dd><code>AWS</code></dd>
-                                  
-                                  
-                                  
-                                  
-                                  <dt>Redacted Secret:</dt>
-                                  <dd><code>AKIA***REDACTED***</code></dd>
-                                  
-                                  
-                                  
-                                  <dt>Verified:</dt>
-                                  <dd>
-                                      
-                                      <span class="chip chip--ok">✅ Verified</span>
-                                      
-                                  </dd>
-                                  
-                                  
-                              </dl>
-                          </div>
-  
-                          <div class="details-section">
-                              <h4>Location Details</h4>
-                              <dl class="details-grid">
-                                  
-                                  <dt>File:</dt>
-                                  <dd><code>config/credentials.env</code></dd>
-                                  
-                                  
-                                  <dt>Line:</dt>
-                                  <dd>5</dd>
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  <dt>Commit:</dt>
-                                  <dd><code>abc123def456</code></dd>
-                                  
-                              </dl>
-                          </div>
-  
-                          
-                      </div>
-                  </td>
-              </tr>
-              
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-  
-              <tr class="row-expandable" >
-                  <td>
-                  
-                  </td>
-                  <td>
-                  3
-                  </td>
-                  <td>Generic</td>
-                  <td><code>***REDACTED***</code></td>
                   <td>
                   
                       <span class="chip chip--bad" title="Verified false">❌ Unverified</span>
@@ -1262,13 +924,16 @@
                               <dl class="details-grid">
                                   
                                   <dt>Detector:</dt>
-                                  <dd><code>Generic</code></dd>
+                                  <dd><code>AWS</code></dd>
                                   
+                                  
+                                  <dt>Detector Type:</dt>
+                                  <dd>1</dd>
                                   
                                   
                                   
                                   <dt>Redacted Secret:</dt>
-                                  <dd><code>***REDACTED***</code></dd>
+                                  <dd><code>AKIA***REDACTED***</code></dd>
                                   
                                   
                                   
@@ -1287,9 +952,12 @@
                               <h4>Location Details</h4>
                               <dl class="details-grid">
                                   
+                                  <dt>File:</dt>
+                                  <dd><code>config<ROOT>/secrets.yaml</code></dd>
+                                  
                                   
                                   <dt>Line:</dt>
-                                  <dd>3</dd>
+                                  <dd>5</dd>
                                   
                                   
                                   
@@ -1364,7 +1032,7 @@
           
               <div>
               <span class="chip chip--neutral">Total: 3</span>
-              <span class="chip">Files: 2</span>
+              <span class="chip">Files: 3</span>
               <span class="chip">Rules: 3</span>
               <span class="chip chip--bad">Critical: 0</span>
               <span class="chip chip--bad">High | Error: 1</span>
@@ -1384,9 +1052,11 @@
               <p class="meta" style="margin:0 0 8px 0;">
                   Heaviest files:
                   
-                  <strong>src<ROOT>/main.py</strong> (2), 
+                  <strong>src<ROOT>/file.py</strong> (1), 
                   
-                  <strong>src<ROOT>/utils.py</strong> (1)
+                  <strong>src<ROOT>/file2.py</strong> (1), 
+                  
+                  <strong>src<ROOT>/file3.py</strong> (1)
                   
               </p>
               
@@ -1434,10 +1104,10 @@
                       
   
                       <tr class="row-expandable" >
-                      <td>src<ROOT>/main.py</td>
-                      <td>15</td>
-                      <td>python.lang.security.audit.insecure-temp-file.mkstemp</td>
-                      <td></td>
+                      <td>src<ROOT>/file.py</td>
+                      <td>10</td>
+                      <td>test.rule.high</td>
+                      <td>Test high severity finding</td>
                       <td><span class="chip chip--bad">HIGH</span></td>
                       <td>
                         
@@ -1449,14 +1119,12 @@
                       <td colspan="6">
                           <div class="details-content">
                               
+                              
+                              
                               <div class="details-section">
-                                  <h4>Code Context</h4>
-                                  <div class="code-block">
-                                      <code>temp_file = tempfile.mkstemp()</code>
-                                  </div>
+                                  <h4>Description</h4>
+                                  <p style="margin: 0; line-height: 1.6;">Test high severity finding</p>
                               </div>
-                              
-                              
                               
                               
                               <div class="details-section">
@@ -1464,15 +1132,15 @@
                                   <dl class="details-grid">
                                       
                                       <dt>Rule ID:</dt>
-                                      <dd><code>python.lang.security.audit.insecure-temp-file.mkstemp</code></dd>
+                                      <dd><code>test.rule.high</code></dd>
                                       
                                       
                                       <dt>File:</dt>
-                                      <dd><code>src<ROOT>/main.py</code></dd>
+                                      <dd><code>src<ROOT>/file.py</code></dd>
                                       
                                       
                                       <dt>Line:</dt>
-                                      <dd>15</dd>
+                                      <dd>10</dd>
                                       
                                       
                                       
@@ -1518,10 +1186,10 @@
                       
   
                       <tr class="row-expandable" >
-                      <td>src<ROOT>/utils.py</td>
-                      <td>42</td>
-                      <td>python.lang.security.audit.weak-cryptographic-key.weak-crypto-key</td>
-                      <td></td>
+                      <td>src<ROOT>/file2.py</td>
+                      <td>20</td>
+                      <td>test.rule.medium</td>
+                      <td>Test medium severity finding</td>
                       <td><span class="chip chip--neutral">MEDIUM</span></td>
                       <td>
                         
@@ -1533,14 +1201,12 @@
                       <td colspan="6">
                           <div class="details-content">
                               
+                              
+                              
                               <div class="details-section">
-                                  <h4>Code Context</h4>
-                                  <div class="code-block">
-                                      <code>key = hashlib.md5(password.encode()).hexdigest()</code>
-                                  </div>
+                                  <h4>Description</h4>
+                                  <p style="margin: 0; line-height: 1.6;">Test medium severity finding</p>
                               </div>
-                              
-                              
                               
                               
                               <div class="details-section">
@@ -1548,15 +1214,15 @@
                                   <dl class="details-grid">
                                       
                                       <dt>Rule ID:</dt>
-                                      <dd><code>python.lang.security.audit.weak-cryptographic-key.weak-crypto-key</code></dd>
+                                      <dd><code>test.rule.medium</code></dd>
                                       
                                       
                                       <dt>File:</dt>
-                                      <dd><code>src<ROOT>/utils.py</code></dd>
+                                      <dd><code>src<ROOT>/file2.py</code></dd>
                                       
                                       
                                       <dt>Line:</dt>
-                                      <dd>42</dd>
+                                      <dd>20</dd>
                                       
                                       
                                       
@@ -1602,10 +1268,10 @@
                       
   
                       <tr class="row-expandable" >
-                      <td>src<ROOT>/main.py</td>
-                      <td>8</td>
-                      <td>python.lang.best-practices.use-defensive-copy</td>
-                      <td></td>
+                      <td>src<ROOT>/file3.py</td>
+                      <td>30</td>
+                      <td>test.rule.low</td>
+                      <td>Test low severity finding</td>
                       <td><span class="chip chip--ok">LOW</span></td>
                       <td>
                         
@@ -1617,14 +1283,12 @@
                       <td colspan="6">
                           <div class="details-content">
                               
+                              
+                              
                               <div class="details-section">
-                                  <h4>Code Context</h4>
-                                  <div class="code-block">
-                                      <code>data = user_input</code>
-                                  </div>
+                                  <h4>Description</h4>
+                                  <p style="margin: 0; line-height: 1.6;">Test low severity finding</p>
                               </div>
-                              
-                              
                               
                               
                               <div class="details-section">
@@ -1632,15 +1296,15 @@
                                   <dl class="details-grid">
                                       
                                       <dt>Rule ID:</dt>
-                                      <dd><code>python.lang.best-practices.use-defensive-copy</code></dd>
+                                      <dd><code>test.rule.low</code></dd>
                                       
                                       
                                       <dt>File:</dt>
-                                      <dd><code>src<ROOT>/main.py</code></dd>
+                                      <dd><code>src<ROOT>/file3.py</code></dd>
                                       
                                       
                                       <dt>Line:</dt>
-                                      <dd>8</dd>
+                                      <dd>30</dd>
                                       
                                       
                                       
@@ -1703,74 +1367,18 @@
           
           
       
-          
-          
-          
-          
-          
-          
-          
-  
-          
-          
-          
-          
-  
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-  
-          
-          
-          
-      
-          
-          
-          
-          
-          
-          
-          
-  
-          
-          
-          
-          
-  
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-  
-          
-          
-          
-      
   
       <div class="section__head">
           <h2 id="checkov-title">Checkov — IaC Findings</h2>
           
               <div>
-              <span class="chip chip--neutral">Total: 3</span>
-              <span class="chip">Files: 3</span>
-              <span class="chip">Rules: 3</span>
+              <span class="chip chip--neutral">Total: 1</span>
+              <span class="chip">Files: 1</span>
+              <span class="chip">Rules: 1</span>
               <span class="chip chip--bad">Critical: 0</span>
               <span class="chip chip--bad">High: 1</span>
-              <span class="chip chip--neutral">Medium: 1</span>
-              <span class="chip chip--ok">Low: 1</span>
+              <span class="chip chip--neutral">Medium: 0</span>
+              <span class="chip chip--ok">Low: 0</span>
               <span class="chip">Info: 0</span>
               <span class="chip">Unknown: 0</span>
               </div>
@@ -1785,11 +1393,7 @@
               <p class="meta" style="margin:0 0 8px 0;">
                   Heaviest files:
                   
-                  <strong>main.tf</strong> (1), 
-                  
-                  <strong>ec2.tf</strong> (1), 
-                  
-                  <strong>storage.tf</strong> (1)
+                  <strong>main.tf</strong> (1)
                   
               </p>
               
@@ -1848,9 +1452,9 @@
   
                       <tr class="row-expandable" >
                       <td>main.tf</td>
-                      <td>5</td>
-                      <td>CKV_AWS_21</td>
-                      <td>Resource &#39;aws_s3_bucket.example&#39; should have versioning enabled</td>
+                      <td>10</td>
+                      <td>CKV_AWS_123</td>
+                      <td>Test finding</td>
                       <td><span class="chip chip--bad">High</span></td>
                       <td>
                         
@@ -1866,7 +1470,7 @@
                               
                               <div class="details-section">
                                   <h4>Description</h4>
-                                  <p style="margin: 0; line-height: 1.6;">Resource &#39;aws_s3_bucket.example&#39; should have versioning enabled</p>
+                                  <p style="margin: 0; line-height: 1.6;">Test finding</p>
                               </div>
                               
                               
@@ -1875,7 +1479,7 @@
                                   <dl class="details-grid">
                                       
                                       <dt>Rule ID:</dt>
-                                      <dd><code>CKV_AWS_21</code></dd>
+                                      <dd><code>CKV_AWS_123</code></dd>
                                       
                                       
                                       
@@ -1884,195 +1488,11 @@
                                       
                                       
                                       <dt>Line:</dt>
-                                      <dd>5</dd>
+                                      <dd>10</dd>
                                       
                                       
                                       <dt>SARIF Level:</dt>
                                       <dd><span class="chip">Error</span></dd>
-                                      
-                                  </dl>
-                              </div>
-                              
-                              
-  
-                              
-                          </div>
-                      </td>
-                      </tr>
-                  
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-  
-                      <tr class="row-expandable" >
-                      <td>ec2.tf</td>
-                      <td>15</td>
-                      <td>CKV_AWS_79</td>
-                      <td>Resource &#39;aws_instance.web&#39; should not have IMDSv1 enabled</td>
-                      <td><span class="chip chip--neutral">Medium</span></td>
-                      <td>
-                        
-                          —
-                        
-                      </td>
-                      </tr>
-                      <tr class="row-details">
-                      <td colspan="6">
-                          <div class="details-content">
-                              
-                              
-                              
-                              <div class="details-section">
-                                  <h4>Description</h4>
-                                  <p style="margin: 0; line-height: 1.6;">Resource &#39;aws_instance.web&#39; should not have IMDSv1 enabled</p>
-                              </div>
-                              
-                              
-                              <div class="details-section">
-                                  <h4>Details</h4>
-                                  <dl class="details-grid">
-                                      
-                                      <dt>Rule ID:</dt>
-                                      <dd><code>CKV_AWS_79</code></dd>
-                                      
-                                      
-                                      
-                                      <dt>File:</dt>
-                                      <dd><code>ec2.tf</code></dd>
-                                      
-                                      
-                                      <dt>Line:</dt>
-                                      <dd>15</dd>
-                                      
-                                      
-                                      <dt>SARIF Level:</dt>
-                                      <dd><span class="chip">Warning</span></dd>
-                                      
-                                  </dl>
-                              </div>
-                              
-                              
-  
-                              
-                          </div>
-                      </td>
-                      </tr>
-                  
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-  
-                      <tr class="row-expandable" >
-                      <td>storage.tf</td>
-                      <td>8</td>
-                      <td>CKV_AWS_145</td>
-                      <td>Resource &#39;aws_s3_bucket.backup&#39; should have server-side encryption enabled</td>
-                      <td><span class="chip chip--ok">Low</span></td>
-                      <td>
-                        
-                          —
-                        
-                      </td>
-                      </tr>
-                      <tr class="row-details">
-                      <td colspan="6">
-                          <div class="details-content">
-                              
-                              
-                              
-                              <div class="details-section">
-                                  <h4>Description</h4>
-                                  <p style="margin: 0; line-height: 1.6;">Resource &#39;aws_s3_bucket.backup&#39; should have server-side encryption enabled</p>
-                              </div>
-                              
-                              
-                              <div class="details-section">
-                                  <h4>Details</h4>
-                                  <dl class="details-grid">
-                                      
-                                      <dt>Rule ID:</dt>
-                                      <dd><code>CKV_AWS_145</code></dd>
-                                      
-                                      
-                                      
-                                      <dt>File:</dt>
-                                      <dd><code>storage.tf</code></dd>
-                                      
-                                      
-                                      <dt>Line:</dt>
-                                      <dd>8</dd>
-                                      
-                                      
-                                      <dt>SARIF Level:</dt>
-                                      <dd><span class="chip">Note</span></dd>
                                       
                                   </dl>
                               </div>
@@ -2491,49 +1911,48 @@
                   
   
                   <tr>
-                      <td>example-library</td>
-                    <td>1.2.1</td>
+                      <td>test-package</td>
+                    <td>1.0.0</td>
                     <td>python</td>
-                    <td>requirements.txt</td>
+                    <td></td>
   
                     <td>
                       
                               
-                        <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-12345" target="_blank" rel="noopener">
-                          CVE-2023-12345
-                        </a>
-                      
-                    </td>
-  
-                    <td>
-                      <span class="chip chip--bad">CRITICAL</span>
-                    </td>
-  
-                    <td>
+                        CVE-2024-1234
                       
                               
-                        1.2.3, 1.2.4
-                      
+                    </td>
+  
+                    <td>
+                      <span class="chip chip--bad">HIGH</span>
                     </td>
   
                     <td>
                       
                               
-                        <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-12345" target="_blank" rel="noopener">
-                          https://nvd.nist.gov/vuln/detail/CVE-2023-12345
-                        </a>
+                        —
                       
+                              
+                    </td>
+  
+                    <td>
+                      
+                              
+                        —
+                      
+                              
                     </td>
                   </tr>
                   <tr>
                       <td colspan="8">
                           <details class="row-details-block">
-                              <summary class="row-details-summary">example-library</summary>
+                              <summary class="row-details-summary">test-package</summary>
                               <div class="details-content">
                               
                         <div class="details-section">
                           <h4>Description</h4>
-                          <p class="p-description">Remote code execution vulnerability in example-library</p>
+                          <p class="p-description">Test vulnerability</p>
                         </div>
                         
                               
@@ -2544,58 +1963,24 @@
                             
                               
                             <dt>Vulnerability ID:</dt>
-                            <dd><code>CVE-2023-12345</code></dd>
+                            <dd><code>CVE-2024-1234</code></dd>
                             
                               
-                            
-                              
-                            <dt>Namespace:</dt>
-                            <dd><code>nvd:cpe</code></dd>
                             
                               
                             
                               
                             <dt>Severity:</dt>
-                            <dd><span class="chip chip--bad">CRITICAL</span></dd>
+                            <dd><span class="chip chip--bad">HIGH</span></dd>
                             
                               
                             
                               
-                            
-                              
-                            <dt>Data Source:</dt>
-                            <dd><a href="https://nvd.nist.gov/vuln/detail/CVE-2023-12345" target="_blank" rel="noopener">https://nvd.nist.gov/vuln/detail/CVE-2023-12345</a></dd>
                             
                               
                           </dl>
                         </div>
   
-                        
-                              
-                        <div class="details-section">
-                          <h4>CVSS Scores</h4>
-                          <dl class="details-grid">
-                            
-                              
-                              
-                              <dt>CVSS 3.1:</dt>
-                              <dd>
-                                
-                              
-                                <span class="chip chip--bad">9.8</span>
-                                
-                              
-                                
-                              
-                                <code >CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H</code>
-                                
-                              
-                              </dd>
-                              
-                              
-                            
-                          </dl>
-                        </div>
                         
                               
   
@@ -2611,13 +1996,13 @@
                             
                               
                             <dt>Package:</dt>
-                            <dd><code>example-library</code></dd>
+                            <dd><code>test-package</code></dd>
                             
                               
                             
                               
                             <dt>Version:</dt>
-                            <dd><code>1.2.1</code></dd>
+                            <dd><code>1.0.0</code></dd>
                             
                               
                             
@@ -2628,14 +2013,6 @@
                               
                             
                               
-                            <dt>PURL:</dt>
-                            <dd><code>pkg:pypi/example-library@1.2.1</code></dd>
-                            
-                              
-                            
-                              
-                            <dt>Location:</dt>
-                            <dd><code>requirements.txt</code></dd>
                             
                               
                             
@@ -2643,26 +2020,6 @@
                           </dl>
                         </div>
   
-                        
-                              
-                        <div class="details-section">
-                          <h4>Fix Information</h4>
-                          <dl class="details-grid">
-                            
-                              
-                            <dt>Fixed Versions:</dt>
-                            <dd>
-                              <div class="tag-list">
-                                
-                                <span class="chip chip--ok">1.2.3</span>
-                                
-                                <span class="chip chip--ok">1.2.4</span>
-                                
-                              </div>
-                            </dd>
-                            
-                          </dl>
-                        </div>
                         
                               
   
@@ -2709,49 +2066,48 @@
                   
   
                   <tr>
-                      <td>another-package</td>
+                      <td>test-package2</td>
                     <td>2.0.0</td>
                     <td>python</td>
-                    <td>requirements.txt</td>
+                    <td></td>
   
                     <td>
                       
                               
-                        <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-54321" target="_blank" rel="noopener">
-                          CVE-2023-54321
-                        </a>
-                      
-                    </td>
-  
-                    <td>
-                      <span class="chip chip--bad">HIGH</span>
-                    </td>
-  
-                    <td>
+                        CVE-2024-5678
                       
                               
-                        2.0.1
-                      
+                    </td>
+  
+                    <td>
+                      <span class="chip chip--bad">CRITICAL</span>
                     </td>
   
                     <td>
                       
                               
-                        <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-54321" target="_blank" rel="noopener">
-                          https://nvd.nist.gov/vuln/detail/CVE-2023-54321
-                        </a>
+                        —
                       
+                              
+                    </td>
+  
+                    <td>
+                      
+                              
+                        —
+                      
+                              
                     </td>
                   </tr>
                   <tr>
                       <td colspan="8">
                           <details class="row-details-block">
-                              <summary class="row-details-summary">another-package</summary>
+                              <summary class="row-details-summary">test-package2</summary>
                               <div class="details-content">
                               
                         <div class="details-section">
                           <h4>Description</h4>
-                          <p class="p-description">Information disclosure in another-package</p>
+                          <p class="p-description">Test critical vulnerability</p>
                         </div>
                         
                               
@@ -2762,58 +2118,24 @@
                             
                               
                             <dt>Vulnerability ID:</dt>
-                            <dd><code>CVE-2023-54321</code></dd>
+                            <dd><code>CVE-2024-5678</code></dd>
                             
                               
-                            
-                              
-                            <dt>Namespace:</dt>
-                            <dd><code>nvd:cpe</code></dd>
                             
                               
                             
                               
                             <dt>Severity:</dt>
-                            <dd><span class="chip chip--bad">HIGH</span></dd>
+                            <dd><span class="chip chip--bad">CRITICAL</span></dd>
                             
                               
                             
                               
-                            
-                              
-                            <dt>Data Source:</dt>
-                            <dd><a href="https://nvd.nist.gov/vuln/detail/CVE-2023-54321" target="_blank" rel="noopener">https://nvd.nist.gov/vuln/detail/CVE-2023-54321</a></dd>
                             
                               
                           </dl>
                         </div>
   
-                        
-                              
-                        <div class="details-section">
-                          <h4>CVSS Scores</h4>
-                          <dl class="details-grid">
-                            
-                              
-                              
-                              <dt>CVSS 3.1:</dt>
-                              <dd>
-                                
-                              
-                                <span class="chip chip--bad">6.5</span>
-                                
-                              
-                                
-                              
-                                <code >CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N</code>
-                                
-                              
-                              </dd>
-                              
-                              
-                            
-                          </dl>
-                        </div>
                         
                               
   
@@ -2829,7 +2151,7 @@
                             
                               
                             <dt>Package:</dt>
-                            <dd><code>another-package</code></dd>
+                            <dd><code>test-package2</code></dd>
                             
                               
                             
@@ -2846,14 +2168,6 @@
                               
                             
                               
-                            <dt>PURL:</dt>
-                            <dd><code>pkg:pypi/another-package@2.0.0</code></dd>
-                            
-                              
-                            
-                              
-                            <dt>Location:</dt>
-                            <dd><code>requirements.txt</code></dd>
                             
                               
                             
@@ -2861,24 +2175,6 @@
                           </dl>
                         </div>
   
-                        
-                              
-                        <div class="details-section">
-                          <h4>Fix Information</h4>
-                          <dl class="details-grid">
-                            
-                              
-                            <dt>Fixed Versions:</dt>
-                            <dd>
-                              <div class="tag-list">
-                                
-                                <span class="chip chip--ok">2.0.1</span>
-                                
-                              </div>
-                            </dd>
-                            
-                          </dl>
-                        </div>
                         
                               
   
@@ -2925,18 +2221,17 @@
                   
   
                   <tr>
-                      <td>low-severity-pkg</td>
-                    <td>0.5.1</td>
+                      <td>test-package3</td>
+                    <td>3.0.0</td>
                     <td>python</td>
-                    <td>requirements.txt</td>
+                    <td></td>
   
                     <td>
                       
                               
-                        <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-99999" target="_blank" rel="noopener">
-                          CVE-2023-99999
-                        </a>
+                        CVE-2024-9999
                       
+                              
                     </td>
   
                     <td>
@@ -2946,28 +2241,28 @@
                     <td>
                       
                               
-                        0.5.2
+                        —
                       
+                              
                     </td>
   
                     <td>
                       
                               
-                        <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-99999" target="_blank" rel="noopener">
-                          https://nvd.nist.gov/vuln/detail/CVE-2023-99999
-                        </a>
+                        —
                       
+                              
                     </td>
                   </tr>
                   <tr>
                       <td colspan="8">
                           <details class="row-details-block">
-                              <summary class="row-details-summary">low-severity-pkg</summary>
+                              <summary class="row-details-summary">test-package3</summary>
                               <div class="details-content">
                               
                         <div class="details-section">
                           <h4>Description</h4>
-                          <p class="p-description">Local privilege escalation in low-severity-pkg</p>
+                          <p class="p-description">Test medium vulnerability</p>
                         </div>
                         
                               
@@ -2978,13 +2273,9 @@
                             
                               
                             <dt>Vulnerability ID:</dt>
-                            <dd><code>CVE-2023-99999</code></dd>
+                            <dd><code>CVE-2024-9999</code></dd>
                             
                               
-                            
-                              
-                            <dt>Namespace:</dt>
-                            <dd><code>nvd:cpe</code></dd>
                             
                               
                             
@@ -2997,39 +2288,9 @@
                               
                             
                               
-                            <dt>Data Source:</dt>
-                            <dd><a href="https://nvd.nist.gov/vuln/detail/CVE-2023-99999" target="_blank" rel="noopener">https://nvd.nist.gov/vuln/detail/CVE-2023-99999</a></dd>
-                            
-                              
                           </dl>
                         </div>
   
-                        
-                              
-                        <div class="details-section">
-                          <h4>CVSS Scores</h4>
-                          <dl class="details-grid">
-                            
-                              
-                              
-                              <dt>CVSS 3.1:</dt>
-                              <dd>
-                                
-                              
-                                <span class="chip chip--bad">5.3</span>
-                                
-                              
-                                
-                              
-                                <code >CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L</code>
-                                
-                              
-                              </dd>
-                              
-                              
-                            
-                          </dl>
-                        </div>
                         
                               
   
@@ -3045,13 +2306,13 @@
                             
                               
                             <dt>Package:</dt>
-                            <dd><code>low-severity-pkg</code></dd>
+                            <dd><code>test-package3</code></dd>
                             
                               
                             
                               
                             <dt>Version:</dt>
-                            <dd><code>0.5.1</code></dd>
+                            <dd><code>3.0.0</code></dd>
                             
                               
                             
@@ -3062,14 +2323,6 @@
                               
                             
                               
-                            <dt>PURL:</dt>
-                            <dd><code>pkg:pypi/low-severity-pkg@0.5.1</code></dd>
-                            
-                              
-                            
-                              
-                            <dt>Location:</dt>
-                            <dd><code>requirements.txt</code></dd>
                             
                               
                             
@@ -3077,24 +2330,6 @@
                           </dl>
                         </div>
   
-                        
-                              
-                        <div class="details-section">
-                          <h4>Fix Information</h4>
-                          <dl class="details-grid">
-                            
-                              
-                            <dt>Fixed Versions:</dt>
-                            <dd>
-                              <div class="tag-list">
-                                
-                                <span class="chip chip--ok">0.5.2</span>
-                                
-                              </div>
-                            </dd>
-                            
-                          </dl>
-                        </div>
                         
                               
   
@@ -3122,9 +2357,9 @@
       <div class="section__head">
           <h2 id="th-title">TruffleHog — Secrets Findings</h2>
           <div>
-          <span class="chip chip--neutral">Total: 3</span>
+          <span class="chip chip--neutral">Total: 1</span>
           
-          <span class="chip chip--ok">Verified: 2</span>
+          <span class="chip chip--ok">Verified: 0</span>
           <span class="chip chip--bad">Unverified: 1</span>
           </div>
       </div>
@@ -3166,15 +2401,16 @@
                   config<ROOT>/secrets.yaml
                   </td>
                   <td>
-                  12
+                  5
                   </td>
-                  <td>URI</td>
-                  <td><code>https://api.example.com/v1/***REDACTED***</code></td>
+                  <td>AWS</td>
+                  <td><code>AKIA***REDACTED***</code></td>
                   <td>
                   
                               
-                      <span class="chip chip--ok" title="Verified true">✅ Verified</span>
+                      <span class="chip chip--bad" title="Verified false">❌ Unverified</span>
                   
+                              
                   </td>
                   </tr>
                   <tr>
@@ -3188,123 +2424,13 @@
                                   
                               
                                   <dt>Detector:</dt>
-                                  <dd><code>URI</code></dd>
-                                  
-                              
-                                  
-                              
-                                  
-                              
-                                  
-                              
-                                  <dt>Redacted Secret:</dt>
-                                  <dd><code>https://api.example.com/v1/***REDACTED***</code></dd>
-                                  
-                              
-                                  
-                              
-                                  
-                              
-                                  <dt>Verified:</dt>
-                                  <dd>
-                                      
-                              
-                                      <span class="chip chip--ok">✅ Verified</span>
-                                      
-                                  </dd>
-                                  
-                              
-                                  
-                              
-                              </dl>
-                          </div>
-  
-                          <div class="details-section">
-                              <h4>Location Details</h4>
-                              <dl class="details-grid">
-                                  
-                              
-                                  <dt>File:</dt>
-                                  <dd><code>config<ROOT>/secrets.yaml</code></dd>
-                                  
-                              
-                                  
-                              
-                                  <dt>Line:</dt>
-                                  <dd>12</dd>
-                                  
-                              
-                                  
-                              
-                                  
-                              
-                                  
-                              
-                                  
-                              
-                                  <dt>Commit:</dt>
-                                  <dd><code>abc123def456</code></dd>
-                                  
-                              
-                              </dl>
-                          </div>
-  
-                          
-                              
-                              </div>
-                          </details>
-                      </td>
-                  </tr>
-              
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-  
-              <tr>
-                      <td>
-                  config/credentials.env
-                  </td>
-                  <td>
-                  5
-                  </td>
-                  <td>AWS</td>
-                  <td><code>AKIA***REDACTED***</code></td>
-                  <td>
-                  
-                              
-                      <span class="chip chip--ok" title="Verified true">✅ Verified</span>
-                  
-                  </td>
-                  </tr>
-                  <tr>
-                      <td colspan="5">
-                          <details class="row-details-block">
-                              <summary class="row-details-summary">config/credentials.env</summary>
-                              <div class="details-content">
-                                  <div class="details-section">
-                              <h4>Secret Details</h4>
-                              <dl class="details-grid">
-                                  
-                              
-                                  <dt>Detector:</dt>
                                   <dd><code>AWS</code></dd>
                                   
                               
+                                  
+                              
+                                  <dt>Detector Type:</dt>
+                                  <dd>1</dd>
                                   
                               
                                   
@@ -3313,121 +2439,6 @@
                               
                                   <dt>Redacted Secret:</dt>
                                   <dd><code>AKIA***REDACTED***</code></dd>
-                                  
-                              
-                                  
-                              
-                                  
-                              
-                                  <dt>Verified:</dt>
-                                  <dd>
-                                      
-                              
-                                      <span class="chip chip--ok">✅ Verified</span>
-                                      
-                                  </dd>
-                                  
-                              
-                                  
-                              
-                              </dl>
-                          </div>
-  
-                          <div class="details-section">
-                              <h4>Location Details</h4>
-                              <dl class="details-grid">
-                                  
-                              
-                                  <dt>File:</dt>
-                                  <dd><code>config/credentials.env</code></dd>
-                                  
-                              
-                                  
-                              
-                                  <dt>Line:</dt>
-                                  <dd>5</dd>
-                                  
-                              
-                                  
-                              
-                                  
-                              
-                                  
-                              
-                                  
-                              
-                                  <dt>Commit:</dt>
-                                  <dd><code>abc123def456</code></dd>
-                                  
-                              
-                              </dl>
-                          </div>
-  
-                          
-                              
-                              </div>
-                          </details>
-                      </td>
-                  </tr>
-              
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-  
-              <tr>
-                      <td>
-                  
-                  </td>
-                  <td>
-                  3
-                  </td>
-                  <td>Generic</td>
-                  <td><code>***REDACTED***</code></td>
-                  <td>
-                  
-                              
-                      <span class="chip chip--bad" title="Verified false">❌ Unverified</span>
-                  
-                              
-                  </td>
-                  </tr>
-                  <tr>
-                      <td colspan="5">
-                          <details class="row-details-block">
-                              <summary class="row-details-summary"></summary>
-                              <div class="details-content">
-                                  <div class="details-section">
-                              <h4>Secret Details</h4>
-                              <dl class="details-grid">
-                                  
-                              
-                                  <dt>Detector:</dt>
-                                  <dd><code>Generic</code></dd>
-                                  
-                              
-                                  
-                              
-                                  
-                              
-                                  
-                              
-                                  <dt>Redacted Secret:</dt>
-                                  <dd><code>***REDACTED***</code></dd>
                                   
                               
                                   
@@ -3454,10 +2465,14 @@
                               <dl class="details-grid">
                                   
                               
+                                  <dt>File:</dt>
+                                  <dd><code>config<ROOT>/secrets.yaml</code></dd>
+                                  
+                              
                                   
                               
                                   <dt>Line:</dt>
-                                  <dd>3</dd>
+                                  <dd>5</dd>
                                   
                               
                                   
@@ -3551,7 +2566,7 @@
                               
               <div>
               <span class="chip chip--neutral">Total: 3</span>
-              <span class="chip">Files: 2</span>
+              <span class="chip">Files: 3</span>
               <span class="chip">Rules: 3</span>
               <span class="chip chip--bad">Critical: 0</span>
               <span class="chip chip--bad">High | Error: 1</span>
@@ -3574,11 +2589,15 @@
               <p class="meta" >
                   Heaviest files:
                   
-                  <strong>src<ROOT>/main.py</strong> (2)
+                  <strong>src<ROOT>/file.py</strong> (1)
                               , 
                               
                   
-                  <strong>src<ROOT>/utils.py</strong> (1)
+                  <strong>src<ROOT>/file2.py</strong> (1)
+                              , 
+                              
+                  
+                  <strong>src<ROOT>/file3.py</strong> (1)
                               
                   
               </p>
@@ -3620,27 +2639,25 @@
                       
   
                       <tr>
-                      <td>src<ROOT>/main.py</td>
-                      <td>15</td>
-                      <td>python.lang.security.audit.insecure-temp-file.mkstemp</td>
-                      <td></td>
+                      <td>src<ROOT>/file.py</td>
+                      <td>10</td>
+                      <td>test.rule.high</td>
+                      <td>Test high severity finding</td>
                       <td><span class="chip chip--bad">HIGH</span></td>
                   </tr>
                   <tr>
                       <td colspan="5">
                           <details class="row-details-block">
-                              <summary class="row-details-summary">src<ROOT>/main.py</summary>
+                              <summary class="row-details-summary">src<ROOT>/file.py</summary>
                               <div class="details-content">
                               
+                              
+                              
+                              
                               <div class="details-section">
-                                  <h4>Code Context</h4>
-                                  <div class="code-block">
-                                      <code>temp_file = tempfile.mkstemp()</code>
-                                  </div>
+                                  <h4>Description</h4>
+                                  <p class="p-description">Test high severity finding</p>
                               </div>
-                              
-                              
-                              
                               
                               
                               
@@ -3650,19 +2667,19 @@
                                       
                               
                                       <dt>Rule ID:</dt>
-                                      <dd><code>python.lang.security.audit.insecure-temp-file.mkstemp</code></dd>
+                                      <dd><code>test.rule.high</code></dd>
                                       
                               
                                       
                               
                                       <dt>File:</dt>
-                                      <dd><code>src<ROOT>/main.py</code></dd>
+                                      <dd><code>src<ROOT>/file.py</code></dd>
                                       
                               
                                       
                               
                                       <dt>Line:</dt>
-                                      <dd>15</dd>
+                                      <dd>10</dd>
                                       
                               
                                       
@@ -3709,27 +2726,25 @@
                       
   
                       <tr>
-                      <td>src<ROOT>/utils.py</td>
-                      <td>42</td>
-                      <td>python.lang.security.audit.weak-cryptographic-key.weak-crypto-key</td>
-                      <td></td>
+                      <td>src<ROOT>/file2.py</td>
+                      <td>20</td>
+                      <td>test.rule.medium</td>
+                      <td>Test medium severity finding</td>
                       <td><span class="chip chip--neutral">MEDIUM</span></td>
                   </tr>
                   <tr>
                       <td colspan="5">
                           <details class="row-details-block">
-                              <summary class="row-details-summary">src<ROOT>/utils.py</summary>
+                              <summary class="row-details-summary">src<ROOT>/file2.py</summary>
                               <div class="details-content">
                               
+                              
+                              
+                              
                               <div class="details-section">
-                                  <h4>Code Context</h4>
-                                  <div class="code-block">
-                                      <code>key = hashlib.md5(password.encode()).hexdigest()</code>
-                                  </div>
+                                  <h4>Description</h4>
+                                  <p class="p-description">Test medium severity finding</p>
                               </div>
-                              
-                              
-                              
                               
                               
                               
@@ -3739,19 +2754,19 @@
                                       
                               
                                       <dt>Rule ID:</dt>
-                                      <dd><code>python.lang.security.audit.weak-cryptographic-key.weak-crypto-key</code></dd>
+                                      <dd><code>test.rule.medium</code></dd>
                                       
                               
                                       
                               
                                       <dt>File:</dt>
-                                      <dd><code>src<ROOT>/utils.py</code></dd>
+                                      <dd><code>src<ROOT>/file2.py</code></dd>
                                       
                               
                                       
                               
                                       <dt>Line:</dt>
-                                      <dd>42</dd>
+                                      <dd>20</dd>
                                       
                               
                                       
@@ -3798,27 +2813,25 @@
                       
   
                       <tr>
-                      <td>src<ROOT>/main.py</td>
-                      <td>8</td>
-                      <td>python.lang.best-practices.use-defensive-copy</td>
-                      <td></td>
+                      <td>src<ROOT>/file3.py</td>
+                      <td>30</td>
+                      <td>test.rule.low</td>
+                      <td>Test low severity finding</td>
                       <td><span class="chip chip--ok">LOW</span></td>
                   </tr>
                   <tr>
                       <td colspan="5">
                           <details class="row-details-block">
-                              <summary class="row-details-summary">src<ROOT>/main.py</summary>
+                              <summary class="row-details-summary">src<ROOT>/file3.py</summary>
                               <div class="details-content">
                               
+                              
+                              
+                              
                               <div class="details-section">
-                                  <h4>Code Context</h4>
-                                  <div class="code-block">
-                                      <code>data = user_input</code>
-                                  </div>
+                                  <h4>Description</h4>
+                                  <p class="p-description">Test low severity finding</p>
                               </div>
-                              
-                              
-                              
                               
                               
                               
@@ -3828,19 +2841,19 @@
                                       
                               
                                       <dt>Rule ID:</dt>
-                                      <dd><code>python.lang.best-practices.use-defensive-copy</code></dd>
+                                      <dd><code>test.rule.low</code></dd>
                                       
                               
                                       
                               
                                       <dt>File:</dt>
-                                      <dd><code>src<ROOT>/main.py</code></dd>
+                                      <dd><code>src<ROOT>/file3.py</code></dd>
                                       
                               
                                       
                               
                                       <dt>Line:</dt>
-                                      <dd>8</dd>
+                                      <dd>30</dd>
                                       
                               
                                       
@@ -3920,89 +2933,19 @@
           
           
       
-          
-          
-          
-          
-          
-                              
-          
-          
-                              
-  
-          
-          
-                              
-          
-          
-                              
-  
-          
-          
-          
-          
-                              
-          
-          
-          
-          
-          
-          
-                              
-  
-          
-                              
-          
-          
-      
-          
-          
-          
-          
-          
-                              
-          
-          
-                              
-  
-          
-          
-                              
-          
-          
-                              
-  
-          
-          
-          
-          
-                              
-          
-          
-          
-          
-          
-          
-                              
-  
-          
-                              
-          
-          
-      
   
       <div class="section__head">
           <h2 id="checkov-title">Checkov — IaC Findings</h2>
           
                               
               <div>
-              <span class="chip chip--neutral">Total: 3</span>
-              <span class="chip">Files: 3</span>
-              <span class="chip">Rules: 3</span>
+              <span class="chip chip--neutral">Total: 1</span>
+              <span class="chip">Files: 1</span>
+              <span class="chip">Rules: 1</span>
               <span class="chip chip--bad">Critical: 0</span>
               <span class="chip chip--bad">High: 1</span>
-              <span class="chip chip--neutral">Medium: 1</span>
-              <span class="chip chip--ok">Low: 1</span>
+              <span class="chip chip--neutral">Medium: 0</span>
+              <span class="chip chip--ok">Low: 0</span>
               <span class="chip">Info: 0</span>
               <span class="chip">Unknown: 0</span>
               </div>
@@ -4021,14 +2964,6 @@
                   Heaviest files:
                   
                   <strong>main.tf</strong> (1)
-                              , 
-                              
-                  
-                  <strong>ec2.tf</strong> (1)
-                              , 
-                              
-                  
-                  <strong>storage.tf</strong> (1)
                               
                   
               </p>
@@ -4084,9 +3019,9 @@
   
                       <tr>
                       <td>main.tf</td>
-                      <td>5</td>
-                      <td>CKV_AWS_21</td>
-                      <td>Resource &#39;aws_s3_bucket.example&#39; should have versioning enabled</td>
+                      <td>10</td>
+                      <td>CKV_AWS_123</td>
+                      <td>Test finding</td>
                       <td><span class="chip chip--bad">High</span></td>
                   </tr>
                   <tr>
@@ -4100,7 +3035,7 @@
                               
                               <div class="details-section">
                                   <h4>Description</h4>
-                                  <p class="p-description">Resource &#39;aws_s3_bucket.example&#39; should have versioning enabled</p>
+                                  <p class="p-description">Test finding</p>
                               </div>
                               
                               
@@ -4111,7 +3046,7 @@
                                       
                               
                                       <dt>Rule ID:</dt>
-                                      <dd><code>CKV_AWS_21</code></dd>
+                                      <dd><code>CKV_AWS_123</code></dd>
                                       
                               
                                       
@@ -4125,211 +3060,13 @@
                                       
                               
                                       <dt>Line:</dt>
-                                      <dd>5</dd>
+                                      <dd>10</dd>
                                       
                               
                                       
                               
                                       <dt>SARIF Level:</dt>
                                       <dd><span class="chip">Error</span></dd>
-                                      
-                              
-                                  </dl>
-                              </div>
-                              
-                              
-                              
-  
-                              
-                              
-                              </div>
-                          </details>
-                      </td>
-                  </tr>
-                  
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                              
-                      
-                      
-                      
-                      
-                      
-                      
-                              
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                              
-  
-                      <tr>
-                      <td>ec2.tf</td>
-                      <td>15</td>
-                      <td>CKV_AWS_79</td>
-                      <td>Resource &#39;aws_instance.web&#39; should not have IMDSv1 enabled</td>
-                      <td><span class="chip chip--neutral">Medium</span></td>
-                  </tr>
-                  <tr>
-                      <td colspan="5">
-                          <details class="row-details-block">
-                              <summary class="row-details-summary">ec2.tf</summary>
-                              <div class="details-content">
-                              
-                              
-                              
-                              
-                              <div class="details-section">
-                                  <h4>Description</h4>
-                                  <p class="p-description">Resource &#39;aws_instance.web&#39; should not have IMDSv1 enabled</p>
-                              </div>
-                              
-                              
-                              
-                              <div class="details-section">
-                                  <h4>Details</h4>
-                                  <dl class="details-grid">
-                                      
-                              
-                                      <dt>Rule ID:</dt>
-                                      <dd><code>CKV_AWS_79</code></dd>
-                                      
-                              
-                                      
-                              
-                                      
-                              
-                                      <dt>File:</dt>
-                                      <dd><code>ec2.tf</code></dd>
-                                      
-                              
-                                      
-                              
-                                      <dt>Line:</dt>
-                                      <dd>15</dd>
-                                      
-                              
-                                      
-                              
-                                      <dt>SARIF Level:</dt>
-                                      <dd><span class="chip">Warning</span></dd>
-                                      
-                              
-                                  </dl>
-                              </div>
-                              
-                              
-                              
-  
-                              
-                              
-                              </div>
-                          </details>
-                      </td>
-                  </tr>
-                  
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                              
-                      
-                      
-                      
-                      
-                      
-                      
-                              
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                              
-  
-                      <tr>
-                      <td>storage.tf</td>
-                      <td>8</td>
-                      <td>CKV_AWS_145</td>
-                      <td>Resource &#39;aws_s3_bucket.backup&#39; should have server-side encryption enabled</td>
-                      <td><span class="chip chip--ok">Low</span></td>
-                  </tr>
-                  <tr>
-                      <td colspan="5">
-                          <details class="row-details-block">
-                              <summary class="row-details-summary">storage.tf</summary>
-                              <div class="details-content">
-                              
-                              
-                              
-                              
-                              <div class="details-section">
-                                  <h4>Description</h4>
-                                  <p class="p-description">Resource &#39;aws_s3_bucket.backup&#39; should have server-side encryption enabled</p>
-                              </div>
-                              
-                              
-                              
-                              <div class="details-section">
-                                  <h4>Details</h4>
-                                  <dl class="details-grid">
-                                      
-                              
-                                      <dt>Rule ID:</dt>
-                                      <dd><code>CKV_AWS_145</code></dd>
-                                      
-                              
-                                      
-                              
-                                      
-                              
-                                      <dt>File:</dt>
-                                      <dd><code>storage.tf</code></dd>
-                                      
-                              
-                                      
-                              
-                                      <dt>Line:</dt>
-                                      <dd>8</dd>
-                                      
-                              
-                                      
-                              
-                                      <dt>SARIF Level:</dt>
-                                      <dd><span class="chip">Note</span></dd>
                                       
                               
                                   </dl>

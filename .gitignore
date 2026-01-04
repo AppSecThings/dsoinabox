@@ -118,7 +118,6 @@ Thumbs.db
 
 # Reports, output, and misc
 reports/
-*.json
 .sync-stamp
 tests/fixtures/tmp/
 tests/output/

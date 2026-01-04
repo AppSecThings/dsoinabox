@@ -1,0 +1,35 @@
+{
+  "results": [
+    {
+      "check_id": "test.rule.high",
+      "path": "src/file.py",
+      "start": {"line": 10, "col": 5},
+      "end": {"line": 10, "col": 15},
+      "extra": {
+        "severity": "HIGH",
+        "message": "Test high severity finding"
+      }
+    },
+    {
+      "check_id": "test.rule.medium",
+      "path": "src/file2.py",
+      "start": {"line": 20, "col": 5},
+      "end": {"line": 20, "col": 15},
+      "extra": {
+        "severity": "MEDIUM",
+        "message": "Test medium severity finding"
+      }
+    },
+    {
+      "check_id": "test.rule.low",
+      "path": "src/file3.py",
+      "start": {"line": 30, "col": 5},
+      "end": {"line": 30, "col": 15},
+      "extra": {
+        "severity": "LOW",
+        "message": "Test low severity finding"
+      }
+    }
+  ]
+}
+

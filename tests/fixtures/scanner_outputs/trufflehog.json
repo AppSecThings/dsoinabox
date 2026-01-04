@@ -1,0 +1,20 @@
+[
+  {
+    "DetectorName": "AWS",
+    "DetectorType": 1,
+    "DetectorDescription": "AWS access key detected",
+    "SourceMetadata": {
+      "Data": {
+        "Git": {
+          "file": "config/secrets.yaml",
+          "line": 5,
+          "repository_local_path": "."
+        }
+      }
+    },
+    "Raw": "AKIAIOSFODNN7EXAMPLE",
+    "RawV2": "AKIA***REDACTED***",
+    "Redacted": "AKIA***REDACTED***"
+  }
+]
+

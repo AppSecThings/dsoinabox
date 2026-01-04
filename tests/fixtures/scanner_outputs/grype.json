@@ -1,0 +1,41 @@
+{
+  "matches": [
+    {
+      "vulnerability": {
+        "id": "CVE-2024-1234",
+        "severity": "HIGH",
+        "description": "Test vulnerability"
+      },
+      "artifact": {
+        "name": "test-package",
+        "version": "1.0.0",
+        "type": "python"
+      }
+    },
+    {
+      "vulnerability": {
+        "id": "CVE-2024-5678",
+        "severity": "CRITICAL",
+        "description": "Test critical vulnerability"
+      },
+      "artifact": {
+        "name": "test-package2",
+        "version": "2.0.0",
+        "type": "python"
+      }
+    },
+    {
+      "vulnerability": {
+        "id": "CVE-2024-9999",
+        "severity": "MEDIUM",
+        "description": "Test medium vulnerability"
+      },
+      "artifact": {
+        "name": "test-package3",
+        "version": "3.0.0",
+        "type": "python"
+      }
+    }
+  ]
+}
+

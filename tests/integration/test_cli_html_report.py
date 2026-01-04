@@ -18,7 +18,7 @@ def test_cli_html_report_generation(tmp_project, fake_runner, monkeypatch):
         "--output", "html",
         "--report_directory", str(tmp_project / "reports"),
         "--show_findings", "False",
-        "--project-id", "test-project",
+        "--project_id", "test-project",
     ])
     
     assert exit_code == 0
@@ -55,7 +55,7 @@ def test_cli_jenkins_html_report_generation(tmp_project, fake_runner, monkeypatc
         "--output", "jenkins_html",
         "--report_directory", str(tmp_project / "reports"),
         "--show_findings", "False",
-        "--project-id", "test-project",
+        "--project_id", "test-project",
     ])
     
     assert exit_code == 0
@@ -93,7 +93,7 @@ def test_cli_html_report_contains_findings_summary(tmp_project, fake_runner, mon
         "--output", "html",
         "--report_directory", str(tmp_project / "reports"),
         "--show_findings", "False",
-        "--project-id", "test-project",
+        "--project_id", "test-project",
     ])
     
     assert exit_code == 0
@@ -127,7 +127,7 @@ def test_cli_multi_output_formats(tmp_project, fake_runner, monkeypatch):
         "--output", "json,html,sarif",
         "--report_directory", str(tmp_project / "reports"),
         "--show_findings", "False",
-        "--project-id", "test-project",
+        "--project_id", "test-project",
     ])
     
     assert exit_code == 0

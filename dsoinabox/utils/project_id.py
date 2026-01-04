@@ -17,6 +17,11 @@ from urllib.parse import urlparse
 from .runner import run_cmd
 
 
+def is_git(path: str) -> bool:
+    # check if the specified directory is a git repository.
+    return os.path.isdir(os.path.join(path, ".git"))
+
+
 def normalize_git_remote(url: str) -> str:
     """
     Normalize git remote URL to consistent format.

@@ -41,7 +41,7 @@ from .reporting.parser import OpengrepParser, SyftParser, GrypeParser, Truffleho
 from .reporting.report_builder import report_builder
 
 from .utils.git import GitRepoInfo, set_git_safe_directory
-from .utils.project_id import derive_project_id
+from .utils.project_id import derive_project_id, is_git
 from .utils.environment import is_running_in_docker, check_tool_available
 
 from .waivers import load_waiver_file, apply_waivers_to_findings, generate_benchmark_yaml
@@ -164,7 +164,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--project-id",
+        "--project_id",
         action="store",
         default=None,
         help="explicit project identifier (required for non-git directories). "
@@ -359,6 +359,14 @@ def main(argv: list[str] | None = None) -> int:
         logger.error(f"Source code path {args.source} does not exist.")
         return 1
 
+    # check if source is a git repository
+    if is_git(args.source):
+        is_git_repo = True
+        logger.info(f"Source is a git repository: {args.source}")
+    else:
+        is_git_repo = False
+        logger.info(f"Source is not a git repository: {args.source}")
+
     if args.tool_versions:
         invoked_pkg = __package__ or (sys.modules[__name__].__spec__.name if sys.modules[__name__].__spec__ else None)
         print(f"{invoked_pkg} {__version__}")
@@ -455,7 +463,7 @@ def main(argv: list[str] | None = None) -> int:
         """run trufflehog scan and processing."""
         logger.info(f"Running Trufflehog scan on {args.source}")
         scan_start = time.perf_counter()
-        data = trufflehog_run_scan(args.source, args.trufflehog_args, tools_output_dir)
+        data = trufflehog_run_scan(args.source, args.trufflehog_args, tools_output_dir, git_repo=is_git_repo)
         scan_duration = time.perf_counter() - scan_start
         logger.info(f"Trufflehog scan completed in {scan_duration:.2f} seconds")
         tp = TrufflehogParser(report_directory=tools_output_dir, report_filename="trufflehog.json", data=data)
@@ -630,7 +638,7 @@ def main(argv: list[str] | None = None) -> int:
 
     #security gate - check thresholds
     threshold_exceeded = False
-    if args.failure_threshold:
+    if args.failure_threshold and args.failure_threshold != "none":
         logger.info(f"Applying failure threshold of {args.failure_threshold}")
         
         if opengrep_data and opengrep_data.get("results"):
