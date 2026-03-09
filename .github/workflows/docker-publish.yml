@@ -83,7 +83,7 @@ jobs:
             type=raw,value=dev-${{ github.sha }}
 
       - name: Build and (optionally) push image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           # Push only for v* tags whose commit is on main
           push: ${{ steps.is-release.outputs.is_release == 'true' && steps.on-main.outputs.on_main == 'true' }}
