@@ -63,7 +63,7 @@ jobs:
       - name: Extract metadata (tags, labels) for releases
         if: steps.is-release.outputs.is_release == 'true'
         id: meta-release
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: appsecthings/dsoinabox
           tags: |
@@ -75,7 +75,7 @@ jobs:
       - name: Extract metadata (tags, labels) for dev / non-release builds
         if: steps.is-release.outputs.is_release == 'false'
         id: meta-dev
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: appsecthings/dsoinabox
           tags: |
