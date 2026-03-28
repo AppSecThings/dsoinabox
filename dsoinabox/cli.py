@@ -54,6 +54,19 @@ logging.basicConfig(
 logger = logging.getLogger()
 default_waiver_file = ".dsoinabox_waivers.yaml"
 
+def resolve_log_level(*, verbose: bool, quiet: bool) -> int:
+    """resolve log level from verbosity flags."""
+    if verbose:
+        return logging.DEBUG
+    if quiet:
+        return logging.WARNING
+    return logging.INFO
+
+def configure_logging(*, verbose: bool, quiet: bool) -> None:
+    """configure root logger verbosity for this run."""
+    level = resolve_log_level(verbose=verbose, quiet=quiet)
+    logger.setLevel(level)
+
 def build_parser() -> argparse.ArgumentParser:
     """build top-level arg parser"""
     parser = argparse.ArgumentParser(
@@ -71,6 +84,18 @@ def build_parser() -> argparse.ArgumentParser:
         "--tool_versions",
         action="store_true",
         help="show tool versions and exit.",
+    )
+    
+    verbosity_group = parser.add_mutually_exclusive_group()
+    verbosity_group.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="enable verbose logging (DEBUG level).",
+    )
+    verbosity_group.add_argument(
+        "--quiet", "-q",
+        action="store_true",
+        help="reduce logging output (WARNING level and above).",
     )
 
     # tool selection
@@ -276,6 +301,7 @@ def main(argv: list[str] | None = None) -> int:
 
     #parse args
     args = parser.parse_args(argv)
+    configure_logging(verbose=args.verbose, quiet=args.quiet)
 
     # Detect Docker environment and set defaults
     in_docker = is_running_in_docker()
