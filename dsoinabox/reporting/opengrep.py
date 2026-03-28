@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path, PurePosixPath
 from types import SimpleNamespace
 
-from ..utils.runner import run_cmd
+from ..utils.git import run_git_cmd
 
 #---------------- shared helpers ----------------
 
@@ -13,9 +13,14 @@ def _b(s):
     return s if isinstance(s, (bytes, bytearray)) else s.encode("utf-8")
 
 def _git(repo_root, *args, check=True):
-    cmd = ["git", "-C", repo_root] + list(args)
     try:
-        returncode, stdout, stderr = run_cmd(cmd, text=False, check=check)
+        returncode, stdout, stderr = run_git_cmd(
+            list(args),
+            cwd=repo_root,
+            repo_path=repo_root,
+            text=False,
+            check=check,
+        )
         return SimpleNamespace(returncode=returncode, stdout=stdout, stderr=stderr)
     except subprocess.CalledProcessError:
         #re-raise to maintain compatibility with existing exception handling

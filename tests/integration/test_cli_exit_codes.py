@@ -77,14 +77,34 @@ class TestCLIExitCodes:
         import dsoinabox.utils.runner
         import dsoinabox.scanners.base
         import dsoinabox.utils.git
+        import dsoinabox.utils.project_id
         import dsoinabox.reporting.trufflehog
         import dsoinabox.reporting.opengrep
         
         monkeypatch.setattr(dsoinabox.utils.runner, "run_cmd", empty_runner)
         monkeypatch.setattr(dsoinabox.scanners.base, "run_cmd", empty_runner)
         monkeypatch.setattr(dsoinabox.utils.git, "run_cmd", empty_runner)
-        monkeypatch.setattr(dsoinabox.reporting.trufflehog, "run_cmd", empty_runner)
-        monkeypatch.setattr(dsoinabox.reporting.opengrep, "run_cmd", empty_runner)
+        monkeypatch.setattr(
+            dsoinabox.utils.project_id,
+            "run_git_cmd",
+            lambda args, *, repo_path=None, cwd=None, text=True, check=False: empty_runner(
+                ["git"] + list(args), cwd=cwd, text=text, check=check
+            ),
+        )
+        monkeypatch.setattr(
+            dsoinabox.reporting.trufflehog,
+            "run_git_cmd",
+            lambda args, *, repo_path=None, cwd=None, text=True, check=False: empty_runner(
+                ["git"] + list(args), cwd=cwd, text=text, check=check
+            ),
+        )
+        monkeypatch.setattr(
+            dsoinabox.reporting.opengrep,
+            "run_git_cmd",
+            lambda args, *, repo_path=None, cwd=None, text=True, check=False: empty_runner(
+                ["git"] + list(args), cwd=cwd, text=text, check=check
+            ),
+        )
         
         exit_code = main([
             "--source", str(source_dir),
@@ -124,14 +144,34 @@ class TestCLIExitCodes:
         import dsoinabox.utils.runner
         import dsoinabox.scanners.base
         import dsoinabox.utils.git
+        import dsoinabox.utils.project_id
         import dsoinabox.reporting.trufflehog
         import dsoinabox.reporting.opengrep
         
         monkeypatch.setattr(dsoinabox.utils.runner, "run_cmd", failing_runner)
         monkeypatch.setattr(dsoinabox.scanners.base, "run_cmd", failing_runner)
         monkeypatch.setattr(dsoinabox.utils.git, "run_cmd", failing_runner)
-        monkeypatch.setattr(dsoinabox.reporting.trufflehog, "run_cmd", failing_runner)
-        monkeypatch.setattr(dsoinabox.reporting.opengrep, "run_cmd", failing_runner)
+        monkeypatch.setattr(
+            dsoinabox.utils.project_id,
+            "run_git_cmd",
+            lambda args, *, repo_path=None, cwd=None, text=True, check=False: failing_runner(
+                ["git"] + list(args), cwd=cwd, text=text, check=check
+            ),
+        )
+        monkeypatch.setattr(
+            dsoinabox.reporting.trufflehog,
+            "run_git_cmd",
+            lambda args, *, repo_path=None, cwd=None, text=True, check=False: failing_runner(
+                ["git"] + list(args), cwd=cwd, text=text, check=check
+            ),
+        )
+        monkeypatch.setattr(
+            dsoinabox.reporting.opengrep,
+            "run_git_cmd",
+            lambda args, *, repo_path=None, cwd=None, text=True, check=False: failing_runner(
+                ["git"] + list(args), cwd=cwd, text=text, check=check
+            ),
+        )
         
         exit_code = main([
             "--source", str(source_dir),
@@ -325,14 +365,34 @@ class TestCLIExitCodes:
         import dsoinabox.utils.runner
         import dsoinabox.scanners.base
         import dsoinabox.utils.git
+        import dsoinabox.utils.project_id
         import dsoinabox.reporting.trufflehog
         import dsoinabox.reporting.opengrep
         
         monkeypatch.setattr(dsoinabox.utils.runner, "run_cmd", empty_trufflehog_runner)
         monkeypatch.setattr(dsoinabox.scanners.base, "run_cmd", empty_trufflehog_runner)
         monkeypatch.setattr(dsoinabox.utils.git, "run_cmd", empty_trufflehog_runner)
-        monkeypatch.setattr(dsoinabox.reporting.trufflehog, "run_cmd", empty_trufflehog_runner)
-        monkeypatch.setattr(dsoinabox.reporting.opengrep, "run_cmd", empty_trufflehog_runner)
+        monkeypatch.setattr(
+            dsoinabox.utils.project_id,
+            "run_git_cmd",
+            lambda args, *, repo_path=None, cwd=None, text=True, check=False: empty_trufflehog_runner(
+                ["git"] + list(args), cwd=cwd, text=text, check=check
+            ),
+        )
+        monkeypatch.setattr(
+            dsoinabox.reporting.trufflehog,
+            "run_git_cmd",
+            lambda args, *, repo_path=None, cwd=None, text=True, check=False: empty_trufflehog_runner(
+                ["git"] + list(args), cwd=cwd, text=text, check=check
+            ),
+        )
+        monkeypatch.setattr(
+            dsoinabox.reporting.opengrep,
+            "run_git_cmd",
+            lambda args, *, repo_path=None, cwd=None, text=True, check=False: empty_trufflehog_runner(
+                ["git"] + list(args), cwd=cwd, text=text, check=check
+            ),
+        )
         
         # mock check_tool_available to always return True for tests
         import dsoinabox.utils.environment

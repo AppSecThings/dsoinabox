@@ -1,6 +1,8 @@
 """cli smoke tests for main flow"""
 
 import json
+import os
+import subprocess
 import pytest
 
 from dsoinabox.cli import main
@@ -110,3 +112,114 @@ def test_cli_scan_non_git_directory(tmp_project, fake_runner, monkeypatch):
     json_files = list(report_dir.rglob("dsoinabox_unified_report_*.json"))
     assert len(json_files) > 0, "Should generate JSON report for non-git directory"
 
+    with open(json_files[0], "r") as f:
+        report_data = json.load(f)
+    assert report_data["metadata"]["git_repo_info"] is None
+
+
+@pytest.mark.integration
+def test_cli_does_not_run_git_config_global(tmp_project, monkeypatch):
+    """Ensure CLI never executes git config --global during normal run."""
+    source_dir = tmp_project / "source"
+    source_dir.mkdir()
+    (source_dir / "test.py").write_text("print('hello')\n")
+
+    seen_commands: list[list[str]] = []
+
+    def tracked_runner(cmd, *, cwd=None, env=None, timeout=None, text=True, check=False):
+        seen_commands.append(list(cmd))
+        if not cmd:
+            return (1, "" if text else b"", "Empty command" if text else b"Empty command")
+        if cmd[0] == "opengrep" and "--json-output=" in " ".join(cmd):
+            for arg in cmd:
+                if arg.startswith("--json-output="):
+                    output_file = arg.split("=", 1)[1]
+                    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+                    with open(output_file, "w") as f:
+                        f.write('{"results": []}')
+                    break
+            return (0, "" if text else b"", "" if text else b"")
+        if cmd[0] == "checkov" and "--output-file-path" in " ".join(cmd):
+            cmd_str = " ".join(cmd)
+            output_dir = cmd_str.split("--output-file-path", 1)[1].strip().split()[0]
+            os.makedirs(output_dir, exist_ok=True)
+            with open(os.path.join(output_dir, "results_sarif.sarif"), "w") as f:
+                json.dump({"version": "2.1.0", "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json", "runs": []}, f)
+            return (0, "" if text else b"", "" if text else b"")
+        return (0, "{}" if text else b"{}", "" if text else b"")
+
+    def tracked_git_runner(args, *, repo_path=None, cwd=None, text=True, check=False):
+        return tracked_runner(["git"] + list(args), cwd=cwd, text=text, check=check)
+
+    import dsoinabox.utils.runner
+    import dsoinabox.scanners.base
+    import dsoinabox.utils.git
+    import dsoinabox.utils.project_id
+    import dsoinabox.reporting.trufflehog
+    import dsoinabox.reporting.opengrep
+    import dsoinabox.utils.environment
+    import dsoinabox.cli
+
+    monkeypatch.setattr(dsoinabox.utils.runner, "run_cmd", tracked_runner)
+    monkeypatch.setattr(dsoinabox.scanners.base, "run_cmd", tracked_runner)
+    monkeypatch.setattr(dsoinabox.utils.git, "run_cmd", tracked_runner)
+    monkeypatch.setattr(dsoinabox.utils.project_id, "run_git_cmd", tracked_git_runner)
+    monkeypatch.setattr(dsoinabox.reporting.trufflehog, "run_git_cmd", tracked_git_runner)
+    monkeypatch.setattr(dsoinabox.reporting.opengrep, "run_git_cmd", tracked_git_runner)
+    monkeypatch.setattr(dsoinabox.utils.environment, "check_tool_available", lambda tool_name: True)
+    monkeypatch.setattr(dsoinabox.cli, "check_tool_available", lambda tool_name: True)
+
+    exit_code = main([
+        "--source", str(source_dir),
+        "--output", "json",
+        "--report_directory", str(tmp_project / "reports"),
+        "--show_findings", "False",
+        "--project_id", "test-project",
+    ])
+
+    assert exit_code == 0
+    assert not any(
+        len(cmd) >= 3 and cmd[0] == "git" and cmd[1] == "config" and cmd[2] == "--global"
+        for cmd in seen_commands
+    )
+
+
+@pytest.mark.integration
+def test_cli_git_repo_metadata_still_resolves(tmp_project, monkeypatch):
+    """Git metadata and derived project ID should still work for git sources."""
+    source_dir = tmp_project / "source"
+    source_dir.mkdir()
+    (source_dir / "test.py").write_text("print('hello')\n")
+
+    subprocess.run(["git", "init"], cwd=source_dir, check=True, capture_output=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=source_dir, check=True)
+    subprocess.run(["git", "config", "user.name", "Test User"], cwd=source_dir, check=True)
+    subprocess.run(["git", "remote", "add", "origin", "https://github.com/acme/repo.git"], cwd=source_dir, check=True, capture_output=True)
+    subprocess.run(["git", "add", "test.py"], cwd=source_dir, check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "init"], cwd=source_dir, check=True, capture_output=True)
+
+    import dsoinabox.cli
+    import dsoinabox.utils.environment
+
+    monkeypatch.setattr(dsoinabox.utils.environment, "check_tool_available", lambda tool_name: True)
+    monkeypatch.setattr(dsoinabox.cli, "check_tool_available", lambda tool_name: True)
+    monkeypatch.setattr(dsoinabox.cli, "syft_dir_scan", lambda source, extra_args, out_dir: {"artifacts": []})
+
+    exit_code = main([
+        "--source", str(source_dir),
+        "--tools", "syft",
+        "--output", "json",
+        "--report_directory", str(tmp_project / "reports"),
+        "--show_findings", "False",
+    ])
+
+    assert exit_code == 0
+    json_files = list((tmp_project / "reports").rglob("dsoinabox_unified_report_*.json"))
+    assert len(json_files) > 0
+    with open(json_files[0], "r") as f:
+        report_data = json.load(f)
+
+    git_repo_info = report_data["metadata"]["git_repo_info"]
+    assert git_repo_info is not None
+    assert git_repo_info["origin_url"] == "https://github.com/acme/repo"
+    assert git_repo_info["last_commit_id"]

@@ -184,19 +184,25 @@ def fake_runner(golden_dir, monkeypatch):
         else:
             return (0, stdout_json.encode(), b"")
     
-    # monkeypatch run_cmd in all modules where it's imported
+    # monkeypatch command runners in all modules where they're imported
     # necessary because python creates local references on import
     import dsoinabox.utils.runner
     import dsoinabox.scanners.base
     import dsoinabox.utils.git
+    import dsoinabox.utils.project_id
     import dsoinabox.reporting.trufflehog
     import dsoinabox.reporting.opengrep
     
     monkeypatch.setattr(dsoinabox.utils.runner, "run_cmd", _fake_run_cmd)
     monkeypatch.setattr(dsoinabox.scanners.base, "run_cmd", _fake_run_cmd)
     monkeypatch.setattr(dsoinabox.utils.git, "run_cmd", _fake_run_cmd)
-    monkeypatch.setattr(dsoinabox.reporting.trufflehog, "run_cmd", _fake_run_cmd)
-    monkeypatch.setattr(dsoinabox.reporting.opengrep, "run_cmd", _fake_run_cmd)
+
+    def _fake_run_git_cmd(args, *, repo_path=None, cwd=None, text=True, check=False):
+        return _fake_run_cmd(["git"] + list(args), cwd=cwd, text=text, check=check)
+
+    monkeypatch.setattr(dsoinabox.utils.project_id, "run_git_cmd", _fake_run_git_cmd)
+    monkeypatch.setattr(dsoinabox.reporting.trufflehog, "run_git_cmd", _fake_run_git_cmd)
+    monkeypatch.setattr(dsoinabox.reporting.opengrep, "run_git_cmd", _fake_run_git_cmd)
     
     # mock check_tool_available to always return True for tests
     # allows tests to run without requiring actual tools installed
@@ -206,4 +212,3 @@ def fake_runner(golden_dir, monkeypatch):
     monkeypatch.setattr(dsoinabox.cli, "check_tool_available", lambda tool_name: True)
     
     return _fake_run_cmd
-
