@@ -225,7 +225,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--output", "-o",
         action="store",
         default="html",
-        help="output format(s) for the report. comma-separated list of formats: html, jenkins_html, json, sarif. default is html. example: --output json,html,sarif",
+        help="output format(s) for the report. comma-separated list of formats: html, jenkins_html, json, ndjson, sarif. default is html. example: --output json,ndjson,html,sarif",
     )
 
     parser.add_argument(
@@ -690,7 +690,7 @@ def main(argv: list[str] | None = None) -> int:
     # Parse output formats (comma-separated)
     output_formats = [fmt.strip().lower() for fmt in args.output.split(",")]
     # Validate output formats
-    valid_formats = {"html", "jenkins_html", "json", "sarif"}
+    valid_formats = {"html", "jenkins_html", "json", "ndjson", "sarif"}
     for fmt in output_formats:
         if fmt not in valid_formats:
             logger.error(f"Invalid output format: {fmt}. Supported formats: {', '.join(sorted(valid_formats))}")
@@ -731,4 +731,3 @@ def main(argv: list[str] | None = None) -> int:
     
     logger.info("All scans completed successfully.")
     return 0
-

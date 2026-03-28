@@ -57,7 +57,7 @@ docker run --rm \
   appsecthings/dsoinabox:latest \
   --show_findings false \
   -t all \
-  -o sarif,html \
+  -o sarif,html,ndjson \
   --tool_output
 ```
 
@@ -70,7 +70,7 @@ docker run --rm \
   appsecthings/dsoinabox:latest \
   --show_findings false \
   -t all \
-  -o sarif,html \
+  -o sarif,html,ndjson \
   --tool_output
 ```
 
@@ -78,7 +78,7 @@ This command:
 - Mounts your code to `/scan_target` inside the container
 - Mounts a reports directory to `/reports` for output
 - Runs all scanners (`-t all`)
-- Generates reports in both SARIF and HTML formats (`-o sarif,html`)
+- Generates reports in SARIF, HTML, and NDJSON formats (`-o sarif,html,ndjson`)
 - Suppresses CLI output of findings (`--show_findings false`)
 - Preserves raw tool output files (`--tool_output`)
 
@@ -251,8 +251,8 @@ While some tools (Syft, Opengrep, Checkov) have Windows binaries available, othe
 
 - `--output`, `-o` (default: `html`)
   - Output format(s) for the report
-  - Comma-separated list: `html`, `jenkins_html`, `json`, `sarif`
-  - Example: `--output json,html,sarif`
+  - Comma-separated list: `html`, `jenkins_html`, `json`, `ndjson`, `sarif`
+  - Example: `--output json,ndjson,html,sarif`
 
 - `--tool_output` (default: `False`)
   - If enabled, keeps tool output files in `tools_output` subdirectory
@@ -325,6 +325,12 @@ Machine-readable JSON format containing all scan data:
 - Metadata (scan timestamp, git repo info)
 - Findings from all scanners
 - Tool-specific data structures
+
+### NDJSON (`ndjson`)
+Newline-delimited JSON (one JSON object per line), optimized for:
+- Log pipelines and streaming consumers
+- `jq`/shell workflows on large result sets
+- Incremental processing without loading full report into memory
 
 ### SARIF (`sarif`)
 SARIF (Static Analysis Results Interchange Format) output for integration with:
@@ -490,6 +496,7 @@ Reports are generated in the `report_directory` with timestamped filenames:
 reports/
 ├── dsoinabox_unified_report_2025_11_13T22_55_15.html
 ├── dsoinabox_unified_report_2025_11_13T22_55_15.json
+├── dsoinabox_unified_report_2025_11_13T22_55_15.ndjson
 ├── dsoinabox_unified_report_2025_11_13T22_55_15.sarif
 ├── benchmark.yaml  # Only if --benchmark is enabled
 └── tools_output/  # Only if --tool_output is enabled
@@ -529,5 +536,4 @@ dsoinabox automatically derives project IDs from:
 3. Explicit `--project-id` argument (if provided)
 
 This ensures consistent fingerprinting across scans and environments.
-
 

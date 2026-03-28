@@ -118,6 +118,35 @@ def test_cli_scan_non_git_directory(tmp_project, fake_runner, monkeypatch):
 
 
 @pytest.mark.integration
+def test_cli_scan_ndjson_output(tmp_project, fake_runner, monkeypatch):
+    """test basic cli scan flow with NDJSON output."""
+    source_dir = tmp_project / "source"
+    source_dir.mkdir()
+    (source_dir / "test.py").write_text("print('hello')\n")
+
+    exit_code = main([
+        "--source", str(source_dir),
+        "--output", "ndjson",
+        "--report_directory", str(tmp_project / "reports"),
+        "--show_findings", "False",
+        "--project_id", "test-project",
+    ])
+
+    assert exit_code == 0
+
+    report_dir = tmp_project / "reports"
+    ndjson_files = list(report_dir.rglob("dsoinabox_unified_report_*.ndjson"))
+    assert len(ndjson_files) > 0, "Should generate at least one NDJSON report file"
+
+    with open(ndjson_files[0], "r") as f:
+        lines = [line.strip() for line in f if line.strip()]
+
+    assert len(lines) > 0, "NDJSON report should contain at least one line"
+    first_line = json.loads(lines[0])
+    assert first_line.get("type") == "metadata", "First NDJSON line should be metadata"
+
+
+@pytest.mark.integration
 def test_cli_does_not_run_git_config_global(tmp_project, monkeypatch):
     """Ensure CLI never executes git config --global during normal run."""
     source_dir = tmp_project / "source"
