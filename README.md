@@ -144,5 +144,6 @@ Exit codes:
 - [Runtime Config (`.dsoinabox.yaml`)](docs/config/README.md)
 - [Waivers (`.dsoinabox_waivers.yaml`)](docs/waivers/README.md)
 - [Output Formats and Report Layout](docs/output/README.md)
+- [CI Examples (GitHub Actions, GitLab CI, Jenkins, Azure DevOps)](docs/ci/README.md)
 - [Usage Examples](docs/examples/README.md)
 - [Architecture Notes](docs/architecture/README.md)

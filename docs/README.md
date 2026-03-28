@@ -9,6 +9,7 @@ Detailed guides and references live here so the root README stays concise.
 - `config/`: `.dsoinabox.yaml` behavior, precedence, and examples
 - `waivers/`: waiver schema, matching behavior, and examples
 - `output/`: output format behavior and generated report layout
+- `ci/`: platform-native CI snippets for GitHub Actions, GitLab CI, Jenkins, and Azure DevOps
 - `examples/`: copy/paste command examples for common workflows
 - `architecture/`: scanner orchestration and project ID behavior
 - `demo/`: screenshot and visual demo assets used by the root README
