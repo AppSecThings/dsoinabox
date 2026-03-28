@@ -132,7 +132,7 @@ dsoinabox --source /path/to/code --report_directory /path/to/reports
 - Skip copying reports to `/reports` mount (Docker-only feature)
 
 **Prerequisites for Direct Usage**:
-- Python 3.11+
+- Python 3.12+
 - All scanner tools installed and in PATH:
   - `trufflehog`
   - `opengrep`
@@ -536,4 +536,3 @@ dsoinabox automatically derives project IDs from:
 3. Explicit `--project-id` argument (if provided)
 
 This ensures consistent fingerprinting across scans and environments.
-
