@@ -2,11 +2,32 @@
 
 Run best-of-breed OSS AppSec scanners through one container.
 
-- Get one normalized output and one policy contract
-- Use one waiver file instead of five
+- Get one normalized severity model and one policy contract
+- Use one waiver file instead of five scanner-specific ignore systems
+- Keep one benchmark and one build-breaking contract across tools
 - Drop it into any CI with minimal CI-specific logic
 
 Use the best tool for each job, without inheriting five incompatible workflows.
+
+## Why DSOInABox?
+
+Every scanner has different:
+
+- severity scales
+- output shapes
+- ignore mechanisms
+- baseline handling
+
+Most teams can wire scanners together. The hard part is making exceptions and enforcement coherent across all of them.
+
+DSOInABox gives you:
+
+- one normalized severity model
+- one waiver file for false positives, risk acceptance, and policy waivers
+- one benchmark mechanism for baselining and expiration-driven revalidation
+- one build-breaking contract for CI/CD
+
+This unified exception model is the core differentiator: path exclusions, waiver lifecycle, benchmark baselines, and policy enforcement all run through one system.
 
 ## Demo
 
