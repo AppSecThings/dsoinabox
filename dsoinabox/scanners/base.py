@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shlex
 import sys
 from types import SimpleNamespace
 
@@ -21,9 +22,23 @@ class BaseScanner:
         self.cli_name = cli_name
         self.help_command = help_command
 
-    def _run_command(self, args: str) -> SimpleNamespace:
+    def _normalize_args(self, args: str | list[str] | tuple[str, ...] | None) -> list[str]:
+        """normalize args into tokenized list suitable for subprocess calls."""
+        if args is None:
+            return []
+        if isinstance(args, str):
+            return shlex.split(args)
+        return [str(arg) for arg in args]
+
+    def _parse_extra_tool_args(self, extra_tool_args: str | list[str] | tuple[str, ...] | None) -> list[str]:
+        """parse optional extra tool args from CLI into a token list."""
+        if not extra_tool_args:
+            return []
+        return self._normalize_args(extra_tool_args)
+
+    def _run_command(self, args: str | list[str] | tuple[str, ...] | None) -> SimpleNamespace:
         """run the cli tool with the provided args."""
-        command = [self.cli_name] + args.split()
+        command = [self.cli_name] + self._normalize_args(args)
         returncode, stdout, stderr = run_cmd(command)
         return SimpleNamespace(returncode=returncode, stdout=stdout, stderr=stderr)
 
@@ -44,4 +59,3 @@ class BaseScanner:
         else:
             sys.stderr.write(result.stderr)
             raise ScannerError(f"{self.cli_name} help failed: {result.stderr}")
-

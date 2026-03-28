@@ -12,7 +12,12 @@ class CheckovScanner(BaseScanner):
     def __init__(self):
         super().__init__("checkov", help_command="--help")
 
-    def run_scan(self, source_path: str, extra_tool_args: str = "", report_directory: str = "reports") -> dict:
+    def run_scan(
+        self,
+        source_path: str,
+        extra_tool_args: str | list[str] | tuple[str, ...] | None = "",
+        report_directory: str = "reports",
+    ) -> dict:
         """run the checkov cli scan."""
         os.makedirs(report_directory, exist_ok=True)
         
@@ -25,9 +30,17 @@ class CheckovScanner(BaseScanner):
         
         checkov_output_dir_abs = os.path.abspath(checkov_output_dir)
         
-        args = f"--soft-fail --quiet -d {source_path} --output sarif --output-file-path {checkov_output_dir_abs}"
-        if extra_tool_args:
-            args += f" {extra_tool_args}"
+        args = [
+            "--soft-fail",
+            "--quiet",
+            "-d",
+            source_path,
+            "--output",
+            "sarif",
+            "--output-file-path",
+            checkov_output_dir_abs,
+        ]
+        args.extend(self._parse_extra_tool_args(extra_tool_args))
         result = self._run_command(args)
         
         if result.returncode == 0:
@@ -66,4 +79,3 @@ _scanner = CheckovScanner()
 show_version = _scanner.show_version
 show_help = _scanner.show_help
 run_scan = _scanner.run_scan
-
