@@ -6,7 +6,6 @@ import argparse
 import sys
 import os
 import shutil
-import json
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -43,6 +42,16 @@ from .reporting.report_builder import report_builder
 from .utils.git import GitRepoInfo, set_git_safe_directory
 from .utils.project_id import derive_project_id, is_git
 from .utils.environment import is_running_in_docker, check_tool_available
+from .utils.config import (
+    DEFAULT_CONFIG_FILE,
+    CONFIG_ENV_VAR,
+    MERGEABLE_KEYS,
+    read_env_overrides,
+    resolve_config_path,
+    load_config_file,
+    str_to_bool,
+    write_default_config,
+)
 
 from .waivers import load_waiver_file, apply_waivers_to_findings, generate_benchmark_yaml
 
@@ -53,6 +62,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger()
 default_waiver_file = ".dsoinabox_waivers.yaml"
+default_repo_config_file = DEFAULT_CONFIG_FILE
 
 def resolve_log_level(*, verbose: bool, quiet: bool) -> int:
     """resolve log level from verbosity flags."""
@@ -84,6 +94,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--tool_versions",
         action="store_true",
         help="show tool versions and exit.",
+    )
+
+    parser.add_argument(
+        "--init-config",
+        action="store_true",
+        dest="init_config",
+        help=(
+            f"write a starter runtime config file ({default_repo_config_file}) and exit. "
+            "respects --config_file and DSOINABOX_CONFIG."
+        ),
     )
     
     verbosity_group = parser.add_mutually_exclusive_group()
@@ -179,7 +199,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="extra args to pass to checkov",
     )
 
-
+    parser.add_argument(
+        "--config_file",
+        action="store",
+        default=None,
+        help=(
+            f"path to runtime config file (YAML). default is '{default_repo_config_file}' "
+            f"relative to --source. env override: {CONFIG_ENV_VAR}."
+        ),
+    )
 
     parser.add_argument(
         "--source",
@@ -216,18 +244,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="fail the scan if any secrets are found.",
     )
-
-    def str_to_bool(v):
-        if isinstance(v, bool):
-            return v
-        if v is None:
-            return True  # flag present without value, default True
-        if isinstance(v, str):
-            if v.lower() in ('yes', 'true', 't', 'y', '1'):
-                return True
-            elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-                return False
-        raise argparse.ArgumentTypeError('Boolean value expected.')
 
     parser.add_argument(
         "--show_findings",
@@ -277,7 +293,15 @@ def prep_env(args: argparse.Namespace):
     tools_output_dir = os.path.join(args.report_directory, "tools_output")
     os.makedirs(tools_output_dir, exist_ok=True)
 
-
+def parse_cli_overrides(argv: list[str]) -> dict[str, object]:
+    """parse only explicitly provided CLI values (suppress parser defaults)."""
+    parser = build_parser()
+    for action in parser._actions:
+        if action.dest in {"help"}:
+            continue
+        action.default = argparse.SUPPRESS
+    parsed = parser.parse_args(argv)
+    return vars(parsed)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -299,8 +323,9 @@ def main(argv: list[str] | None = None) -> int:
         parser.print_help()
         return 0
 
-    #parse args
+    #parse args and explicit CLI overrides
     args = parser.parse_args(argv)
+    cli_overrides = parse_cli_overrides(argv)
     configure_logging(verbose=args.verbose, quiet=args.quiet)
 
     # Detect Docker environment and set defaults
@@ -310,6 +335,43 @@ def main(argv: list[str] | None = None) -> int:
     else:
         logger.debug("Running outside Docker container")
     
+    env_overrides = read_env_overrides()
+
+    # Resolve source first so config file lookup works from repo root
+    source_for_config = cli_overrides.get("source") or env_overrides.get("source")
+    if source_for_config is None:
+        source_for_config = "/scan_target" if in_docker else "."
+
+    config_file_override = cli_overrides.get("config_file") or env_overrides.get("config_file")
+    config_path = resolve_config_path(source=str(source_for_config), explicit_path=config_file_override)
+    config_values: dict[str, object] = {}
+    if config_path.exists():
+        try:
+            config_values = load_config_file(config_path)
+            logger.info(f"Loaded runtime config: {config_path}")
+        except Exception as e:
+            logger.error(f"Failed to load config file {config_path}: {e}")
+            return 1
+    elif config_file_override:
+        logger.error(f"Configured runtime config file was not found: {config_path}")
+        return 1
+
+    merged_values: dict[str, object] = {}
+    merged_values.update(config_values)
+    merged_values.update(env_overrides)
+    merged_values.update(cli_overrides)
+    for key in MERGEABLE_KEYS:
+        if key in merged_values:
+            setattr(args, key, merged_values[key])
+
+    if args.init_config:
+        created = write_default_config(config_path, overwrite=False)
+        if created:
+            logger.info(f"Created starter config at: {config_path}")
+        else:
+            logger.info(f"Config already exists, not overwriting: {config_path}")
+        return 0
+
     # Set default source path based on environment
     if args.source is None:
         args.source = "/scan_target" if in_docker else "."

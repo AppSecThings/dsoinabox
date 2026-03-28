@@ -264,6 +264,16 @@ While some tools (Syft, Opengrep, Checkov) have Windows binaries available, othe
   - Explicit project identifier (required for non-git directories)
   - If not provided, will be derived from git remote or initial commit
 
+- `--config_file` (default: `.dsoinabox.yaml` relative to `--source`)
+  - Path to runtime defaults file (YAML)
+  - Explicit file can also be set via `DSOINABOX_CONFIG`
+  - Merge order is: config file defaults -> environment variables -> CLI flags
+
+- `--init-config`
+  - Writes a starter config file and exits
+  - Uses `--config_file` (or `DSOINABOX_CONFIG`) if provided
+  - Does not overwrite an existing file
+
 ### Security Gating
 
 - `--failure_threshold` (default: `none`)
@@ -301,6 +311,57 @@ Each scanner supports additional arguments:
 - `--syft_args`: Extra args to pass to Syft
 - `--grype_args`: Extra args to pass to Grype
 - `--checkov_args`: Extra args to pass to Checkov
+
+## Runtime Config File (`.dsoinabox.yaml`)
+
+To reduce repeated CLI flags in Docker and CI runs, add a repo-level `.dsoinabox.yaml`.
+
+Example:
+
+```yaml
+tools: [opengrep, checkov, trufflehog]
+failure_threshold: high
+fail_on_secrets: true
+waiver_file: .dsoinabox_waivers.yaml
+output: [json, sarif, html]
+show_findings: false
+tool_output: true
+
+# You can use either top-level *_args keys...
+opengrep_args: "--severity high"
+checkov_args: "--framework terraform --quiet"
+
+# ...or nested tool_args / extra_tool_args maps
+tool_args:
+  trufflehog: "--filter-unverified"
+```
+
+Supported top-level keys:
+- `source`
+- `report_directory`
+- `project_id`
+- `tools`
+- `failure_threshold`
+- `fail_on_secrets`
+- `show_findings`
+- `waiver_file`
+- `output`
+- `tool_output`
+- `benchmark`
+- `trufflehog_args`
+- `opengrep_args`
+- `syft_args`
+- `grype_args`
+- `checkov_args`
+
+Environment variable overrides (`DSOINABOX_*`) are supported for these fields, e.g.:
+- `DSOINABOX_TOOLS`
+- `DSOINABOX_FAILURE_THRESHOLD`
+- `DSOINABOX_FAIL_ON_SECRETS`
+- `DSOINABOX_WAIVER_FILE`
+- `DSOINABOX_TRUFFLEHOG_ARGS` (and other `*_ARGS` variables)
+
+For more details and examples, see `docs/config/README.md`.
 
 ### Help and Version
 
@@ -341,6 +402,7 @@ SARIF (Static Analysis Results Interchange Format) output for integration with:
 ## Waiver System
 
 dsoinabox supports a YAML-based waiver system for managing false positives and risk acceptance. Create a `.dsoinabox_waivers.yaml` file in your repository root.
+Detailed waiver documentation and examples are in `docs/waivers/README.md`.
 
 ### Waiver File Structure
 
