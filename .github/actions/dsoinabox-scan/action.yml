@@ -39,9 +39,7 @@ runs:
           while IFS= read -r -d '' arg; do
             extra_args+=("$arg")
           done < <(
-            python3 -c 'import os, shlex, sys
-for arg in shlex.split(os.environ["INPUT_EXTRA_ARGS"]):
-    sys.stdout.buffer.write(arg.encode() + b"\0")'
+            python3 -c 'import os, shlex, sys; [sys.stdout.buffer.write(arg.encode() + b"\0") for arg in shlex.split(os.environ["INPUT_EXTRA_ARGS"])]'
           )
         fi
 
