@@ -43,8 +43,9 @@ jobs:
           branch="${GITHUB_REF_NAME}"
           previous_version=""
           version_changed="false"
+          publish_image="false"
 
-          if [[ "$branch" == "main" && -n "$EVENT_BEFORE" && "$EVENT_BEFORE" != "0000000000000000000000000000000000000000" ]]; then
+          if [[ -n "$EVENT_BEFORE" && "$EVENT_BEFORE" != "0000000000000000000000000000000000000000" ]]; then
             if git cat-file -e "${EVENT_BEFORE}:pyproject.toml" 2>/dev/null; then
               previous_version="$(
                 git show "${EVENT_BEFORE}:pyproject.toml" | python -c 'import sys, tomllib; print(tomllib.loads(sys.stdin.read())["project"]["version"])'
@@ -52,14 +53,16 @@ jobs:
             fi
           fi
 
-          if [[ "$branch" == "main" ]]; then
-            if [[ -z "$previous_version" || "$previous_version" != "$CURRENT_VERSION" ]]; then
-              version_changed="true"
-            fi
+          if [[ -z "$previous_version" || "$previous_version" != "$CURRENT_VERSION" ]]; then
+            version_changed="true"
           fi
 
+          if [[ "$branch" == "dev" && "$version_changed" == "true" ]]; then
+            publish_image="true"
+          fi
           if [[ "$branch" == "main" && "$version_changed" == "true" ]]; then
             publish_release="true"
+            publish_image="true"
           else
             publish_release="false"
           fi
@@ -68,6 +71,7 @@ jobs:
             echo "branch=${branch}"
             echo "previous_version=${previous_version}"
             echo "version_changed=${version_changed}"
+            echo "publish_image=${publish_image}"
             echo "publish_release=${publish_release}"
           } >> "$GITHUB_OUTPUT"
 
@@ -83,7 +87,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Login to Docker Hub
-        if: github.ref_name == 'dev' || github.ref_name == 'main'
+        if: steps.release.outputs.publish_image == 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -91,6 +95,7 @@ jobs:
 
       - name: Determine Docker tags
         id: docker-tags
+        if: steps.release.outputs.publish_image == 'true'
         env:
           PACKAGE_VERSION: ${{ steps.package-version.outputs.version }}
           PUBLISH_RELEASE: ${{ steps.release.outputs.publish_release }}
@@ -125,6 +130,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Build and (optionally) push image
+        if: steps.release.outputs.publish_image == 'true'
         uses: docker/build-push-action@v6
         with:
           push: true
