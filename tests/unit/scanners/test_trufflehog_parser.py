@@ -36,8 +36,8 @@ def tmp_source_dir(tmp_path, monkeypatch):
 database_url: postgresql://user:pass@localhost/db
 """)
     
-    (config_dir / "credentials.env").write_text("""AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
-AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+    (config_dir / "credentials.env").write_text("""AWS_ACCESS_KEY_ID=EXAMPLEAWSACCESSKEY
+AWS_SECRET_ACCESS_KEY=example-secret-access-key-for-tests
 """)
     
     test_dir = source_dir / "test"
@@ -670,4 +670,3 @@ class TestTrufflehogParserRobustness:
         assert len(result) == 1
         finding = result[0]
         assert "fingerprints" in finding
-

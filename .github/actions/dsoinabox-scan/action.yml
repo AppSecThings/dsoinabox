@@ -24,14 +24,32 @@ runs:
   steps:
     - name: Run dsoinabox in Docker
       shell: bash
+      env:
+        GITHUB_WORKSPACE: ${{ github.workspace }}
+        INPUT_IMAGE: ${{ inputs.image }}
+        INPUT_TARGETS: ${{ inputs.targets }}
+        INPUT_FAILURE_THRESHOLD: ${{ inputs.failure_threshold }}
+        INPUT_EXTRA_ARGS: ${{ inputs.extra_args }}
       run: |
         set -euo pipefail
-        mkdir -p "${{ github.workspace }}/reports"
+        mkdir -p "${GITHUB_WORKSPACE}/reports"
+
+        extra_args=()
+        if [ -n "${INPUT_EXTRA_ARGS}" ]; then
+          while IFS= read -r -d '' arg; do
+            extra_args+=("$arg")
+          done < <(
+            python3 -c 'import os, shlex, sys
+for arg in shlex.split(os.environ["INPUT_EXTRA_ARGS"]):
+    sys.stdout.buffer.write(arg.encode() + b"\0")'
+          )
+        fi
+
         docker run --rm \
-          -v "${{ github.workspace }}:/scan_target" \
-          -v "${{ github.workspace }}/reports:/reports" \
-          "${{ inputs.image }}" \
-          -t "${{ inputs.targets }}" \
+          -v "${GITHUB_WORKSPACE}:/scan_target" \
+          -v "${GITHUB_WORKSPACE}/reports:/reports" \
+          "${INPUT_IMAGE}" \
+          -t "${INPUT_TARGETS}" \
           -o sarif,html \
-          --failure_threshold "${{ inputs.failure_threshold }}" \
-          ${{ inputs.extra_args }}
+          --failure_threshold "${INPUT_FAILURE_THRESHOLD}" \
+          "${extra_args[@]}"

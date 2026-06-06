@@ -904,7 +904,7 @@
                   5
                   </td>
                   <td>AWS</td>
-                  <td><code>AKIA***REDACTED***</code></td>
+                  <td><code>EXAMPLE_AWS_ACCESS_KEY_REDACTED</code></td>
                   <td>
                   
                       <span class="chip chip--bad" title="Verified false">❌ Unverified</span>
@@ -933,7 +933,7 @@
                                   
                                   
                                   <dt>Redacted Secret:</dt>
-                                  <dd><code>AKIA***REDACTED***</code></dd>
+                                  <dd><code>EXAMPLE_AWS_ACCESS_KEY_REDACTED</code></dd>
                                   
                                   
                                   
@@ -2404,7 +2404,7 @@
                   5
                   </td>
                   <td>AWS</td>
-                  <td><code>AKIA***REDACTED***</code></td>
+                  <td><code>EXAMPLE_AWS_ACCESS_KEY_REDACTED</code></td>
                   <td>
                   
                               
@@ -2438,7 +2438,7 @@
                                   
                               
                                   <dt>Redacted Secret:</dt>
-                                  <dd><code>AKIA***REDACTED***</code></dd>
+                                  <dd><code>EXAMPLE_AWS_ACCESS_KEY_REDACTED</code></dd>
                                   
                               
                                   

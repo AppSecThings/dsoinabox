@@ -96,7 +96,7 @@ def minimal_unified_json() -> Dict[str, Any]:
                         }
                     }
                 },
-                "Redacted": "AKIA***REDACTED***",
+                "Redacted": "EXAMPLE_AWS_ACCESS_KEY_REDACTED",
                 "fingerprints": {
                     "secret": "th:1:SECRET:AWS:xyz789"
                 }
@@ -427,4 +427,3 @@ class TestSARIFHelperFunctions:
             "extra": {"severity": "WARNING"}
         }
         assert _extract_severity_from_finding(finding, "opengrep") == "medium"
-
