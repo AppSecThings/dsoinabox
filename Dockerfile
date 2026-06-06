@@ -76,9 +76,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app
 
+ARG APP_UID=1001
+ARG APP_GID=1001
+
 # Minimal deps for TLS trust + git
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates git && \
     rm -rf /var/lib/apt/lists/*
+
+RUN groupadd --gid "${APP_GID}" appuser && \
+    useradd --uid "${APP_UID}" --gid "${APP_GID}" --create-home --shell /usr/sbin/nologin appuser
 
 # Bring in the tools from the "tools" stage
 COPY --from=tools /out/syft /usr/local/bin/syft
@@ -101,6 +107,13 @@ RUN trufflehog --version || (echo "trufflehog not runnable"; exit 1) \
 
 # Copy project source
 COPY . .
+
+RUN chown -R appuser:appuser /app
+
+USER appuser
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+  CMD python -m dsoinabox --help >/dev/null || exit 1
 
 ENTRYPOINT ["python", "-m", "dsoinabox"]
 CMD []

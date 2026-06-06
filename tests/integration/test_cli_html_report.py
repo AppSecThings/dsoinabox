@@ -124,7 +124,7 @@ def test_cli_multi_output_formats(tmp_project, fake_runner, monkeypatch):
     
     exit_code = main([
         "--source", str(source_dir),
-        "--output", "json,html,sarif",
+        "--output", "json,ndjson,html,sarif",
         "--report_directory", str(tmp_project / "reports"),
         "--show_findings", "False",
         "--project_id", "test-project",
@@ -136,10 +136,12 @@ def test_cli_multi_output_formats(tmp_project, fake_runner, monkeypatch):
     
     # Verify all three formats were generated
     json_files = list(report_dir.rglob("dsoinabox_unified_report_*.json"))
+    ndjson_files = list(report_dir.rglob("dsoinabox_unified_report_*.ndjson"))
     html_files = list(report_dir.rglob("dsoinabox_unified_report_*.html"))
     sarif_files = list(report_dir.rglob("dsoinabox_unified_report_*.sarif"))
     
     assert len(json_files) > 0, "Should generate JSON report"
+    assert len(ndjson_files) > 0, "Should generate NDJSON report"
     assert len(html_files) > 0, "Should generate HTML report"
     assert len(sarif_files) > 0, "Should generate SARIF report"
     
@@ -150,4 +152,3 @@ def test_cli_multi_output_formats(tmp_project, fake_runner, monkeypatch):
     
     assert json_timestamp == html_timestamp == sarif_timestamp, \
         "All reports should have the same timestamp from the same scan"
-

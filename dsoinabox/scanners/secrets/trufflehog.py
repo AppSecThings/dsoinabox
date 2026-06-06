@@ -11,14 +11,19 @@ class TrufflehogScanner(BaseScanner):
     def __init__(self):
         super().__init__("trufflehog", help_command="help")
 
-    def run_scan(self, source_path: str, extra_tool_args: str = "", report_directory: str = "reports", git_repo = True) -> dict:
+    def run_scan(
+        self,
+        source_path: str,
+        extra_tool_args: str | list[str] | tuple[str, ...] | None = "",
+        report_directory: str = "reports",
+        git_repo=True,
+    ) -> dict:
         """run the trufflehog cli scan."""
         if git_repo:
-            args = f"git file://{source_path} --no-verification --no-update -j"
+            args = ["git", f"file://{source_path}", "--no-verification", "--no-update", "-j"]
         else:
-            args = f"filesystem {source_path} --no-verification --no-update -j"
-        if extra_tool_args:
-            args += f" {extra_tool_args}"
+            args = ["filesystem", source_path, "--no-verification", "--no-update", "-j"]
+        args.extend(self._parse_extra_tool_args(extra_tool_args))
         result = self._run_command(args)
         if result.returncode == 0:
             records = []

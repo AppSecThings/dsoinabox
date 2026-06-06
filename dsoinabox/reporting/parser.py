@@ -68,7 +68,8 @@ class BaseParser(ABC):
         modified_data = self.data.copy()
         findings_key = self._get_findings_key()
         modified_data[findings_key] = self.findings_that_exceed_threshold(threshold)
-        return modified_data
+        self.data = modified_data
+        return self.data
     
     @abstractmethod
     def _get_findings_key(self) -> str:

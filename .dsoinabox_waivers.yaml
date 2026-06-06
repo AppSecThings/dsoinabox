@@ -1,0 +1,23 @@
+schema_version: "1.0"
+
+meta:
+  owner: "AppSecThings"
+  created_by: "codex"
+  created_at: "2026-06-06"
+  last_reviewed_at: "2026-06-06"
+  notes: "Waivers for report-generation false positives in dsoinabox Scan"
+
+finding_waivers:
+  - fingerprint: "og:1:RULE:python.flask.security.xss.audit.direct-use-of-jinja2.direct-use-of-jinja2:8e50b606eaebd3837513efa9ada34c9893cf88c0:R:05e2617e"
+    type: "false_positive"
+    reason: "Offline report generation uses project-owned Jinja templates, not Flask request rendering"
+    expires_at: "2026-12-31T00:00:00Z"
+    created_by: "codex"
+    created_at: "2026-06-06"
+
+  - fingerprint: "og:1:RULE:python.flask.security.xss.audit.direct-use-of-jinja2.direct-use-of-jinja2:06995503617e79b26cb302c5b4dca1cca23c3714:R:05e2617e"
+    type: "false_positive"
+    reason: "Offline report generation renders project-owned templates with scanner output, not Flask request input"
+    expires_at: "2026-12-31T00:00:00Z"
+    created_by: "codex"
+    created_at: "2026-06-06"

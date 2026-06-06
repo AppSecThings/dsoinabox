@@ -12,9 +12,8 @@
         }
       }
     },
-    "Raw": "AKIAIOSFODNN7EXAMPLE",
-    "RawV2": "AKIA***REDACTED***",
-    "Redacted": "AKIA***REDACTED***"
+    "Raw": "EXAMPLE_AWS_ACCESS_KEY",
+    "RawV2": "EXAMPLE_AWS_ACCESS_KEY_REDACTED",
+    "Redacted": "EXAMPLE_AWS_ACCESS_KEY_REDACTED"
   }
 ]
-

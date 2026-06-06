@@ -27,11 +27,21 @@ class OpengrepScanner(BaseScanner):
             sys.stderr.write(result.stderr)
             raise ScannerError(f"opengrep version check failed: {result.stderr}")
 
-    def run_scan(self, source_path: str, extra_tool_args: str = "", report_directory: str = "reports") -> dict:
+    def run_scan(
+        self,
+        source_path: str,
+        extra_tool_args: str | list[str] | tuple[str, ...] | None = "",
+        report_directory: str = "reports",
+    ) -> dict:
         """run the opengrep cli scan."""
-        args = f"scan --json-output={report_directory}/opengrep.json --config auto {source_path}"
-        if extra_tool_args:
-            args += f" {extra_tool_args}"
+        args = [
+            "scan",
+            f"--json-output={report_directory}/opengrep.json",
+            "--config",
+            "auto",
+            source_path,
+        ]
+        args.extend(self._parse_extra_tool_args(extra_tool_args))
         result = self._run_command(args)
         if result.returncode == 0:
             with open(f"{report_directory}/opengrep.json", "r") as fd:

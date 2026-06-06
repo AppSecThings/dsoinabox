@@ -14,7 +14,7 @@ import hashlib
 from typing import Optional
 from urllib.parse import urlparse
 
-from .runner import run_cmd
+from .git import run_git_cmd
 
 
 def is_git(path: str) -> bool:
@@ -135,8 +135,9 @@ def get_initial_commit_hash(repo_path: str) -> Optional[str]:
         return None
     
     try:
-        returncode, stdout, stderr = run_cmd(
-            ["git", "rev-list", "--max-parents=0", "HEAD"],
+        returncode, stdout, stderr = run_git_cmd(
+            ["rev-list", "--max-parents=0", "HEAD"],
+            repo_path=repo_path,
             cwd=repo_path,
             text=True,
             check=False
@@ -171,8 +172,9 @@ def derive_project_id(source_path: str, project_id_override: Optional[str] = Non
     
     # Try to get remote.origin.url
     try:
-        returncode, stdout, stderr = run_cmd(
-            ["git", "config", "--get", "remote.origin.url"],
+        returncode, stdout, stderr = run_git_cmd(
+            ["config", "--get", "remote.origin.url"],
+            repo_path=source_path,
             cwd=source_path,
             text=True,
             check=False
@@ -259,4 +261,3 @@ def derive_project_hmac_key(project_id: str) -> bytes:
     okm = _hkdf_expand(prk, info, 32)
     
     return okm
-

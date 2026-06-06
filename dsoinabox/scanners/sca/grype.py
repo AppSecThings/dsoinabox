@@ -11,17 +11,20 @@ class GrypeScanner(BaseScanner):
     def __init__(self):
         super().__init__("grype", help_command="help")
 
-    def run_scan(self, source_path: str, extra_tool_args: str = "", report_directory: str = "reports") -> dict:
+    def run_scan(
+        self,
+        source_path: str,
+        extra_tool_args: str | list[str] | tuple[str, ...] | None = "",
+        report_directory: str = "reports",
+    ) -> dict:
         """run the grype cli scan."""
         #check for syft.json in report_directory (could be tools_output or reports)
         syft_json_path = os.path.join(report_directory, "syft.json")
         if os.path.exists(syft_json_path):
-            args = f"sbom:{syft_json_path} -o json"
+            args = [f"sbom:{syft_json_path}", "-o", "json"]
         else:
-            args = f"dir:{source_path} -o json"
-
-        if extra_tool_args:
-            args += f" {extra_tool_args}"
+            args = [f"dir:{source_path}", "-o", "json"]
+        args.extend(self._parse_extra_tool_args(extra_tool_args))
         result = self._run_command(args)
         if result.returncode == 0:
             json_result = json.loads(result.stdout.strip())
