@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel", "setuptools-scm"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dsoinabox"
-dynamic = ["version"]
+version = "0.1.4"
 description = "DSO in a Box"
 requires-python = ">=3.12"
 dependencies = [
@@ -45,9 +45,14 @@ omit = ["dsoinabox/**/__main__.py"]
 [tool.coverage.report]
 fail_under = 85
 
-[tool.setuptools_scm]
-version_scheme = "python-simplified-semver"
-local_scheme = "no-local-version"
-
 [tool.setuptools.packages.find]
-include = ["dsoinabox"]
+include = ["dsoinabox*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+dsoinabox = [
+    "reporting/templates/html/*",
+    "reporting/templates/jenkins_html/*",
+    "reporting/templates/jenkins_html/assets/*",
+    "waivers/*.yaml",
+]

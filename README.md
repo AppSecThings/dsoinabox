@@ -29,6 +29,20 @@ DSOInABox gives you:
 
 This unified exception model is the core differentiator: path exclusions, waiver lifecycle, benchmark baselines, and policy enforcement all run through one system.
 
+## Why Not DIY?
+
+You can run TruffleHog, OpenGrep, Grype, Checkov, and Syft yourself in separate jobs. The cost is operational complexity and policy drift.
+
+DIY means inheriting multiple:
+
+- suppression models
+- severity mappings
+- output contracts
+- baseline workflows
+- CI failure behaviors
+
+DSOInABox standardizes these into one repo-level contract: one severity model, one waiver system, one baseline/benchmark mechanism, and one build-breaking policy gate.
+
 ## Demo
 
 Run one command:
@@ -78,30 +92,81 @@ finding_waivers:
     created_at: "2026-03-28"
 ```
 
-Example CI job (GitHub Actions):
+## GitHub Action Quick Start
+
+Use the composite action for the easiest GitHub Actions adoption:
 
 ```yaml
 name: AppSec Scan
-on: [pull_request]
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+
 jobs:
   dsoinabox:
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v4
-      - name: Run dsoinabox
+
+      - name: Run dsoinabox composite action
+        uses: owner/repo/.github/actions/dsoinabox-scan@v0.1.4
+        with:
+          image: appsecthings/dsoinabox:latest
+          failure_threshold: high
+          targets: all
+          extra_args: --fail_on_secrets --show_findings false
+
+      - name: Find SARIF report
+        id: find_sarif
+        if: always()
+        shell: bash
         run: |
-          mkdir -p reports
-          docker run --rm \
-            -v "$PWD:/scan_target" \
-            -v "$PWD/reports:/reports" \
-            appsecthings/dsoinabox:latest \
-            -t all -o sarif,html --failure_threshold high --fail_on_secrets --show_findings false
-          cp "$(ls -1 reports/*.sarif | head -n 1)" reports/dsoinabox.sarif
-      - name: Upload SARIF to GitHub
+          sarif_file="$(find reports -type f -name '*.sarif' -print -quit || true)"
+          if [ -n "${sarif_file}" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "sarif_file=${sarif_file}" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload SARIF to GitHub Security
+        if: always() && steps.find_sarif.outputs.found == 'true'
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: reports/dsoinabox.sarif
+          sarif_file: ${{ steps.find_sarif.outputs.sarif_file }}
+          category: dsoinabox
+
+      - name: Persist artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsoinabox-reports
+          path: reports/**
 ```
+
+`extra_args` is passed through bash and shell-split, so quote/escape values that contain spaces.
+For full CI docs and raw Docker examples, see [docs/ci/github-actions.md](docs/ci/github-actions.md).
+
+## Releasing
+
+Releases no longer depend on Git tags.
+
+- Pushes to `dev` publish Docker development images.
+- Pushes to `main` always publish traceable Docker images for that commit.
+- PyPI and versioned Docker releases happen only when `pyproject.toml` contains a new version.
+
+Typical flow:
+
+1. Make your code changes locally.
+2. Bump `project.version` in `pyproject.toml` when you want a release.
+3. Merge locally into `dev` and push `dev`.
+4. Open and merge a PR from `dev` to `main`.
 
 ## What It Runs
 

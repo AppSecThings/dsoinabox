@@ -1,0 +1,1 @@
+"""Jenkins HTML report templates."""
