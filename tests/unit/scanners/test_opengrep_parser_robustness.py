@@ -77,6 +77,37 @@ class TestOpenGrepParserRobustness:
         # Should not crash on threshold application
         filtered = parser.apply_threshold("high")
         assert filtered is not None
+
+    def test_apply_threshold_mutates_parser_data(self, tmp_path):
+        """Test threshold filtering updates parser.data for downstream processing."""
+        report_file = tmp_path / "opengrep.json"
+        report_data = {
+            "results": [
+                {
+                    "check_id": "test.rule.low",
+                    "path": "src/file.py",
+                    "extra": {"severity": "LOW", "message": "low severity"},
+                },
+                {
+                    "check_id": "test.rule.high",
+                    "path": "src/file.py",
+                    "extra": {"severity": "HIGH", "message": "high severity"},
+                },
+            ]
+        }
+
+        with open(report_file, "w") as f:
+            json.dump(report_data, f)
+
+        parser = OpengrepParser(
+            report_directory=str(tmp_path),
+            report_filename="opengrep.json",
+        )
+
+        parser.apply_threshold("high")
+
+        assert len(parser.data["results"]) == 1
+        assert parser.data["results"][0]["check_id"] == "test.rule.high"
     
     def test_parser_empty_results_returns_empty_list(self, tmp_path):
         """Test that empty results array is handled correctly."""
@@ -331,4 +362,3 @@ class TestOpenGrepParserRobustness:
         
         # Should return None when file doesn't exist
         assert parser.data is None or parser.report_exists() is False
-

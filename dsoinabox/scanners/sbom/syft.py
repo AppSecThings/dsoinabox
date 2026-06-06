@@ -11,11 +11,15 @@ class SyftScanner(BaseScanner):
     def __init__(self):
         super().__init__("syft", help_command="help")
 
-    def run_scan(self, source_path: str, extra_tool_args: str = "", report_directory: str = "reports") -> dict:
+    def run_scan(
+        self,
+        source_path: str,
+        extra_tool_args: str | list[str] | tuple[str, ...] | None = "",
+        report_directory: str = "reports",
+    ) -> dict:
         """run the syft cli scan."""
-        args = f"scan dir:{source_path} -o json -q"
-        if extra_tool_args:
-            args += f" {extra_tool_args}"
+        args = ["scan", f"dir:{source_path}", "-o", "json", "-q"]
+        args.extend(self._parse_extra_tool_args(extra_tool_args))
         result = self._run_command(args)
         if result.returncode == 0:
             json_result = json.loads(result.stdout.strip())

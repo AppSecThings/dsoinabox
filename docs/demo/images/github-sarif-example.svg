@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-label="Example GitHub SARIF results screenshot">
+  <rect width="1280" height="720" fill="#f6f8fa"/>
+  <rect x="0" y="0" width="1280" height="72" fill="#24292f"/>
+  <text x="36" y="45" fill="#ffffff" font-family="Arial, sans-serif" font-size="24" font-weight="700">GitHub Security / Code scanning alerts (example)</text>
+
+  <rect x="40" y="100" width="1200" height="72" rx="8" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="70" y="145" fill="#1f2328" font-family="Arial, sans-serif" font-size="22" font-weight="700">SQL injection risk in app/routes.py</text>
+  <text x="1010" y="145" fill="#a40e26" font-family="Arial, sans-serif" font-size="20" font-weight="700">High</text>
+
+  <rect x="40" y="190" width="1200" height="72" rx="8" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="70" y="235" fill="#1f2328" font-family="Arial, sans-serif" font-size="22" font-weight="700">Insecure IAM policy in infra/main.tf</text>
+  <text x="1010" y="235" fill="#9a6700" font-family="Arial, sans-serif" font-size="20" font-weight="700">Medium</text>
+
+  <rect x="40" y="280" width="1200" height="360" rx="8" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="70" y="330" fill="#1f2328" font-family="Arial, sans-serif" font-size="24" font-weight="700">Alert Detail (sample)</text>
+  <text x="70" y="375" fill="#57606a" font-family="Courier New, monospace" font-size="17">ruleId: opengrep/sql-injection-risk</text>
+  <text x="70" y="410" fill="#57606a" font-family="Courier New, monospace" font-size="17">tool: dsoinabox (SARIF upload)</text>
+  <text x="70" y="445" fill="#57606a" font-family="Courier New, monospace" font-size="17">location: app/routes.py:112</text>
+  <text x="70" y="480" fill="#57606a" font-family="Courier New, monospace" font-size="17">help: Parameterized queries are required.</text>
+  <text x="70" y="535" fill="#57606a" font-family="Arial, sans-serif" font-size="16">Representative mock screenshot for README demonstration.</text>
+</svg>

@@ -1,0 +1,37 @@
+name: dsoinabox Scan
+description: Run dsoinabox Docker scanner against the checked-out repository and emit HTML/SARIF reports.
+
+inputs:
+  image:
+    description: Docker image for dsoinabox.
+    required: false
+    default: appsecthings/dsoinabox:latest
+  failure_threshold:
+    description: Severity threshold that causes a non-zero exit code (none, low, medium, high, critical).
+    required: false
+    default: high
+  targets:
+    description: "Scanner targets passed to -t (for example: all, secrets,sast,sca,iac,sbom)."
+    required: false
+    default: all
+  extra_args:
+    description: Additional CLI arguments appended to the dsoinabox command (shell-split by bash; quote/escape values containing spaces).
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Run dsoinabox in Docker
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p "${{ github.workspace }}/reports"
+        docker run --rm \
+          -v "${{ github.workspace }}:/scan_target" \
+          -v "${{ github.workspace }}/reports:/reports" \
+          "${{ inputs.image }}" \
+          -t "${{ inputs.targets }}" \
+          -o sarif,html \
+          --failure_threshold "${{ inputs.failure_threshold }}" \
+          ${{ inputs.extra_args }}

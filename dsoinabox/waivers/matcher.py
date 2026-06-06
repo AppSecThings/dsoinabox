@@ -2,28 +2,37 @@
 
 from __future__ import annotations
 
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Optional, Union, Set
 
 
-def check_waiver(fingerprints: Dict[str, str], waiver_data: Dict[str, Any]) -> bool:
+def _build_waiver_fingerprints(waiver_data: Dict[str, Any]) -> Set[str]:
+    """Build a set of all waiver fingerprints from finding and benchmark waivers."""
+    finding_waivers = waiver_data.get('finding_waivers', [])
+    benchmark_waivers = waiver_data.get('benchmark', [])
+
+    all_waivers = finding_waivers + benchmark_waivers
+    return {w['fingerprint'] for w in all_waivers if 'fingerprint' in w}
+
+
+def check_waiver(
+    fingerprints: Dict[str, str],
+    waiver_data: Dict[str, Any],
+    waiver_fingerprints: Optional[Set[str]] = None
+) -> bool:
     """check if any fingerprint from a finding matches a waiver."""
     if not fingerprints:
         return False
-    
-    finding_waivers = waiver_data.get('finding_waivers', [])
-    benchmark_waivers = waiver_data.get('benchmark', [])
-    
-    all_waivers = finding_waivers + benchmark_waivers
-    
-    if not all_waivers:
+
+    if waiver_fingerprints is None:
+        waiver_fingerprints = _build_waiver_fingerprints(waiver_data)
+
+    if not waiver_fingerprints:
         return False
-    
-    waiver_fingerprints = {w['fingerprint'] for w in all_waivers if 'fingerprint' in w}
-    
+
     for fp_value in fingerprints.values():
         if fp_value and fp_value in waiver_fingerprints:
             return True
-    
+
     return False
 
 
@@ -57,12 +66,16 @@ def apply_waivers_to_findings(
                 break
         else:
             return findings
+
+    waiver_fingerprints = _build_waiver_fingerprints(waiver_data)
     
     if persist_waived_findings:
         for finding in findings_list:
             finding_fingerprints = finding.get('fingerprints', {})
             if isinstance(finding_fingerprints, dict):
-                finding['waived'] = check_waiver(finding_fingerprints, waiver_data)
+                finding['waived'] = check_waiver(
+                    finding_fingerprints, waiver_data, waiver_fingerprints
+                )
             else:
                 finding['waived'] = False
     else:
@@ -70,7 +83,9 @@ def apply_waivers_to_findings(
         for finding in findings_list:
             finding_fingerprints = finding.get('fingerprints', {})
             if isinstance(finding_fingerprints, dict):
-                is_waived = check_waiver(finding_fingerprints, waiver_data)
+                is_waived = check_waiver(
+                    finding_fingerprints, waiver_data, waiver_fingerprints
+                )
                 if not is_waived:
                     filtered_findings.append(finding)
             else:
@@ -88,4 +103,3 @@ def apply_waivers_to_findings(
             findings[:] = filtered_findings
     
     return findings
-

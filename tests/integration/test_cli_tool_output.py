@@ -75,7 +75,7 @@ def test_cli_tool_output_with_multi_output(tmp_project, fake_runner, monkeypatch
     
     exit_code = main([
         "--source", str(source_dir),
-        "--output", "json,html,sarif",
+        "--output", "json,ndjson,html,sarif",
         "--report_directory", str(tmp_project / "reports"),
         "--tool_output",
         "--show_findings", "False",
@@ -95,14 +95,15 @@ def test_cli_tool_output_with_multi_output(tmp_project, fake_runner, monkeypatch
     
     # Verify reports were generated in main directory
     json_files = list(report_dir.rglob("dsoinabox_unified_report_*.json"))
+    ndjson_files = list(report_dir.rglob("dsoinabox_unified_report_*.ndjson"))
     html_files = list(report_dir.rglob("dsoinabox_unified_report_*.html"))
     sarif_files = list(report_dir.rglob("dsoinabox_unified_report_*.sarif"))
     
     assert len(json_files) > 0, "Should generate JSON report"
+    assert len(ndjson_files) > 0, "Should generate NDJSON report"
     assert len(html_files) > 0, "Should generate HTML report"
     assert len(sarif_files) > 0, "Should generate SARIF report"
     
     # Verify tool outputs are in tools_output directory, not in main report directory
     tool_output_files = list(tools_output_dir.glob("*.json")) + list(tools_output_dir.glob("*.sarif"))
     assert len(tool_output_files) > 0, "Tool output files should be in tools_output directory"
-

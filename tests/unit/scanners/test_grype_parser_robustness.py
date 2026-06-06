@@ -101,6 +101,35 @@ class TestGrypeParserRobustness:
         # Unknown severity should not match any threshold
         findings = parser.findings_that_exceed_threshold("high")
         assert len(findings) == 0
+
+    def test_apply_threshold_mutates_parser_data(self, tmp_path):
+        """Test threshold filtering updates parser.data for downstream processing."""
+        report_file = tmp_path / "grype.json"
+        report_data = {
+            "matches": [
+                {
+                    "artifact": {"name": "pkg-low", "version": "1.0.0", "type": "python"},
+                    "vulnerability": {"id": "CVE-LOW", "severity": "LOW"},
+                },
+                {
+                    "artifact": {"name": "pkg-critical", "version": "2.0.0", "type": "python"},
+                    "vulnerability": {"id": "CVE-CRIT", "severity": "CRITICAL"},
+                },
+            ]
+        }
+
+        with open(report_file, "w") as f:
+            json.dump(report_data, f)
+
+        parser = GrypeParser(
+            report_directory=str(tmp_path),
+            report_filename="grype.json",
+        )
+
+        parser.apply_threshold("high")
+
+        assert len(parser.data["matches"]) == 1
+        assert parser.data["matches"][0]["vulnerability"]["id"] == "CVE-CRIT"
     
     def test_parser_empty_matches_returns_empty_list(self, tmp_path):
         """Test that empty matches array is handled correctly."""
@@ -255,4 +284,3 @@ class TestGrypeParserRobustness:
         findings = parser.findings_that_exceed_threshold("high")
         # Missing vulnerability should not match any threshold
         assert len(findings) == 0
-

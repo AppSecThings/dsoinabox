@@ -1,22 +1,24 @@
+from pathlib import Path
+
 try:
-    from importlib.metadata import version
-    __version__ = version("dsoinabox")
-except ImportError:
-    # python < 3.8
-    try:
-        from importlib_metadata import version
-        __version__ = version("dsoinabox")
-    except ImportError:
-        # fallback to setuptools_scm for dev (when not installed)
-        try:
-            from setuptools_scm import get_version
-            __version__ = get_version(root='..', relative_to=__file__)
-        except (ImportError, LookupError):
-            __version__ = "0.0.0"
+    from importlib.metadata import PackageNotFoundError, version
+except ImportError:  # pragma: no cover
+    from importlib_metadata import PackageNotFoundError, version
+
+
+def _read_local_version() -> str:
+    import tomllib
+
+    pyproject_path = Path(__file__).resolve().parents[1] / "pyproject.toml"
+    with pyproject_path.open("rb") as pyproject_file:
+        project = tomllib.load(pyproject_file)["project"]
+    return project["version"]
+
+
+try:
+    __version__ = _read_local_version()
 except Exception:
-    # fallback to setuptools_scm for dev (when not installed)
     try:
-        from setuptools_scm import get_version
-        __version__ = get_version(root='..', relative_to=__file__)
-    except (ImportError, LookupError):
+        __version__ = version("dsoinabox")
+    except PackageNotFoundError:
         __version__ = "0.0.0"

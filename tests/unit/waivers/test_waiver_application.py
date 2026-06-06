@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from freezegun import freeze_time
 from typing import Dict, Any, List
 
+import dsoinabox.waivers.matcher as waiver_matcher
 from dsoinabox.waivers.matcher import check_waiver, apply_waivers_to_findings
 
 
@@ -600,6 +601,46 @@ class TestWaiverMetadataSerialization:
         assert result[0]['waived'] is False  # No fingerprints
         assert result[1]['waived'] is False  # Different fingerprint
 
+    def test_apply_waivers_builds_waiver_fingerprints_once_per_call(self, monkeypatch):
+        """Test that waiver fingerprint set is built once per apply call."""
+        findings = [
+            {
+                'check_id': 'test.rule.id',
+                'fingerprints': {'rule': 'og:1:RULE:test.rule.id:abc123'}
+            },
+            {
+                'check_id': 'other.rule.id',
+                'fingerprints': {'rule': 'og:1:RULE:other.rule.id:def456'}
+            },
+            {
+                'check_id': 'third.rule.id',
+                'fingerprints': {'rule': 'og:1:RULE:third.rule.id:ghi789'}
+            },
+        ]
+
+        waiver_data = {
+            'finding_waivers': [
+                {'fingerprint': 'og:1:RULE:test.rule.id:abc123', 'type': 'false_positive'}
+            ],
+            'benchmark': [
+                {'fingerprint': 'og:1:RULE:benchmark.rule.id:zzz000', 'type': 'benchmark_waiver'}
+            ]
+        }
+
+        calls = 0
+        original_builder = waiver_matcher._build_waiver_fingerprints
+
+        def counting_builder(data):
+            nonlocal calls
+            calls += 1
+            return original_builder(data)
+
+        monkeypatch.setattr(waiver_matcher, '_build_waiver_fingerprints', counting_builder)
+
+        apply_waivers_to_findings(findings, waiver_data, persist_waived_findings=True)
+
+        assert calls == 1
+
 
 class TestWaiverRuleFileLinePattern:
     """Test rule/file/line pattern matching (if supported)."""
@@ -733,4 +774,3 @@ class TestWaiverRegressionNonMatchingFingerprint:
         
         assert len(result) == 1
         assert result[0]['waived'] is True, "Matching waiver should apply"
-

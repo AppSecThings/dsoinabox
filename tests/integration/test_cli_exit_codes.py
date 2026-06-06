@@ -77,14 +77,34 @@ class TestCLIExitCodes:
         import dsoinabox.utils.runner
         import dsoinabox.scanners.base
         import dsoinabox.utils.git
+        import dsoinabox.utils.project_id
         import dsoinabox.reporting.trufflehog
         import dsoinabox.reporting.opengrep
         
         monkeypatch.setattr(dsoinabox.utils.runner, "run_cmd", empty_runner)
         monkeypatch.setattr(dsoinabox.scanners.base, "run_cmd", empty_runner)
         monkeypatch.setattr(dsoinabox.utils.git, "run_cmd", empty_runner)
-        monkeypatch.setattr(dsoinabox.reporting.trufflehog, "run_cmd", empty_runner)
-        monkeypatch.setattr(dsoinabox.reporting.opengrep, "run_cmd", empty_runner)
+        monkeypatch.setattr(
+            dsoinabox.utils.project_id,
+            "run_git_cmd",
+            lambda args, *, repo_path=None, cwd=None, text=True, check=False: empty_runner(
+                ["git"] + list(args), cwd=cwd, text=text, check=check
+            ),
+        )
+        monkeypatch.setattr(
+            dsoinabox.reporting.trufflehog,
+            "run_git_cmd",
+            lambda args, *, repo_path=None, cwd=None, text=True, check=False: empty_runner(
+                ["git"] + list(args), cwd=cwd, text=text, check=check
+            ),
+        )
+        monkeypatch.setattr(
+            dsoinabox.reporting.opengrep,
+            "run_git_cmd",
+            lambda args, *, repo_path=None, cwd=None, text=True, check=False: empty_runner(
+                ["git"] + list(args), cwd=cwd, text=text, check=check
+            ),
+        )
         
         exit_code = main([
             "--source", str(source_dir),
@@ -124,14 +144,34 @@ class TestCLIExitCodes:
         import dsoinabox.utils.runner
         import dsoinabox.scanners.base
         import dsoinabox.utils.git
+        import dsoinabox.utils.project_id
         import dsoinabox.reporting.trufflehog
         import dsoinabox.reporting.opengrep
         
         monkeypatch.setattr(dsoinabox.utils.runner, "run_cmd", failing_runner)
         monkeypatch.setattr(dsoinabox.scanners.base, "run_cmd", failing_runner)
         monkeypatch.setattr(dsoinabox.utils.git, "run_cmd", failing_runner)
-        monkeypatch.setattr(dsoinabox.reporting.trufflehog, "run_cmd", failing_runner)
-        monkeypatch.setattr(dsoinabox.reporting.opengrep, "run_cmd", failing_runner)
+        monkeypatch.setattr(
+            dsoinabox.utils.project_id,
+            "run_git_cmd",
+            lambda args, *, repo_path=None, cwd=None, text=True, check=False: failing_runner(
+                ["git"] + list(args), cwd=cwd, text=text, check=check
+            ),
+        )
+        monkeypatch.setattr(
+            dsoinabox.reporting.trufflehog,
+            "run_git_cmd",
+            lambda args, *, repo_path=None, cwd=None, text=True, check=False: failing_runner(
+                ["git"] + list(args), cwd=cwd, text=text, check=check
+            ),
+        )
+        monkeypatch.setattr(
+            dsoinabox.reporting.opengrep,
+            "run_git_cmd",
+            lambda args, *, repo_path=None, cwd=None, text=True, check=False: failing_runner(
+                ["git"] + list(args), cwd=cwd, text=text, check=check
+            ),
+        )
         
         exit_code = main([
             "--source", str(source_dir),
@@ -325,14 +365,34 @@ class TestCLIExitCodes:
         import dsoinabox.utils.runner
         import dsoinabox.scanners.base
         import dsoinabox.utils.git
+        import dsoinabox.utils.project_id
         import dsoinabox.reporting.trufflehog
         import dsoinabox.reporting.opengrep
         
         monkeypatch.setattr(dsoinabox.utils.runner, "run_cmd", empty_trufflehog_runner)
         monkeypatch.setattr(dsoinabox.scanners.base, "run_cmd", empty_trufflehog_runner)
         monkeypatch.setattr(dsoinabox.utils.git, "run_cmd", empty_trufflehog_runner)
-        monkeypatch.setattr(dsoinabox.reporting.trufflehog, "run_cmd", empty_trufflehog_runner)
-        monkeypatch.setattr(dsoinabox.reporting.opengrep, "run_cmd", empty_trufflehog_runner)
+        monkeypatch.setattr(
+            dsoinabox.utils.project_id,
+            "run_git_cmd",
+            lambda args, *, repo_path=None, cwd=None, text=True, check=False: empty_trufflehog_runner(
+                ["git"] + list(args), cwd=cwd, text=text, check=check
+            ),
+        )
+        monkeypatch.setattr(
+            dsoinabox.reporting.trufflehog,
+            "run_git_cmd",
+            lambda args, *, repo_path=None, cwd=None, text=True, check=False: empty_trufflehog_runner(
+                ["git"] + list(args), cwd=cwd, text=text, check=check
+            ),
+        )
+        monkeypatch.setattr(
+            dsoinabox.reporting.opengrep,
+            "run_git_cmd",
+            lambda args, *, repo_path=None, cwd=None, text=True, check=False: empty_trufflehog_runner(
+                ["git"] + list(args), cwd=cwd, text=text, check=check
+            ),
+        )
         
         # mock check_tool_available to always return True for tests
         import dsoinabox.utils.environment
@@ -351,3 +411,67 @@ class TestCLIExitCodes:
         
         assert exit_code == 0, "Should pass when no secrets found even with --fail_on_secrets"
 
+    def test_cli_threshold_filtering_applies_before_report_and_exit_gate(self, tmp_project, fake_runner, monkeypatch):
+        """test opengrep/grype below-threshold findings are filtered before report and exit gate"""
+        source_dir = tmp_project / "source"
+        source_dir.mkdir()
+        (source_dir / "test.py").write_text("print('hello')\n")
+
+        import dsoinabox.cli
+
+        def opengrep_low_only(_source, _extra_args, _output_dir):
+            return {
+                "results": [
+                    {
+                        "check_id": "test.rule.medium",
+                        "path": "test.py",
+                        "start": {"line": 1, "col": 1},
+                        "end": {"line": 1, "col": 5},
+                        "extra": {"severity": "MEDIUM", "message": "below threshold"},
+                    }
+                ]
+            }
+
+        def grype_low_only(_source, _extra_args, _output_dir):
+            return {
+                "matches": [
+                    {
+                        "artifact": {
+                            "name": "pkg",
+                            "version": "1.0.0",
+                            "type": "python",
+                            "locations": [{"path": "requirements.txt"}],
+                        },
+                        "vulnerability": {
+                            "id": "CVE-2024-0001",
+                            "severity": "MEDIUM",
+                            "namespace": "nvd",
+                        },
+                    }
+                ],
+                "source": {"type": "directory", "target": str(source_dir)},
+            }
+
+        monkeypatch.setattr(dsoinabox.cli, "opengrep_run_scan", opengrep_low_only)
+        monkeypatch.setattr(dsoinabox.cli, "grype_run_scan", grype_low_only)
+
+        exit_code = main([
+            "--source", str(source_dir),
+            "--output", "json",
+            "--report_directory", str(tmp_project / "reports"),
+            "--tools", "opengrep,grype",
+            "--failure_threshold", "high",
+            "--show_findings", "False",
+            "--project_id", "test-project",
+        ])
+
+        assert exit_code == 0, "Should pass when all findings are below threshold"
+
+        json_files = list((tmp_project / "reports").rglob("dsoinabox_unified_report_*.json"))
+        assert json_files, "Unified JSON report should be generated"
+
+        with open(json_files[0], "r") as f:
+            report = json.load(f)
+
+        assert report["opengrep_data"]["results"] == []
+        assert report["grype_data"]["matches"] == []

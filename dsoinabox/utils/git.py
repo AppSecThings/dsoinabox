@@ -5,9 +5,61 @@ import logging
 
 from .runner import run_cmd
 
+
+# process-local registry for git safe directories. this avoids mutating user global config.
+_GIT_SAFE_DIRECTORIES: set[str] = set()
+
+
+def _canonicalize_git_path(path: str) -> str:
+    """Return canonical absolute path suitable for git safe.directory values."""
+    return os.path.realpath(os.path.abspath(path))
+
+
+def _safe_directory_values(path: str) -> tuple[str, str]:
+    repo_path = _canonicalize_git_path(path)
+    return repo_path, _canonicalize_git_path(os.path.join(repo_path, ".git"))
+
+
+def build_git_safe_env(path: Optional[str] = None) -> Optional[dict[str, str]]:
+    """Build per-process git safe.directory env overrides for a git command.
+
+    If no directories are registered (and no path provided), returns None.
+    """
+    safe_dirs = set(_GIT_SAFE_DIRECTORIES)
+    if path:
+        safe_dirs.update(_safe_directory_values(path))
+
+    if not safe_dirs:
+        return None
+
+    env: dict[str, str] = {"GIT_CONFIG_COUNT": str(len(safe_dirs))}
+    for idx, safe_dir in enumerate(sorted(safe_dirs)):
+        env[f"GIT_CONFIG_KEY_{idx}"] = "safe.directory"
+        env[f"GIT_CONFIG_VALUE_{idx}"] = safe_dir
+    return env
+
+
+def run_git_cmd(
+    args: list[str],
+    *,
+    repo_path: Optional[str] = None,
+    cwd: Optional[str] = None,
+    text: bool = True,
+    check: bool = False,
+) -> tuple[int, str | bytes, str | bytes]:
+    """Run a git command with process-scoped safe.directory overrides."""
+    return run_cmd(
+        ["git"] + args,
+        cwd=cwd,
+        env=build_git_safe_env(repo_path or cwd),
+        text=text,
+        check=check,
+    )
+
+
 class GitRepoInfo:
     def __init__(self, repo_path: str):
-        self.repo_path = os.path.abspath(repo_path)
+        self.repo_path = _canonicalize_git_path(repo_path)
         if not os.path.isdir(os.path.join(self.repo_path, ".git")):
             raise ValueError(f"{repo_path} is not a valid git repository.")
 
@@ -15,14 +67,15 @@ class GitRepoInfo:
 
     def _run_git(self, args: list[str]) -> str:
         try:
-            returncode, stdout, stderr = run_cmd(
-                ["git"] + args,
+            returncode, stdout, stderr = run_git_cmd(
+                args,
                 cwd=self.repo_path,
+                repo_path=self.repo_path,
                 text=True,
-                check=True
+                check=True,
             )
             return stdout.strip()
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError:
             return ""
 
     def _gather_info(self) -> Dict[str, Optional[str]]:
@@ -72,18 +125,8 @@ class GitRepoInfo:
     def as_dict(self) -> Dict[str, Optional[str]]:
         return self._info.copy()
 
-#function to set git config --global --add safe.directory /scan_target
+
+# register git safe directories for this process only.
 def set_git_safe_directory(scan_target: str) -> None:
-    logging.info(f"Setting git safe directory to {scan_target}")
-
-    env = os.environ.copy()
-    env["GIT_CONFIG_COUNT"] = "2"
-    env["GIT_CONFIG_KEY_0"] = "safe.directory"
-    env["GIT_CONFIG_VALUE_0"] = scan_target
-    env["GIT_CONFIG_KEY_1"] = "safe.directory"
-    #resolve canonical path inside the container; if running outside, resolve host path accordingly
-    env["GIT_CONFIG_VALUE_1"] = scan_target
-
-    #set safe dir
-    run_cmd(["git", "config", "--global", "--add", "safe.directory", scan_target], check=True)
-    run_cmd(["git", "config", "--global", "--add", "safe.directory", scan_target + "/.git"], check=True)
+    logging.info(f"Registering process-local git safe directory for {scan_target}")
+    _GIT_SAFE_DIRECTORIES.update(_safe_directory_values(scan_target))
