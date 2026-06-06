@@ -42,9 +42,9 @@ jobs:
         run: |
           extract_version() {
             python -c 'import sys, tomllib
-data = tomllib.loads(sys.stdin.read())
-project = data.get("project", {})
-print(project.get("version", ""))'
+            data = tomllib.loads(sys.stdin.read())
+            project = data.get("project", {})
+            print(project.get("version", ""))'
           }
 
           branch="${GITHUB_REF_NAME}"
