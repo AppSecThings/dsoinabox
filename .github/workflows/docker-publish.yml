@@ -40,6 +40,13 @@ jobs:
           EVENT_BEFORE: ${{ github.event.before }}
           CURRENT_VERSION: ${{ steps.package-version.outputs.version }}
         run: |
+          extract_version() {
+            python -c 'import sys, tomllib
+data = tomllib.loads(sys.stdin.read())
+project = data.get("project", {})
+print(project.get("version", ""))'
+          }
+
           branch="${GITHUB_REF_NAME}"
           previous_version=""
           version_changed="false"
@@ -48,7 +55,7 @@ jobs:
           if [[ -n "$EVENT_BEFORE" && "$EVENT_BEFORE" != "0000000000000000000000000000000000000000" ]]; then
             if git cat-file -e "${EVENT_BEFORE}:pyproject.toml" 2>/dev/null; then
               previous_version="$(
-                git show "${EVENT_BEFORE}:pyproject.toml" | python -c 'import sys, tomllib; print(tomllib.loads(sys.stdin.read())["project"]["version"])'
+                git show "${EVENT_BEFORE}:pyproject.toml" | extract_version
               )"
             fi
           fi
