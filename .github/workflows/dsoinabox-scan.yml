@@ -24,7 +24,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run dsoinabox composite action
         uses: ./.github/actions/dsoinabox-scan
