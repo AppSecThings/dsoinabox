@@ -10,21 +10,23 @@
 
 ## Report Structure
 
-Reports are written to `report_directory` with timestamped names:
+Each run creates a `dsoinabox_<timestamp>` directory under `report_directory`:
 
 ```text
 reports/
-├── dsoinabox_unified_report_<timestamp>.html
-├── dsoinabox_unified_report_<timestamp>.json
-├── dsoinabox_unified_report_<timestamp>.ndjson
-├── dsoinabox_unified_report_<timestamp>.sarif
-├── benchmark.yaml      # only when --benchmark is enabled
-└── tools_output/       # only when --tool_output is enabled
-    ├── checkov.json
-    ├── grype.json
-    ├── opengrep.json
-    ├── syft.json
-    └── trufflehog.json
+└── dsoinabox_<timestamp>/
+    ├── dsoinabox_unified_report_<timestamp>.html
+    ├── dsoinabox_unified_report_<timestamp>_jenkins.html
+    ├── dsoinabox_unified_report_<timestamp>.json
+    ├── dsoinabox_unified_report_<timestamp>.ndjson
+    ├── dsoinabox_unified_report_<timestamp>.sarif
+    ├── benchmark.yaml      # only when --benchmark is enabled
+    └── tools_output/       # only when --tool_output is enabled
+        ├── checkov.json
+        ├── grype.json
+        ├── opengrep.json
+        ├── syft.json
+        └── trufflehog.json
 ```
 
 When `/reports` is mounted in Docker, report artifacts are copied to `/reports/dsoinabox_<timestamp>/`.
