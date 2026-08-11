@@ -131,7 +131,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--report_directory",
         action="store",
         default=None,  # set based on docker detection
-        help="directory to store reports. default is 'reports' (relative to source). if running in docker and '/reports' mount exists, copies reports there",
+        help=(
+            "directory for generated reports. default is './reports'. relative paths are resolved "
+            "from the current working directory. if running in docker and '/reports' is available, "
+            "reports are copied there"
+        ),
     )
 
     # trufflehog
@@ -325,8 +329,23 @@ def main(argv: list[str] | None = None) -> int:
 
     #parse args and explicit CLI overrides
     args = parser.parse_args(argv)
-    cli_overrides = parse_cli_overrides(argv)
     configure_logging(verbose=args.verbose, quiet=args.quiet)
+
+    if args.tool_versions:
+        invoked_pkg = __package__ or (sys.modules[__name__].__spec__.name if sys.modules[__name__].__spec__ else None)
+        print(f"{invoked_pkg} {__version__}")
+        try:
+            syft_show_version()
+            grype_show_version()
+            trufflehog_show_version()
+            opengrep_show_version()
+            checkov_show_version()
+        except ScannerError as e:
+            logger.error(f"Version check failed: {e}")
+            return 1
+        return 0
+
+    cli_overrides = parse_cli_overrides(argv)
 
     # Detect Docker environment and set defaults
     in_docker = is_running_in_docker()
@@ -454,20 +473,6 @@ def main(argv: list[str] | None = None) -> int:
     else:
         is_git_repo = False
         logger.info(f"Source is not a git repository: {args.source}")
-
-    if args.tool_versions:
-        invoked_pkg = __package__ or (sys.modules[__name__].__spec__.name if sys.modules[__name__].__spec__ else None)
-        print(f"{invoked_pkg} {__version__}")
-        try:
-            syft_show_version()
-            grype_show_version()
-            trufflehog_show_version()
-            opengrep_show_version()
-            checkov_show_version()
-        except ScannerError as e:
-            logger.error(f"Version check failed: {e}")
-            return 1
-        return 0
 
     prep_env(args)
     set_git_safe_directory(args.source)

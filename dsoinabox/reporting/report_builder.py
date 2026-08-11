@@ -166,7 +166,10 @@ def report_builder(
     
     #ensure output directory exists
     os.makedirs(output_dir, exist_ok=True)
-    output_filename=f"dsoinabox_unified_report_{timestamp}.html"
+    if output_format == "jenkins_html":
+        output_filename = f"dsoinabox_unified_report_{timestamp}_jenkins.html"
+    else:
+        output_filename = f"dsoinabox_unified_report_{timestamp}.html"
     #determine template directory based on output format
     templates_dir = os.path.join(os.path.dirname(__file__), "templates")
     if output_format == "jenkins_html":
@@ -204,4 +207,3 @@ def report_builder(
             if os.path.exists(assets_dest):
                 shutil.rmtree(assets_dest)
             shutil.copytree(assets_source, assets_dest)
-
