@@ -297,6 +297,35 @@ class TestHTMLTemplateRendering:
         html_content = report_files[0].read_text()
         assert "<!DOCTYPE html>" in html_content or "<html" in html_content
         assert "</html>" in html_content
+
+    def test_html_and_jenkins_html_use_distinct_filenames(
+        self, tmp_project, sample_normalized_findings, sample_git_repo_info
+    ):
+        """Test that Jenkins HTML does not overwrite the regular HTML report."""
+        output_dir = str(tmp_project / "reports")
+        timestamp = "2024_01_15T10_30_00"
+        data = (
+            sample_normalized_findings.get("trufflehog"),
+            sample_normalized_findings.get("opengrep"),
+            sample_normalized_findings.get("syft"),
+            sample_normalized_findings.get("grype"),
+            sample_normalized_findings.get("checkov"),
+        )
+
+        for output_format in ("html", "jenkins_html"):
+            report_builder(
+                output_dir=output_dir,
+                timestamp=timestamp,
+                git_repo_info=sample_git_repo_info,
+                data=data,
+                output_format=output_format,
+            )
+
+        report_files = {path.name for path in Path(output_dir).glob("*.html")}
+        assert report_files == {
+            f"dsoinabox_unified_report_{timestamp}.html",
+            f"dsoinabox_unified_report_{timestamp}_jenkins.html",
+        }
     
     def test_jenkins_html_snapshot(
         self, tmp_project, sample_normalized_findings, sample_git_repo_info, snapshot: SnapshotAssertion
@@ -505,4 +534,3 @@ class TestIndividualHTMLTemplates:
         
         normalized = normalize_html_output(rendered)
         assert normalized == snapshot
-
