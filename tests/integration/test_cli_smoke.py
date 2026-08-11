@@ -89,6 +89,33 @@ def test_cli_scan_with_specific_output_path(tmp_project, fake_runner, monkeypatc
 
 
 @pytest.mark.integration
+def test_cli_relative_report_directory_uses_invocation_directory(
+    tmp_project, fake_runner, monkeypatch
+):
+    """Relative report paths resolve from the invocation directory, not the source."""
+    invocation_dir = tmp_project / "invocation"
+    invocation_dir.mkdir()
+    source_dir = tmp_project / "source"
+    source_dir.mkdir()
+    (source_dir / "test.py").write_text("print('hello')\n")
+    monkeypatch.chdir(invocation_dir)
+
+    exit_code = main([
+        "--source", str(source_dir),
+        "--output", "json",
+        "--report_directory", "reports",
+        "--show_findings", "False",
+        "--project_id", "test-project",
+    ])
+
+    assert exit_code == 0
+    assert list(
+        (invocation_dir / "reports").rglob("dsoinabox_unified_report_*.json")
+    )
+    assert not (source_dir / "reports").exists()
+
+
+@pytest.mark.integration
 def test_cli_scan_non_git_directory(tmp_project, fake_runner, monkeypatch):
     """test that scanning a non-git directory works correctly."""
     source_dir = tmp_project / "source"

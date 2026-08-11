@@ -19,6 +19,7 @@ Examples:
 
 - `--report_directory`
 - Default: `reports`
+- Relative paths are resolved from the current working directory, not `--source`
 - If `/reports` is mounted in Docker, reports are copied there
 
 - `--output`, `-o`

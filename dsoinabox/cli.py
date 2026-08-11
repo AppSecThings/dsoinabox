@@ -131,7 +131,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--report_directory",
         action="store",
         default=None,  # set based on docker detection
-        help="directory to store reports. default is 'reports' (relative to source). if running in docker and '/reports' mount exists, copies reports there",
+        help=(
+            "directory for generated reports. default is './reports'. relative paths are resolved "
+            "from the current working directory. if running in docker and '/reports' is available, "
+            "reports are copied there"
+        ),
     )
 
     # trufflehog

@@ -42,6 +42,10 @@ dsoinabox --init-config
 - `grype_args`
 - `checkov_args`
 
+Relative `report_directory` values are resolved from the directory where `dsoinabox` is invoked,
+including values loaded from `.dsoinabox.yaml` or environment variables. They are not resolved
+relative to `source` or the config file.
+
 You can also define tool args with nested maps:
 
 - `tool_args`
