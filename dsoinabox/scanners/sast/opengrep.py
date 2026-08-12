@@ -36,25 +36,33 @@ class OpengrepScanner(BaseScanner):
         """run the opengrep cli scan."""
         args = [
             "scan",
-            f"--json-output={report_directory}/opengrep.json",
+            "--json",
             "--config",
             "auto",
             source_path,
         ]
         args.extend(self._parse_extra_tool_args(extra_tool_args))
-        result = self._run_command(args)
+        # Capture bytes and decode them ourselves instead of using OpenGrep's
+        # locale-dependent --json-output file writer. PYTHONIOENCODING controls
+        # the child stream even for bundled Python distributions.
+        result = self._run_command(
+            args,
+            env={"PYTHONIOENCODING": "utf-8"},
+            text=False,
+        )
+        stdout = result.stdout.decode("utf-8") if isinstance(result.stdout, bytes) else result.stdout
+        stderr = result.stderr.decode("utf-8", errors="replace") if isinstance(result.stderr, bytes) else result.stderr
         if result.returncode == 0:
-            with open(f"{report_directory}/opengrep.json", "r") as fd:
-                json_results = json.load(fd)
+            json_results = json.loads(stdout)
             self._write_json_report(json_results, report_directory, "opengrep.json")
             return json_results
         else:
-            raise ScannerError(f"OpenGrep scan failed: {result.stderr}")
+            raise ScannerError(f"OpenGrep scan failed: {stderr}")
 
     def _write_json_report(self, data: dict | list, report_directory: str, filename: str) -> None:
         """write json report to file."""
         os.makedirs(report_directory, exist_ok=True)
-        with open(f"{report_directory}/{filename}", "w") as fd:
+        with open(f"{report_directory}/{filename}", "w", encoding="utf-8") as fd:
             json.dump(data, fd, indent=4)
 
 

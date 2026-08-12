@@ -128,6 +128,64 @@ def sample_git_repo_info():
 
 class TestHTMLTemplateRendering:
     """Test HTML template rendering."""
+
+    @pytest.fixture
+    def paginated_opengrep_findings(self):
+        """OpenGrep data large enough to require two report pages."""
+        return {
+            "results": [
+                {
+                    "check_id": f"test.rule.{index}",
+                    "path": f"src/file_{index}.py",
+                    "start": {"line": index + 1},
+                    "extra": {
+                        "message": f"Finding {index}",
+                        "severity": "ERROR" if index % 2 == 0 else "WARNING",
+                    },
+                }
+                for index in range(30)
+            ]
+        }
+
+    def test_html_report_includes_section_pagination_and_severity_metadata(
+        self, tmp_project, paginated_opengrep_findings
+    ):
+        output_dir = str(tmp_project / "reports")
+        os.makedirs(output_dir, exist_ok=True)
+
+        report_builder(
+            output_dir=output_dir,
+            timestamp="2024_01_15T10_30_00",
+            data=(None, paginated_opengrep_findings, None, None, None),
+            output_format="html",
+        )
+
+        html_content = next(Path(output_dir).glob("*.html")).read_text()
+        assert "const PAGE_SIZE = 25" in html_content
+        assert "table data-report-table" in html_content
+        assert html_content.count("data-report-row") >= 30
+        assert 'data-severity="high"' in html_content
+        assert 'data-severity="medium"' in html_content
+        assert "report-pagination" in html_content
+        assert "All severities" in html_content
+
+    def test_jenkins_html_remains_progressively_enhanced_without_pagination(
+        self, tmp_project, paginated_opengrep_findings
+    ):
+        output_dir = str(tmp_project / "reports")
+        os.makedirs(output_dir, exist_ok=True)
+
+        report_builder(
+            output_dir=output_dir,
+            timestamp="2024_01_15T10_30_00",
+            data=(None, paginated_opengrep_findings, None, None, None),
+            output_format="jenkins_html",
+        )
+
+        html_content = next(Path(output_dir).glob("*.html")).read_text()
+        assert "data-report-table" not in html_content
+        assert "report-pagination" not in html_content
+        assert '<script src="assets/app.js"></script>' in html_content
     
     def test_unified_report_html_renders(
         self, tmp_project, sample_normalized_findings, sample_git_repo_info

@@ -34,7 +34,7 @@
         {% elif level == 'none' %}
         {% set sev = 'info' %}
         {% endif %}
-        
+
         {# Check for security-severity in rule properties #}
         {% set rule_index = f.ruleIndex | default(-1) %}
         {% if rule_index >= 0 and runs and runs[0].tool and runs[0].tool.driver and runs[0].tool.driver.rules %}
@@ -95,7 +95,7 @@
             {% endif %}
 
             <div class="table-wrap" role="region" aria-label="Checkov IaC findings (scrollable)">
-            <table>
+            <table data-report-table>
                 <thead>
                 <tr>
                     <th style="min-width:16rem">File</th>
@@ -118,7 +118,7 @@
                     {% set message = finding.message if finding.message is defined else {} %}
                     {% set msg = message.text if message.text is defined else (message if message is string else '') %}
                     {% set level = (finding.level | default('error')) | lower %}
-                    
+
                     {# Determine severity #}
                     {% set sev = 'medium' %}
                     {% if level == 'error' %}
@@ -130,7 +130,7 @@
                     {% elif level == 'none' %}
                     {% set sev = 'info' %}
                     {% endif %}
-                    
+
                     {# Check for security-severity in rule properties #}
                     {% set rule_index = finding.ruleIndex | default(-1) %}
                     {% if rule_index >= 0 and runs and runs[0].tool and runs[0].tool.driver and runs[0].tool.driver.rules %}
@@ -152,12 +152,12 @@
                     {% endif %}
                     {% endif %}
                     {% endif %}
-                    
+
                     {% set sev_chip =
                     'chip--bad' if sev in ['critical','high'] else
                     ('chip--neutral' if sev == 'medium' else
                     ('chip--ok' if sev in ['low','info'] else '')) %}
-                    
+
                     {% set snippet = region.snippet.text if region.snippet and region.snippet.text is defined else '' %}
                     {% set fingerprints = finding.fingerprints if finding.fingerprints is defined else {} %}
                     {% set fingerprint_list = [] %}
@@ -171,7 +171,7 @@
                     {% elif fingerprint_list|length > 0 %}
                       {% set default_fp = fingerprint_list[0][1] %}
                     {% endif %}
-                    
+
                     {# Get rule details if available #}
                     {% set rule_name = '' %}
                     {% set rule_help_uri = '' %}
@@ -184,7 +184,7 @@
                     {% endif %}
                     {% endif %}
 
-                    <tr class="row-expandable" {% if fingerprint_list|length > 0 %}data-fingerprints='{{ fingerprint_list|map(attribute=1)|list|tojson }}'{% endif %}>
+                    <tr class="row-expandable" data-report-row data-severity="{{ sev | e }}" {% if fingerprint_list|length > 0 %}data-fingerprints='{{ fingerprint_list|map(attribute=1)|list|tojson }}'{% endif %}>
                     <td>{{ path | e }}</td>
                     <td>{{ line | e }}</td>
                     <td>{{ rid | e }}</td>
@@ -233,14 +233,14 @@
                                 </div>
                             </div>
                             {% endif %}
-                            
+
                             {% if msg %}
                             <div class="details-section">
                                 <h4>Description</h4>
                                 <p style="margin: 0; line-height: 1.6;">{{ msg | e }}</p>
                             </div>
                             {% endif %}
-                            
+
                             <div class="details-section">
                                 <h4>Details</h4>
                                 <dl class="details-grid">
@@ -266,7 +266,7 @@
                                     {% endif %}
                                 </dl>
                             </div>
-                            
+
                             {% if rule_help_uri %}
                             <div class="details-section">
                                 <h4>References</h4>
@@ -317,4 +317,3 @@
     {% endif %}
     </section>
 {% endif %}
-

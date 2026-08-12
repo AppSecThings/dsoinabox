@@ -27,7 +27,7 @@
     {% if matches %}
       <div class="section__body">
         <div class="table-wrap" role="region" aria-label="Grype SCA matches (scrollable)">
-          <table>
+          <table data-report-table>
             <thead>
               <tr>
                 <th style="min-width:14rem">Package</th>
@@ -87,7 +87,7 @@
                   {% set default_fp = fingerprint_list[0][1] %}
                 {% endif %}
 
-                <tr class="row-expandable" {% if fingerprint_list|length > 0 %}data-fingerprints='{{ fingerprint_list|map(attribute=1)|list|tojson }}'{% endif %}>
+                <tr class="row-expandable" data-report-row data-severity="{{ sev | e }}" {% if fingerprint_list|length > 0 %}data-fingerprints='{{ fingerprint_list|map(attribute=1)|list|tojson }}'{% endif %}>
                   <td>{{ art.name | default('') | e }}</td>
                   <td>{{ art.version | default('') | e }}</td>
                   <td>{{ art.type | default('') | e }}</td>
