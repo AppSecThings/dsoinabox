@@ -59,7 +59,7 @@
             {% endif %}
 
             <div class="table-wrap" role="region" aria-label="OpenGrep SAST findings (scrollable)">
-            <table>
+            <table data-report-table>
                 <thead>
                 <tr>
                     <th style="min-width:16rem">File</th>
@@ -78,6 +78,7 @@
                     {% set msg = (finding.extra.message if finding.extra is defined and finding.extra and finding.extra.message is defined else '') %}
                     {% set sev_raw = (finding.extra.severity if finding.extra is defined and finding.extra and finding.extra.severity is defined else 'Unknown') %}
                     {% set sev = sev_raw | lower %}
+                    {% set filter_sev = 'medium' if sev == 'warning' else ('high' if sev == 'error' else sev) %}
                     {% set sev_chip =
                     'chip--bad' if sev in ['critical','high'] else
                     ('chip--neutral' if sev == 'medium' else
@@ -107,7 +108,7 @@
                       {% set default_fp = fingerprint_list[0][1] %}
                     {% endif %}
 
-                    <tr class="row-expandable" {% if fingerprint_list|length > 0 %}data-fingerprints='{{ fingerprint_list|map(attribute=1)|list|tojson }}'{% endif %}>
+                    <tr class="row-expandable" data-report-row data-severity="{{ filter_sev | e }}" {% if fingerprint_list|length > 0 %}data-fingerprints='{{ fingerprint_list|map(attribute=1)|list|tojson }}'{% endif %}>
                     <td>{{ path | e }}</td>
                     <td>{{ line | e }}</td>
                     <td>{{ rid | e }}</td>
@@ -156,14 +157,14 @@
                                 </div>
                             </div>
                             {% endif %}
-                            
+
                             {% if msg %}
                             <div class="details-section">
                                 <h4>Description</h4>
                                 <p style="margin: 0; line-height: 1.6;">{{ msg | e }}</p>
                             </div>
                             {% endif %}
-                            
+
                             <div class="details-section">
                                 <h4>Details</h4>
                                 <dl class="details-grid">
@@ -193,7 +194,7 @@
                                     {% endif %}
                                 </dl>
                             </div>
-                            
+
                             {% if cwe or owasp or vulnerability_class %}
                             <div class="details-section">
                                 <h4>Classifications</h4>
@@ -231,7 +232,7 @@
                                 </dl>
                             </div>
                             {% endif %}
-                            
+
                             {% if references or source or shortlink %}
                             <div class="details-section">
                                 <h4>References</h4>

@@ -150,13 +150,8 @@ def test_repo_config_nested_tool_args_are_applied(tmp_project, monkeypatch):
         if cmd[0] == "git":
             return (0, "", "") if text else (0, b"", b"")
         if cmd[0] == "opengrep":
-            output_file_arg = next((arg for arg in cmd if arg.startswith("--json-output=")), None)
-            if output_file_arg:
-                out_file = output_file_arg.split("=", 1)[1]
-                os.makedirs(os.path.dirname(out_file), exist_ok=True)
-                with open(out_file, "w", encoding="utf-8") as f:
-                    json.dump({"results": []}, f)
-            return (0, "", "") if text else (0, b"", b"")
+            output = '{"results": []}'
+            return (0, output, "") if text else (0, output.encode("utf-8"), b"")
         return (0, "{}", "") if text else (0, b"{}", b"")
 
     import dsoinabox.utils.runner

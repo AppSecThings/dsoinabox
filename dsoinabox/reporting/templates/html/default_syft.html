@@ -41,7 +41,7 @@
       </p>
 
       <div class="table-wrap" role="region" aria-label="SBOM components (scrollable)">
-        <table>
+        <table data-report-table>
           <thead>
             <tr>
               <th style="min-width:16rem">Component</th>
@@ -111,7 +111,8 @@
                 {% set license = item.license|default('—') %}
               {% endif %}
 
-              <tr>
+              {# SBOM inventory records do not carry a vulnerability severity. #}
+              <tr data-report-row data-severity="not-applicable">
                 <td>{{ name }}</td>
                 <td>{{ license if license else '—' }}</td>
                 <td>{{ version }}</td>

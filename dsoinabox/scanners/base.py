@@ -36,10 +36,16 @@ class BaseScanner:
             return []
         return self._normalize_args(extra_tool_args)
 
-    def _run_command(self, args: str | list[str] | tuple[str, ...] | None) -> SimpleNamespace:
+    def _run_command(
+        self,
+        args: str | list[str] | tuple[str, ...] | None,
+        *,
+        env: dict[str, str] | None = None,
+        text: bool = True,
+    ) -> SimpleNamespace:
         """run the cli tool with the provided args."""
         command = [self.cli_name] + self._normalize_args(args)
-        returncode, stdout, stderr = run_cmd(command)
+        returncode, stdout, stderr = run_cmd(command, env=env, text=text)
         return SimpleNamespace(returncode=returncode, stdout=stdout, stderr=stderr)
 
     def show_version(self) -> None:

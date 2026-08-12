@@ -23,12 +23,8 @@ def run_cmd_recorder(monkeypatch):
         tool = cmd[0]
 
         if tool == "opengrep":
-            output_file_arg = next((arg for arg in cmd if arg.startswith("--json-output=")), None)
-            if output_file_arg:
-                output_file = Path(output_file_arg.split("=", 1)[1])
-                output_file.parent.mkdir(parents=True, exist_ok=True)
-                output_file.write_text(json.dumps({"results": []}))
-            return (0, "", "")
+            output = json.dumps({"results": []})
+            return (0, output if text else output.encode("utf-8"), "" if text else b"")
 
         if tool == "syft":
             return (0, json.dumps({"artifacts": []}), "")
@@ -98,7 +94,7 @@ def test_opengrep_command_tokenization_with_quoted_extra_args(tmp_path, run_cmd_
     assert run_cmd_recorder[-1] == [
         "opengrep",
         "scan",
-        f"--json-output={report_dir}/opengrep.json",
+        "--json",
         "--config",
         "auto",
         source,
@@ -106,6 +102,27 @@ def test_opengrep_command_tokenization_with_quoted_extra_args(tmp_path, run_cmd_
         "high critical",
         "--flag",
     ]
+
+
+def test_opengrep_captures_utf8_json_stdout_as_bytes(tmp_path, monkeypatch):
+    captured_env = None
+    captured_text = None
+
+    def _fake_run_cmd(cmd, *, cwd=None, env=None, timeout=None, text=True, check=False):
+        nonlocal captured_env, captured_text
+        captured_env = env
+        captured_text = text
+        return (0, b'{"results": []}', b"")
+
+    monkeypatch.setattr(base_module, "run_cmd", _fake_run_cmd)
+
+    OpengrepScanner().run_scan(
+        source_path=str(tmp_path / "source"),
+        report_directory=str(tmp_path / "reports"),
+    )
+
+    assert captured_env == {"PYTHONIOENCODING": "utf-8"}
+    assert captured_text is False
 
 
 def test_syft_command_tokenization_handles_none_extra_args(tmp_path, run_cmd_recorder):
