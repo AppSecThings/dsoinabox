@@ -11,7 +11,7 @@
     </div>
     <div class="section__body">
         <div class="table-wrap" role="region" aria-label="TruffleHog findings (scrollable)">
-        <table>
+        <table data-report-table>
             <thead>
             <tr>
                 <th style="width:32%">File</th>
@@ -57,7 +57,8 @@
                 {% set repository = git_data.repository if git_data.repository is defined else '' %}
                 {% set commit = git_data.commit if git_data.commit is defined else '' %}
 
-            <tr class="row-expandable" {% if fingerprint_list|length > 0 %}data-fingerprints='{{ fingerprint_list|map(attribute=1)|list|tojson }}'{% endif %}>
+            {# Secret findings are normalized to High in the unified SARIF formatter. #}
+            <tr class="row-expandable" data-report-row data-severity="high" {% if fingerprint_list|length > 0 %}data-fingerprints='{{ fingerprint_list|map(attribute=1)|list|tojson }}'{% endif %}>
                 <td>
                 {{ file_path | e }}
                 </td>
