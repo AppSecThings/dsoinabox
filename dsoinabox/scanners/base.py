@@ -56,6 +56,8 @@ class BaseScanner:
             raise ScannerError(f"{self.cli_name} version check failed: {result.stderr}")
         text = result.stdout if isinstance(result.stdout, str) else result.stdout.decode("utf-8", "replace")
         first = next((line.strip() for line in text.splitlines() if line.strip()), "")
+        if first.startswith(("{", "[")) or len(first) > 120:
+            return ""
         return first
 
     def show_version(self) -> None:

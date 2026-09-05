@@ -72,6 +72,11 @@ def fake_runner(golden_dir, monkeypatch):
         
         # extract first token (scanner name)
         scanner_name = cmd[0].lower()
+
+        # version probes answer with a short version line, like the real tools
+        if len(cmd) == 2 and cmd[1] in ("--version", "version"):
+            line = f"{scanner_name} 0.0.0-fake"
+            return (0, line if text else line.encode(), "" if text else b"")
         
         # handle git commands - return empty success
         if scanner_name == "git":

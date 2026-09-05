@@ -6,7 +6,7 @@ from typing import Any
 from jinja2 import Environment, FileSystemLoader
 
 from .. import __version__
-from ..utils.deterministic import normalize_path, utcnow
+from ..utils.deterministic import utcnow
 from ..waivers.apply import active_findings, waived_findings
 from .sarif_formatter import (
     _extract_file_path_from_finding,
@@ -79,37 +79,6 @@ def split_waived(tool_payloads: dict[str, Any]) -> tuple[dict[str, Any], list[di
     return active, waived_rows, expired_rows
 
 
-def _normalize_paths_in_data(data: Any) -> Any:
-    """
-    recursively normalize absolute paths in data structures
-    
-    ensures paths in reports are deterministic across different machines and environments
-    """
-    if isinstance(data, dict):
-        normalized = {}
-        for key, value in data.items():
-            #normalize common path fields
-            if key in ("path", "file", "file_path", "uri", "location", "realPath", "repository_local_path", "base_path"):
-                if isinstance(value, str):
-                    normalized[key] = normalize_path(value)
-                else:
-                    normalized[key] = _normalize_paths_in_data(value)
-            elif key in ("locations", "artifactLocation", "physicalLocation", "SourceMetadata", "Data", "Git", "Filesystem"):
-                #handle nested location structures
-                normalized[key] = _normalize_paths_in_data(value)
-            else:
-                normalized[key] = _normalize_paths_in_data(value)
-        return normalized
-    elif isinstance(data, list):
-        return [_normalize_paths_in_data(item) for item in data]
-    elif isinstance(data, str):
-        #check if string looks like an absolute path
-        if os.path.isabs(data) and ("/" in data or "\\" in data):
-            return normalize_path(data)
-        return data
-    else:
-        return data
-
 def report_builder(
     reports_directory = "reports", 
     output_dir = "reports", 
@@ -132,13 +101,7 @@ def report_builder(
     if waiver_data is not None and hasattr(waiver_data, "to_dict"):
         waiver_data = waiver_data.to_dict()
 
-    #normalize paths in all data structures for deterministic output
-    trufflehog_data = _normalize_paths_in_data(trufflehog_data) if trufflehog_data else None
-    opengrep_data = _normalize_paths_in_data(opengrep_data) if opengrep_data else None
-    syft_data = _normalize_paths_in_data(syft_data) if syft_data else None
-    grype_data = _normalize_paths_in_data(grype_data) if grype_data else None
-    checkov_data = _normalize_paths_in_data(checkov_data) if checkov_data else None
-    
+    #paths are made repo-relative by the normalizers (dsoinabox.normalize); nothing is rewritten here
     if output_format.lower() == "json":
         #ensure output directory exists
         os.makedirs(output_dir, exist_ok=True)

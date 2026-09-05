@@ -3,10 +3,10 @@ import os
 import textwrap
 from abc import ABC, abstractmethod
 
-from ..utils.deterministic import normalize_path
 from ..waivers.apply import active_findings
 from .checkov import _extract_severity
 from .checkov import fingerprint_findings as checkov_fingerprint_findings
+from .fields import relativize_path
 from .grype import fingerprint_findings as grype_fingerprint_findings
 from .opengrep import fingerprint_findings as opengrep_fingerprint_findings
 from .trufflehog import fingerprint_findings as trufflehog_fingerprint_findings
@@ -227,8 +227,7 @@ class TrufflehogParser(BaseParser):
             repo_root = git_data.get("repository_local_path") or "."
             file_rel = git_data.get("file")
             if file_rel:
-                path = os.path.normpath(os.path.join(repo_root, file_rel)).replace("\\", "/")
-                return normalize_path(path)
+                return relativize_path(file_rel, repo_root)
 
         #--- case 2: filesystem scan ---
         if "Filesystem" in data:
@@ -236,8 +235,7 @@ class TrufflehogParser(BaseParser):
             base = fs_data.get("base_path") or "."
             path = fs_data.get("file") or fs_data.get("file_path") or fs_data.get("path")
             if path:
-                full_path = os.path.normpath(os.path.join(base, path)).replace("\\", "/")
-                return normalize_path(full_path)
+                return relativize_path(path, base)
 
         raise ValueError("Unable to determine file path from Trufflehog finding")
     
