@@ -484,7 +484,10 @@ def main(argv: list[str] | None = None) -> int:
         try:
             logger.info(f"Loading waiver file: {args.waiver_file}")
             waiver_data = load_waiver_file(os.path.join(args.source, args.waiver_file))
-            logger.info(f"Waiver file loaded successfully. Found {len(waiver_data.get('finding_waivers', []))} finding waivers and {len(waiver_data.get('benchmark', []))} benchmark waivers.")
+            logger.info(
+                f"Waiver file loaded successfully (schema {waiver_data.schema_version}). "
+                f"Found {len(waiver_data.finding_waivers)} finding waivers and {len(waiver_data.benchmark)} benchmark waivers."
+            )
         except FileNotFoundError:
             logger.info(f"Did not find waiver file: {args.waiver_file}")
             if args.waiver_file != default_waiver_file:

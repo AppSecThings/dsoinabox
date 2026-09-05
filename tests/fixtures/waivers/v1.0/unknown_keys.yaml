@@ -1,0 +1,6 @@
+schema_version: "1.0"
+owner_team: "platform"           # unknown top-level key
+finding_waivers:
+  - fingerprint: "og:1:RULE:test:abc"
+    type: "false_positive"
+    justification: "typo for reason"   # unknown entry key

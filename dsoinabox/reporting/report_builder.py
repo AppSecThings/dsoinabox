@@ -48,7 +48,7 @@ def report_builder(
     git_repo_info: dict = None,
     data: tuple = None,
     output_format: str = "html",
-    waiver_data: dict = None,
+    waiver_data: Any = None,
 ) -> None:
     # Generate timestamp if not provided
     if timestamp is None:
@@ -56,6 +56,10 @@ def report_builder(
     trufflehog_data, opengrep_data, syft_data, grype_data, checkov_data = data or (None, None, None, None, None)
     '''report builder supports report outputs in html, jenkins_html, json, and ndjson formats'''
     
+    #templates and json need a plain dict; accept WaiverSet or legacy dict
+    if waiver_data is not None and hasattr(waiver_data, "to_dict"):
+        waiver_data = waiver_data.to_dict()
+
     #normalize paths in all data structures for deterministic output
     trufflehog_data = _normalize_paths_in_data(trufflehog_data) if trufflehog_data else None
     opengrep_data = _normalize_paths_in_data(opengrep_data) if opengrep_data else None

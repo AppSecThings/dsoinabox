@@ -1,0 +1,5 @@
+schema_version: "1.0"
+finding_waivers:
+  - fingerprint: "og:1:RULE:test:abc"
+    type: "false_positive"
+    expires_at: "next tuesday"

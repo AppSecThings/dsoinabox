@@ -1,0 +1,4 @@
+# no schema_version: loader must assume 1.0 and warn
+finding_waivers:
+  - fingerprint: "og:1:RULE:test:abc"
+    type: "false_positive"

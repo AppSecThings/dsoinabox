@@ -59,6 +59,7 @@ dsoinabox = [
     "reporting/templates/jenkins_html/*",
     "reporting/templates/jenkins_html/assets/*",
     "waivers/*.yaml",
+    "waivers/schema_files/*.json",
 ]
 
 [tool.ruff]

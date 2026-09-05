@@ -4,9 +4,16 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Set, Union
 
+from .models import WaiverSet
 
-def _build_waiver_fingerprints(waiver_data: Dict[str, Any]) -> Set[str]:
+WaiverData = Union[WaiverSet, Dict[str, Any]]
+
+
+def _build_waiver_fingerprints(waiver_data: WaiverData) -> Set[str]:
     """Build a set of all waiver fingerprints from finding and benchmark waivers."""
+    if isinstance(waiver_data, WaiverSet):
+        return {e.fingerprint for e in waiver_data.all_fingerprint_entries() if e.fingerprint}
+
     finding_waivers = waiver_data.get('finding_waivers', [])
     benchmark_waivers = waiver_data.get('benchmark', [])
 
@@ -16,7 +23,7 @@ def _build_waiver_fingerprints(waiver_data: Dict[str, Any]) -> Set[str]:
 
 def check_waiver(
     fingerprints: Dict[str, str],
-    waiver_data: Dict[str, Any],
+    waiver_data: WaiverData,
     waiver_fingerprints: Optional[Set[str]] = None
 ) -> bool:
     """check if any fingerprint from a finding matches a waiver."""
@@ -38,7 +45,7 @@ def check_waiver(
 
 def apply_waivers_to_findings(
     findings: Union[List[Dict[str, Any]], Dict[str, Any]],
-    waiver_data: Optional[Dict[str, Any]],
+    waiver_data: Optional[WaiverData],
     findings_key: Optional[str] = None,
     persist_waived_findings: bool = False
 ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:

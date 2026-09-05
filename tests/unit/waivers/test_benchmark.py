@@ -36,11 +36,10 @@ class TestBenchmarkLoader:
             yaml.dump(waiver_data, f)
         
         result = load_waiver_file(str(waiver_file))
-        assert "benchmark" in result
-        assert len(result["benchmark"]) == 1
-        assert result["benchmark"][0]["fingerprint"] == "og:1:RULE:test2:xyz"
+        assert len(result.benchmark) == 1
+        assert result.benchmark[0].fingerprint == "og:1:RULE:test2:xyz"
         # Type should be overridden to "benchmark"
-        assert result["benchmark"][0]["type"] == "benchmark"
+        assert result.benchmark[0].type == "benchmark"
     
     def test_benchmark_type_override(self, tmp_path):
         """Test that benchmark entry type is always overridden to 'benchmark'."""
@@ -67,8 +66,8 @@ class TestBenchmarkLoader:
             yaml.dump(waiver_data, f)
         
         result = load_waiver_file(str(waiver_file))
-        for entry in result["benchmark"]:
-            assert entry["type"] == "benchmark"
+        for entry in result.benchmark:
+            assert entry.type == "benchmark"
     
     def test_benchmark_missing_fingerprint_raises(self, tmp_path):
         """Test that benchmark entry without fingerprint raises ValueError."""
@@ -101,7 +100,7 @@ class TestBenchmarkLoader:
             yaml.dump(waiver_data, f)
         
         result = load_waiver_file(str(waiver_file))
-        assert result["benchmark"] == []
+        assert result.benchmark == []
     
     def test_benchmark_missing_section_defaults_to_empty(self, tmp_path):
         """Test that missing benchmark section defaults to empty list."""
@@ -115,7 +114,7 @@ class TestBenchmarkLoader:
             yaml.dump(waiver_data, f)
         
         result = load_waiver_file(str(waiver_file))
-        assert result["benchmark"] == []
+        assert result.benchmark == []
 
 
 class TestBenchmarkMatcher:
@@ -251,7 +250,7 @@ class TestBenchmarkMatcher:
         loaded_data = load_waiver_file(str(waiver_file))
         
         # Verify type was overridden
-        assert loaded_data['benchmark'][0]['type'] == 'benchmark'
+        assert loaded_data.benchmark[0].type == 'benchmark'
         
         # Test that it matches findings
         fingerprints = {
