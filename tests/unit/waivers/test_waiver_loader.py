@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import pytest
 import yaml
-import tempfile
-from pathlib import Path
 
-from dsoinabox.waivers.loader import load_waiver_file, _load_schema_v1_0
+from dsoinabox.waivers.loader import load_waiver_file
 
 
 class TestWaiverLoaderEdgeCases:

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from typing import Any, Dict, List, Optional
+
 import yaml
-import os
-from typing import Dict, Any, List, Optional
 
 
 def _extract_primary_fingerprint(finding: Dict[str, Any], tool_name: str) -> Optional[str]:

@@ -70,7 +70,7 @@ RUN set -eux; \
 ############################
 # Stage: runtime
 ############################
-FROM python:3.11-slim AS runtime
+FROM python:3.12-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -96,17 +96,20 @@ COPY --from=trufflehog-install /out/trufflehog /usr/local/bin/trufflehog
 
 WORKDIR /app
 
-# Python deps + security tools (drop pip trufflehog)
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt \
+# Install dsoinabox from pyproject (single source of truth for dependencies)
+# plus checkov, which is a Python tool.
+COPY pyproject.toml LICENSE NOTICE ./
+COPY dsoinabox ./dsoinabox
+RUN pip install --no-cache-dir . \
     && pip install --no-cache-dir checkov
 
-# (Optional) sanity check at build-time
+# Build-time sanity checks: every scanner and the package itself must run.
 RUN trufflehog --version || (echo "trufflehog not runnable"; exit 1) \
-    && checkov --version || (echo "checkov not runnable"; exit 1)
-
-# Copy project source
-COPY . .
+    && checkov --version || (echo "checkov not runnable"; exit 1) \
+    && syft version || (echo "syft not runnable"; exit 1) \
+    && grype version || (echo "grype not runnable"; exit 1) \
+    && opengrep --version || (echo "opengrep not runnable"; exit 1) \
+    && python -c "import dsoinabox; print(dsoinabox.__version__)"
 
 RUN chown -R appuser:appuser /app
 

@@ -1,8 +1,6 @@
 """CLI tests for --tool_output flag."""
 
-import json
 import pytest
-from pathlib import Path
 
 from dsoinabox.cli import main
 

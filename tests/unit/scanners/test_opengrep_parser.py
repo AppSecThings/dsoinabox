@@ -1,8 +1,9 @@
 """Unit tests for OpenGrep (SAST) parser/normalizer."""
 
 import json
-import pytest
 from pathlib import Path
+
+import pytest
 from syrupy import SnapshotAssertion
 
 from dsoinabox.reporting.opengrep import fingerprint_findings

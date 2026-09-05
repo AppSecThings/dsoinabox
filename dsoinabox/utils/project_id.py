@@ -7,10 +7,10 @@ consistent HMAC keys from project IDs.
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import os
 import re
-import hmac
-import hashlib
 from typing import Optional
 from urllib.parse import urlparse
 
@@ -142,8 +142,8 @@ def get_initial_commit_hash(repo_path: str) -> Optional[str]:
             text=True,
             check=False
         )
-        if returncode == 0 and stdout.strip():
-            return stdout.strip()
+        if returncode == 0 and str(stdout).strip():
+            return str(stdout).strip()
     except Exception:
         pass
     
@@ -179,8 +179,8 @@ def derive_project_id(source_path: str, project_id_override: Optional[str] = Non
             text=True,
             check=False
         )
-        if returncode == 0 and stdout.strip():
-            remote_url = stdout.strip()
+        if returncode == 0 and str(stdout).strip():
+            remote_url = str(stdout).strip()
             normalized = normalize_git_remote(remote_url)
             if normalized:
                 return normalized

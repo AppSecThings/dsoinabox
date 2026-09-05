@@ -1,10 +1,9 @@
+import logging
 import os
 import subprocess
-from typing import Optional, Dict
-import logging
+from typing import Dict, Optional
 
 from .runner import run_cmd
-
 
 # process-local registry for git safe directories. this avoids mutating user global config.
 _GIT_SAFE_DIRECTORIES: set[str] = set()
@@ -74,7 +73,7 @@ class GitRepoInfo:
                 text=True,
                 check=True,
             )
-            return stdout.strip()
+            return str(stdout).strip()
         except subprocess.CalledProcessError:
             return ""
 

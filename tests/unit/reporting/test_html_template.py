@@ -3,13 +3,13 @@
 import json
 import os
 import re
-import pytest
 from pathlib import Path
-from syrupy import SnapshotAssertion
+
+import pytest
 from jinja2 import Environment, FileSystemLoader
+from syrupy import SnapshotAssertion
 
 from dsoinabox.reporting.report_builder import report_builder
-from dsoinabox.utils.deterministic import normalize_path
 
 
 def normalize_html_output(html: str) -> str:

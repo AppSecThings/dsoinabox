@@ -1,8 +1,9 @@
 """Unit tests for TruffleHog (Secrets) parser/normalizer."""
 
 import json
-import pytest
 from pathlib import Path
+
+import pytest
 
 from dsoinabox.reporting.trufflehog import fingerprint_findings
 

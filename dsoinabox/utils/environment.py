@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import shutil
-from pathlib import Path
 
 
 def is_running_in_docker() -> bool:

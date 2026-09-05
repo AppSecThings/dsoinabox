@@ -1,8 +1,8 @@
 """Unit tests for Grype (SCA) parser/normalizer."""
 
 import json
+
 import pytest
-from pathlib import Path
 
 from dsoinabox.reporting.grype import fingerprint_findings
 

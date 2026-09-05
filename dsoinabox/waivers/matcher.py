@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Any, List, Optional, Union, Set
+from typing import Any, Dict, List, Optional, Set, Union
 
 
 def _build_waiver_fingerprints(waiver_data: Dict[str, Any]) -> Set[str]:
@@ -93,13 +93,13 @@ def apply_waivers_to_findings(
         
         if findings_dict is not None:
             if findings_key:
-                findings[findings_key] = filtered_findings
+                findings_dict[findings_key] = filtered_findings
             else:
                 for key in ['results', 'matches']:
-                    if key in findings:
-                        findings[key] = filtered_findings
+                    if key in findings_dict:
+                        findings_dict[key] = filtered_findings
                         break
         else:
-            findings[:] = filtered_findings
+            findings_list[:] = filtered_findings
     
     return findings

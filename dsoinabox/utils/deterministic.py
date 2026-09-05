@@ -11,7 +11,6 @@ import os
 from datetime import datetime, timezone
 from typing import Callable, Optional
 
-
 # Allow tests to override utcnow by setting this callable
 _utcnow_override: Optional[Callable[[], datetime]] = None
 

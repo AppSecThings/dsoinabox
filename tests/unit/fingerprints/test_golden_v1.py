@@ -16,7 +16,6 @@ deliberately (only when adding cases, never when changing outputs), run:
 from __future__ import annotations
 
 import json
-import os
 import sys
 from pathlib import Path
 

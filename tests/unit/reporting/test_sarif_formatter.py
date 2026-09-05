@@ -1,19 +1,18 @@
 """Unit tests for SARIF formatter."""
 
 import json
-import os
+from typing import Any, Dict
+
 import pytest
-from pathlib import Path
-from typing import Dict, Any
 
 from dsoinabox.reporting.sarif_formatter import (
-    convert_unified_json_to_sarif,
-    _map_severity_to_sarif_level,
-    _extract_rule_id_from_finding,
-    _extract_message_from_finding,
     _extract_file_path_from_finding,
     _extract_line_info_from_finding,
+    _extract_message_from_finding,
+    _extract_rule_id_from_finding,
     _extract_severity_from_finding,
+    _map_severity_to_sarif_level,
+    convert_unified_json_to_sarif,
 )
 
 

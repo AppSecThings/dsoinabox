@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import pytest
-import os
 import json
+import os
+
+import pytest
 import yaml
-from pathlib import Path
-from unittest.mock import patch
 
 from dsoinabox.cli import main
 
@@ -74,12 +73,12 @@ class TestCLIExitCodes:
         
         # patch at source module and all places where it's imported
         # necessary because python creates local references on import
-        import dsoinabox.utils.runner
+        import dsoinabox.reporting.opengrep
+        import dsoinabox.reporting.trufflehog
         import dsoinabox.scanners.base
         import dsoinabox.utils.git
         import dsoinabox.utils.project_id
-        import dsoinabox.reporting.trufflehog
-        import dsoinabox.reporting.opengrep
+        import dsoinabox.utils.runner
         
         monkeypatch.setattr(dsoinabox.utils.runner, "run_cmd", empty_runner)
         monkeypatch.setattr(dsoinabox.scanners.base, "run_cmd", empty_runner)
@@ -141,12 +140,12 @@ class TestCLIExitCodes:
                 return (0, b"{}", b"")
         
         # patch at source module and all places where it's imported
-        import dsoinabox.utils.runner
+        import dsoinabox.reporting.opengrep
+        import dsoinabox.reporting.trufflehog
         import dsoinabox.scanners.base
         import dsoinabox.utils.git
         import dsoinabox.utils.project_id
-        import dsoinabox.reporting.trufflehog
-        import dsoinabox.reporting.opengrep
+        import dsoinabox.utils.runner
         
         monkeypatch.setattr(dsoinabox.utils.runner, "run_cmd", failing_runner)
         monkeypatch.setattr(dsoinabox.scanners.base, "run_cmd", failing_runner)
@@ -362,12 +361,12 @@ class TestCLIExitCodes:
                 return (0, b"{}", b"")
         
         # patch at source module and all places where it's imported
-        import dsoinabox.utils.runner
+        import dsoinabox.reporting.opengrep
+        import dsoinabox.reporting.trufflehog
         import dsoinabox.scanners.base
         import dsoinabox.utils.git
         import dsoinabox.utils.project_id
-        import dsoinabox.reporting.trufflehog
-        import dsoinabox.reporting.opengrep
+        import dsoinabox.utils.runner
         
         monkeypatch.setattr(dsoinabox.utils.runner, "run_cmd", empty_trufflehog_runner)
         monkeypatch.setattr(dsoinabox.scanners.base, "run_cmd", empty_trufflehog_runner)
@@ -395,8 +394,8 @@ class TestCLIExitCodes:
         )
         
         # mock check_tool_available to always return True for tests
-        import dsoinabox.utils.environment
         import dsoinabox.cli
+        import dsoinabox.utils.environment
         monkeypatch.setattr(dsoinabox.utils.environment, "check_tool_available", lambda tool_name: True)
         monkeypatch.setattr(dsoinabox.cli, "check_tool_available", lambda tool_name: True)
         

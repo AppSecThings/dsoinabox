@@ -1,5 +1,9 @@
-import hashlib, hmac, re, json, os
-from typing import Any, Dict, Tuple, Optional
+import hashlib
+import hmac
+import os
+import re
+from typing import Any, Dict, Optional, Tuple
+
 
 def _b(s): 
     return s if isinstance(s, (bytes, bytearray)) else s.encode("utf-8")
@@ -125,7 +129,6 @@ def fingerprint_checkov_result(
     rule_id = _extract_rule_id(result, sarif_data)
     file_path = _extract_file_path(result)
     start_line, end_line = _extract_line_info(result)
-    message = _extract_message(result)
     snippet = _extract_snippet(result)
     
     #normalize file path relative to source
@@ -143,7 +146,7 @@ def fingerprint_checkov_result(
     rule_fp = f"ck:1:RULE:{rule_id}:{_hmac40(project_hmac_key, _b(rule_coord))}"
     
     #--- EXACT fingerprint ---
-    file_sha = _hex12(_b(rel_path))  #simplified for now
+    #note: v1 EXACT does not hash file content; frozen as-is (see tests/unit/fingerprints/golden_v1.json)
     exact_fp = f"ck:1:EXACT:{rule_id}:{path_norm_sha(rel_path)}:{start_line}:{end_line}"
     
     #--- CTX fingerprint ---

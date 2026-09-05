@@ -1,19 +1,14 @@
-import os
 import json
+import os
 import textwrap
 from abc import ABC, abstractmethod
 
-from cyclonedx.model.bom import Bom
-from cyclonedx.output import make_outputter
-from cyclonedx.schema import OutputFormat, SchemaVersion
-
 from ..utils.deterministic import normalize_path
-
-from .trufflehog import fingerprint_findings as trufflehog_fingerprint_findings
-from .opengrep import fingerprint_findings as opengrep_fingerprint_findings
-from .grype import fingerprint_findings as grype_fingerprint_findings
-from .checkov import fingerprint_findings as checkov_fingerprint_findings
 from .checkov import _extract_severity
+from .checkov import fingerprint_findings as checkov_fingerprint_findings
+from .grype import fingerprint_findings as grype_fingerprint_findings
+from .opengrep import fingerprint_findings as opengrep_fingerprint_findings
+from .trufflehog import fingerprint_findings as trufflehog_fingerprint_findings
 
 #threshold mapping: cleaner than if/elif chain
 #old format for semgrep/opengrep severity thresholds:
@@ -150,93 +145,6 @@ class OpengrepParser(BaseParser):
             print()
 
 
-
-class SyftParser:
-    def __init__(self, report_directory: str, report_filename: str):
-        self.report_path = os.path.join(report_directory, report_filename)
-        self.bom = self.load_bom()
-
-    def report_exists(self):
-        return os.path.exists(self.report_path)
-
-    def load_bom(self):
-        if not self.report_exists():
-            return None
-        with open(self.report_path) as f:
-            syft_report = json.load(f)
-            return Bom.from_json(data=syft_report)
-    
-    def load_report(self):
-        if not self.report_exists():
-            return None
-        with open(self.report_path) as f:
-            return json.load(f)
-
-    def print_deps(self): 
-        bom = self.bom
-
-        #index components by bom-ref for easy lookup
-        comp_index = {c.bom_ref.value: c for c in bom.components}
-
-        #index dependencies by parent ref
-        dep_index = {d.ref: d for d in (bom.dependencies or [])}
-
-        #helper to name a ref nicely
-        def name_of(ref: str) -> str:
-            c = comp_index.get(ref)
-            return f"{c.name} {c.version}" if c else ref
-
-        #choose roots:
-        #1) if metadata.component exists, start there;
-        #2) else, components that are parents but never listed as children
-        roots = []
-        meta_ref = getattr(getattr(bom, "metadata", None), "component", None)
-        if meta_ref and getattr(meta_ref, "bom_ref", None):
-            roots = [meta_ref.bom_ref.value]
-
-        if not roots:
-            parents = set(dep_index.keys())
-            children = set()
-            for d in dep_index.values():
-                children.update(d.dependencies)
-            candidate_roots = sorted(parents - children) or sorted(parents)
-            roots = candidate_roots
-
-        #depth-first traversal with ascii tree branches and cycle detection
-        def walk(ref: str, prefix: str = "", is_last: bool = True, seen=None):
-            if seen is None:
-                seen = set()
-
-            branch = "└─ " if is_last else "├─ "
-            line = prefix + branch + name_of(ref)
-            if ref in seen:
-                print(line + "  (cycle)")
-                return
-            print(line)
-
-            seen = seen | {ref}
-            dep = dep_index.get(ref)
-            if not dep or not dep.dependencies:
-                return
-
-            #sort children by display name for stable output
-            children = sorted(dep.dependencies, key=name_of)
-            for i, child_ref in enumerate(children):
-                last = (i == len(children) - 1)
-                child_prefix = prefix + ("   " if is_last else "│  ")
-                walk(child_ref, child_prefix, last, seen)
-
-        #print each root as its own tree
-        for i, r in enumerate(roots):
-            #top-level root line without a leading branch
-            print(name_of(r))
-            dep = dep_index.get(r)
-            if dep and dep.dependencies:
-                children = sorted(dep.dependencies, key=name_of)
-                for j, child in enumerate(children):
-                    walk(child, "", j == len(children) - 1)
-            if i != len(roots) - 1:
-                print()  #blank line between multiple roots
 
 class GrypeParser(BaseParser):
     def __init__(self, report_directory: str, report_filename: str, data: dict = None):

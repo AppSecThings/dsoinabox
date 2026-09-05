@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+
 from ..base import BaseScanner, ScannerError
 
 
@@ -17,7 +18,7 @@ class TrufflehogScanner(BaseScanner):
         extra_tool_args: str | list[str] | tuple[str, ...] | None = "",
         report_directory: str = "reports",
         git_repo=True,
-    ) -> dict:
+    ) -> list:
         """run the trufflehog cli scan."""
         if git_repo:
             args = ["git", f"file://{source_path}", "--no-verification", "--no-update", "-j"]

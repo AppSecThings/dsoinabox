@@ -3,57 +3,47 @@
 from __future__ import annotations
 
 import argparse
-import sys
+import logging
 import os
 import shutil
-import logging
+import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 
 from . import __version__
-from .utils.deterministic import utcnow
-
-from .scanners.sbom.syft import show_version as syft_show_version
-from .scanners.sbom.syft import show_help as syft_show_help
+from .reporting.parser import CheckovParser, GrypeParser, OpengrepParser, TrufflehogParser
+from .reporting.report_builder import report_builder
+from .scanners.base import ScannerError
+from .scanners.iac.checkov import run_scan as checkov_run_scan
+from .scanners.iac.checkov import show_help as checkov_show_help
+from .scanners.iac.checkov import show_version as checkov_show_version
+from .scanners.sast.opengrep import run_scan as opengrep_run_scan
+from .scanners.sast.opengrep import show_help as opengrep_show_help
+from .scanners.sast.opengrep import show_version as opengrep_show_version
 from .scanners.sbom.syft import dir_scan as syft_dir_scan
-
-from .scanners.sca.grype import show_version as grype_show_version
-from .scanners.sca.grype import show_help as grype_show_help
+from .scanners.sbom.syft import show_help as syft_show_help
+from .scanners.sbom.syft import show_version as syft_show_version
 from .scanners.sca.grype import run_scan as grype_run_scan
-
-from .scanners.secrets.trufflehog import show_version as trufflehog_show_version
+from .scanners.sca.grype import show_help as grype_show_help
+from .scanners.sca.grype import show_version as grype_show_version
 from .scanners.secrets.trufflehog import run_scan as trufflehog_run_scan
 from .scanners.secrets.trufflehog import show_help as trufflehog_show_help
-
-
-from .scanners.sast.opengrep import show_version as opengrep_show_version   
-from .scanners.sast.opengrep import show_help as opengrep_show_help
-from .scanners.sast.opengrep import run_scan as opengrep_run_scan
-
-from .scanners.iac.checkov import show_version as checkov_show_version
-from .scanners.iac.checkov import show_help as checkov_show_help
-from .scanners.iac.checkov import run_scan as checkov_run_scan
-
-from .scanners.base import ScannerError
-
-from .reporting.parser import OpengrepParser, SyftParser, GrypeParser, TrufflehogParser, CheckovParser
-from .reporting.report_builder import report_builder
-
-from .utils.git import GitRepoInfo, set_git_safe_directory
-from .utils.project_id import derive_project_id, is_git
-from .utils.environment import is_running_in_docker, check_tool_available
+from .scanners.secrets.trufflehog import show_version as trufflehog_show_version
 from .utils.config import (
-    DEFAULT_CONFIG_FILE,
     CONFIG_ENV_VAR,
+    DEFAULT_CONFIG_FILE,
     MERGEABLE_KEYS,
+    load_config_file,
     read_env_overrides,
     resolve_config_path,
-    load_config_file,
     str_to_bool,
     write_default_config,
 )
-
-from .waivers import load_waiver_file, apply_waivers_to_findings, generate_benchmark_yaml
+from .utils.deterministic import utcnow
+from .utils.environment import check_tool_available, is_running_in_docker
+from .utils.git import GitRepoInfo, set_git_safe_directory
+from .utils.project_id import derive_project_id, is_git
+from .waivers import apply_waivers_to_findings, generate_benchmark_yaml, load_waiver_file
 
 logging.basicConfig(
     level=logging.INFO,
@@ -332,7 +322,7 @@ def main(argv: list[str] | None = None) -> int:
     configure_logging(verbose=args.verbose, quiet=args.quiet)
 
     if args.tool_versions:
-        invoked_pkg = __package__ or (sys.modules[__name__].__spec__.name if sys.modules[__name__].__spec__ else None)
+        invoked_pkg = __package__ or "dsoinabox"
         print(f"{invoked_pkg} {__version__}")
         try:
             syft_show_version()
@@ -362,7 +352,10 @@ def main(argv: list[str] | None = None) -> int:
         source_for_config = "/scan_target" if in_docker else "."
 
     config_file_override = cli_overrides.get("config_file") or env_overrides.get("config_file")
-    config_path = resolve_config_path(source=str(source_for_config), explicit_path=config_file_override)
+    config_path = resolve_config_path(
+        source=str(source_for_config),
+        explicit_path=str(config_file_override) if config_file_override else None,
+    )
     config_values: dict[str, object] = {}
     if config_path.exists():
         try:
@@ -560,12 +553,12 @@ def main(argv: list[str] | None = None) -> int:
         scan_duration = time.perf_counter() - scan_start
         logger.info(f"Trufflehog scan completed in {scan_duration:.2f} seconds")
         tp = TrufflehogParser(report_directory=tools_output_dir, report_filename="trufflehog.json", data=data)
-        logger.info(f"Processing Trufflehog findings")
+        logger.info("Processing Trufflehog findings")
         processing_start = time.perf_counter()
         tp.fingerprint_findings(args.source, project_id=project_id)
         #apply waiver checking
         if waiver_data:
-            logger.info(f"Applying waiver checking to Trufflehog findings")
+            logger.info("Applying waiver checking to Trufflehog findings")
             apply_waivers_to_findings(tp.data, waiver_data)
         if args.show_findings:
             tp.cli_display_findings()
@@ -581,13 +574,13 @@ def main(argv: list[str] | None = None) -> int:
         scan_duration = time.perf_counter() - scan_start
         logger.info(f"OpenGrep scan completed in {scan_duration:.2f} seconds")
         ogp = OpengrepParser(report_directory=tools_output_dir, report_filename="opengrep.json", data=data)
-        logger.info(f"Processing OpenGrep findings")
+        logger.info("Processing OpenGrep findings")
         processing_start = time.perf_counter()
         ogp.apply_threshold(args.failure_threshold)
         ogp.fingerprint_findings(args.source, project_id=project_id)
         #apply waiver checking
         if waiver_data:
-            logger.info(f"Applying waiver checking to OpenGrep findings")
+            logger.info("Applying waiver checking to OpenGrep findings")
             apply_waivers_to_findings(ogp.data, waiver_data, findings_key="results", persist_waived_findings=False)
         if args.show_findings:
             ogp.cli_display_findings()
@@ -613,13 +606,13 @@ def main(argv: list[str] | None = None) -> int:
         scan_duration = time.perf_counter() - scan_start
         logger.info(f"Grype scan completed in {scan_duration:.2f} seconds")
         gp = GrypeParser(report_directory=tools_output_dir, report_filename="grype.json", data=data)
-        logger.info(f"Processing Grype findings")
+        logger.info("Processing Grype findings")
         processing_start = time.perf_counter()
         gp.apply_threshold(args.failure_threshold)
         gp.fingerprint_findings(project_id=project_id)
         #apply waiver checking
         if waiver_data:
-            logger.info(f"Applying waiver checking to Grype findings")
+            logger.info("Applying waiver checking to Grype findings")
             apply_waivers_to_findings(gp.data, waiver_data, findings_key="matches")
         if args.show_findings:
             gp.cli_display_findings()
@@ -635,13 +628,13 @@ def main(argv: list[str] | None = None) -> int:
         scan_duration = time.perf_counter() - scan_start
         logger.info(f"Checkov scan completed in {scan_duration:.2f} seconds")
         cp = CheckovParser(report_directory=tools_output_dir, report_filename="checkov.json", data=data)
-        logger.info(f"Processing Checkov findings")
+        logger.info("Processing Checkov findings")
         processing_start = time.perf_counter()
         cp.apply_threshold(args.failure_threshold)
         cp.fingerprint_findings(args.source, project_id=project_id)
         #apply waiver checking
         if waiver_data:
-            logger.info(f"Applying waiver checking to Checkov findings")
+            logger.info("Applying waiver checking to Checkov findings")
             # For SARIF format, we need to extract results from runs[0].results
             runs = cp.data.get("runs", [])
             if runs:

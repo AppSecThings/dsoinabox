@@ -1,8 +1,8 @@
 """Unit tests for Checkov (IaC) parser/normalizer."""
 
 import json
+
 import pytest
-from pathlib import Path
 
 from dsoinabox.reporting.checkov import fingerprint_findings
 

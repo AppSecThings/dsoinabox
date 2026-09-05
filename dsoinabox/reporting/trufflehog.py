@@ -1,12 +1,18 @@
-import hmac, hashlib, base64, re, html, urllib.parse, unicodedata
-from typing import Tuple, Optional
+import base64
+import hashlib
+import hmac
+import html
 import os
+import re
 import subprocess
+import unicodedata
+import urllib.parse
 from pathlib import Path, PurePosixPath
-from collections import defaultdict
 from types import SimpleNamespace
+from typing import Optional, Tuple
 
 from ..utils.git import run_git_cmd
+
 
 def _b(s): return s if isinstance(s, (bytes, bytearray)) else s.encode("utf-8")
 
@@ -149,12 +155,10 @@ def locate_span(detector: str, candidate: str, file_bytes: bytes, approx_line: i
     variants = {candidate, html.unescape(candidate), urllib.parse.unquote(candidate)}
     decoded = html.unescape(text)
     hit = None
-    which = None
     for v in variants:
         idx = decoded.find(v)
         if idx != -1:
             hit = (idx, idx + len(v))
-            which = v
             break
 
     if hit:
@@ -403,17 +407,17 @@ def context_hash(file_bytes: bytes, start: int, end: int) -> str:
     
     if lo >= hi:
         #edge case: no valid context window
-        ctx = b"<NO_CONTEXT>"
+        window = bytearray(b"<NO_CONTEXT>")
     else:
-        ctx = bytearray(file_bytes[lo:hi])
+        window = bytearray(file_bytes[lo:hi])
         #redact secret region (only if it's within context window)
         red_lo = max(0, start - lo)
-        red_hi = min(len(ctx), end - lo)
+        red_hi = min(len(window), end - lo)
         if red_lo < red_hi:
-            ctx[red_lo:red_hi] = b"<SECRET>"
+            window[red_lo:red_hi] = b"<SECRET>"
     
     #normalize whitespace
-    ctx = re.sub(rb"\s+", b" ", bytes(ctx))
+    ctx = re.sub(rb"\s+", b" ", bytes(window))
     return hashlib.sha256(ctx).hexdigest()[:16]
 
 def path_norm_sha(path_rel: str, cache: Optional[dict[str, str]] = None) -> str:
@@ -556,7 +560,6 @@ def find_span_in_file(file_bytes: bytes, target: str, approx_line: int | None = 
     #5) pem-aware fallback: if target looks like pem block, capture begin..end span
     if "-----BEGIN " in target_norm:
         first_line = next((ln for ln in target_norm.split("\n") if ln.strip()), "")
-        end_marker = None
         pem_type = None
         if first_line.startswith("-----BEGIN ") and first_line.endswith("-----"):
             pem_type = first_line[len("-----BEGIN "):-len("-----")]
@@ -587,15 +590,15 @@ def find_span_in_file(file_bytes: bytes, target: str, approx_line: int | None = 
     
     #if not found, try tolerant match against decoded text views
     #if we match in decoded view, attempt to map back by trying entity-encoded variant on raw bytes
-    for label, txt in decode_text_views(file_bytes):
+    for _label, txt in decode_text_views(file_bytes):
         for tv in candidate_variants("", target):
             #whitespace/linebreak tolerant text regex
             pat = re.compile(r"\s*".join(map(re.escape, tv.split())), re.DOTALL)
-            m = pat.search(txt)
-            if not m:
+            m_txt = pat.search(txt)
+            if not m_txt:
                 continue
             #try to map back to raw bytes by testing a few re-encodings of the matched substring
-            snippet = txt[m.start():m.end()]
+            snippet = txt[m_txt.start():m_txt.end()]
             #try as-is
             for back in [snippet, html.escape(snippet, quote=True), urllib.parse.quote(snippet, safe="/:@?&=+,$-_.!~*'()#")]:
                 bb = _b(back)
@@ -743,7 +746,7 @@ def fingerprint_findings(findings: list[dict], source_path: str, project_id: Opt
                 cache=file_cache,
                 cached_head=cached_head
             )
-        except (FileNotFoundError, KeyError) as e:
+        except (FileNotFoundError, KeyError):
             #file not found or missing required metadata - mark as UNLOCATABLE
             #still generate secret fingerprint for waivers/deduplication
             ns = normalize_secret(detector, candidate, cache=normalize_secret_cache)

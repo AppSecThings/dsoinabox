@@ -4,12 +4,10 @@ from __future__ import annotations
 
 import pytest
 import yaml
-import tempfile
-from pathlib import Path
 
+from dsoinabox.waivers.benchmark import _extract_primary_fingerprint, generate_benchmark_yaml
 from dsoinabox.waivers.loader import load_waiver_file
-from dsoinabox.waivers.matcher import check_waiver, apply_waivers_to_findings
-from dsoinabox.waivers.benchmark import generate_benchmark_yaml, _extract_primary_fingerprint
+from dsoinabox.waivers.matcher import apply_waivers_to_findings, check_waiver
 
 
 class TestBenchmarkLoader:

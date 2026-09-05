@@ -1,9 +1,11 @@
-import hmac, hashlib, base64, re, json
-from typing import Tuple, Optional
+import hashlib
+import hmac
 import os
+import re
 import subprocess
-from pathlib import Path, PurePosixPath
+from pathlib import PurePosixPath
 from types import SimpleNamespace
+from typing import Optional, Tuple
 
 from ..utils.git import run_git_cmd
 
@@ -44,10 +46,10 @@ def path_norm_sha(path_rel: str) -> str:
 def context_hash(file_bytes: bytes, start: int, end: int) -> str:
     lo = max(0, start - 120)
     hi = min(len(file_bytes), end + 120)
-    ctx = bytearray(file_bytes[lo:hi])
+    window = bytearray(file_bytes[lo:hi])
     red_lo, red_hi = start - lo, end - lo
-    ctx[red_lo:red_hi] = b"<MATCH>"
-    ctx = re.sub(rb"\s+", b" ", bytes(ctx))
+    window[red_lo:red_hi] = b"<MATCH>"
+    ctx = re.sub(rb"\s+", b" ", bytes(window))
     return hashlib.sha256(ctx).hexdigest()[:16]
 
 def _first_nonempty(*vals):
@@ -274,7 +276,7 @@ def fingerprint_opengrep(
 
 #---------------- batch driver ----------------
 
-def fingerprint_findings(findings: list[dict], source_path: str, project_id: Optional[str] = None) -> list[dict]:
+def fingerprint_findings(findings: dict, source_path: str, project_id: Optional[str] = None) -> dict:
     """
     given a list of opengrep findings, append:
       finding["fingerprints"] = {"rule": ..., "exact": ..., "ctx": ...}
@@ -306,7 +308,7 @@ def fingerprint_findings(findings: list[dict], source_path: str, project_id: Opt
                 "exact": exact_fp,
                 "ctx": ctx_fp,
             }
-        except (FileNotFoundError, KeyError) as e:
+        except (FileNotFoundError, KeyError):
             #file not found or missing required metadata - mark as unlocatable
             rule_id = _extract_rule_id(f)
             rel_path = _extract_path(f) or f.get("file") or "unknown"

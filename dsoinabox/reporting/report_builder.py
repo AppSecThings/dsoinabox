@@ -1,10 +1,11 @@
 import json
-from jinja2 import Environment, FileSystemLoader
 import os
 import shutil
 from typing import Any
 
-from ..utils.deterministic import utcnow, normalize_path
+from jinja2 import Environment, FileSystemLoader
+
+from ..utils.deterministic import normalize_path, utcnow
 from .sarif_formatter import convert_unified_json_to_sarif
 
 

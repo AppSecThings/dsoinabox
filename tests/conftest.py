@@ -1,7 +1,8 @@
-import os
 import json
-import pytest
+import os
 from pathlib import Path
+
+import pytest
 
 
 def pytest_sessionfinish(session, exitstatus):
@@ -186,12 +187,12 @@ def fake_runner(golden_dir, monkeypatch):
     
     # monkeypatch command runners in all modules where they're imported
     # necessary because python creates local references on import
-    import dsoinabox.utils.runner
+    import dsoinabox.reporting.opengrep
+    import dsoinabox.reporting.trufflehog
     import dsoinabox.scanners.base
     import dsoinabox.utils.git
     import dsoinabox.utils.project_id
-    import dsoinabox.reporting.trufflehog
-    import dsoinabox.reporting.opengrep
+    import dsoinabox.utils.runner
     
     monkeypatch.setattr(dsoinabox.utils.runner, "run_cmd", _fake_run_cmd)
     monkeypatch.setattr(dsoinabox.scanners.base, "run_cmd", _fake_run_cmd)
@@ -206,8 +207,8 @@ def fake_runner(golden_dir, monkeypatch):
     
     # mock check_tool_available to always return True for tests
     # allows tests to run without requiring actual tools installed
-    import dsoinabox.utils.environment
     import dsoinabox.cli
+    import dsoinabox.utils.environment
     monkeypatch.setattr(dsoinabox.utils.environment, "check_tool_available", lambda tool_name: True)
     monkeypatch.setattr(dsoinabox.cli, "check_tool_available", lambda tool_name: True)
     

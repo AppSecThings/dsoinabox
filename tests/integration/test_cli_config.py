@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 
 import pytest
 import yaml
@@ -154,14 +153,14 @@ def test_repo_config_nested_tool_args_are_applied(tmp_project, monkeypatch):
             return (0, output, "") if text else (0, output.encode("utf-8"), b"")
         return (0, "{}", "") if text else (0, b"{}", b"")
 
-    import dsoinabox.utils.runner
+    import dsoinabox.cli
+    import dsoinabox.reporting.opengrep
+    import dsoinabox.reporting.trufflehog
     import dsoinabox.scanners.base
+    import dsoinabox.utils.environment
     import dsoinabox.utils.git
     import dsoinabox.utils.project_id
-    import dsoinabox.reporting.trufflehog
-    import dsoinabox.reporting.opengrep
-    import dsoinabox.utils.environment
-    import dsoinabox.cli
+    import dsoinabox.utils.runner
 
     monkeypatch.setattr(dsoinabox.utils.runner, "run_cmd", _runner)
     monkeypatch.setattr(dsoinabox.scanners.base, "run_cmd", _runner)

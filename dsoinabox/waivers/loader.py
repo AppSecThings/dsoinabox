@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import yaml
 import os
-from typing import Dict, Any, Optional
-from pathlib import Path
+from typing import Any, Dict
+
+import yaml
 
 
 def load_waiver_file(filepath: str) -> Dict[str, Any]:
