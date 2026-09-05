@@ -35,6 +35,16 @@ def relativize_path(path: str | None, source_path: str | None) -> str:
     if text.startswith("file://"):
         text = text[len("file://"):]
     text = text.replace("\\", "/")
+    # Checkov writes absolute paths into SARIF without the leading slash
+    # ("private/tmp/x/src/config.yaml"). Restore it when that is the only reading that exists.
+    if (
+        source_path
+        and text
+        and not os.path.isabs(text)
+        and not os.path.exists(os.path.join(source_path, text))
+        and os.path.exists("/" + text)
+    ):
+        text = "/" + text
     if source_path and os.path.isabs(text):
         candidates = []
         for root in {os.path.abspath(source_path), os.path.realpath(source_path)}:
@@ -54,6 +64,23 @@ def relativize_path(path: str | None, source_path: str | None) -> str:
                 pass
     while text.startswith("./"):
         text = text[2:]
+    # Syft/Grype report locations rooted at the scan target ("/requirements.txt");
+    # Checkov may do the same. If such a path does not exist on the filesystem but
+    # does exist under the source tree, it is a repo-relative path with a stray slash.
+    if text.startswith("/") and source_path and not os.path.exists(text):
+        candidate = text.lstrip("/")
+        if candidate and os.path.exists(os.path.join(source_path, candidate)):
+            return candidate
+    # Checkov prefixes paths with the scan directory's own name ("src/config.yaml"
+    # for /scan_target/src... when --source is .../src). Strip it when that is the
+    # only way the path resolves inside the source tree.
+    if source_path and not os.path.exists(os.path.join(source_path, text)):
+        base = os.path.basename(os.path.abspath(source_path).rstrip("/"))
+        stripped = text.lstrip("/")
+        if base and stripped.startswith(base + "/"):
+            candidate = stripped[len(base) + 1:]
+            if candidate and os.path.exists(os.path.join(source_path, candidate)):
+                return candidate
     return text
 
 

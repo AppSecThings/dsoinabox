@@ -109,3 +109,13 @@ def test_grype_carries_package_and_baseline_status():
     props = gy["results"][0]["properties"]
     assert props["package"]["name"] == "requests" and props["baseline_status"] == "new"
     assert gy["tool"]["driver"]["rules"][0]["properties"]["security-severity"] == "9.5"
+
+
+def test_repo_without_remote_is_still_schema_valid():
+    jsonschema = pytest.importorskip("jsonschema")
+    run = _run()
+    run.git_info = {"repo_name": "local", "origin_url": "", "branch": "main", "last_commit_id": "abc123"}
+    sarif = convert_run_to_sarif(run)
+    jsonschema.validate(sarif, json.loads(SCHEMA.read_text()))
+    assert "versionControlProvenance" not in sarif["runs"][0]
+    assert sarif["runs"][0]["properties"]["git"]["branch"] == "main"

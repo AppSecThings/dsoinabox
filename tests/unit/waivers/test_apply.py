@@ -295,3 +295,37 @@ class TestUsage:
         assert total.waived == 2 and total.total_findings == 2
         assert total.unused_refs(w) == []
         assert total.waived_by_type == {"false_positive": 1, "risk_acceptance": 1}
+
+
+class TestScanRootRelativePaths:
+    def test_leading_slash_path_that_exists_under_source_is_relativized(self, tmp_path):
+        (tmp_path / "requirements.txt").write_text("requests==2.19.1\n")
+        assert relativize_path("/requirements.txt", str(tmp_path)) == "requirements.txt"
+
+    def test_leading_slash_path_that_does_not_exist_anywhere_is_left_alone(self, tmp_path):
+        assert relativize_path("/definitely/not/here.txt", str(tmp_path)) == "/definitely/not/here.txt"
+
+    def test_real_absolute_path_outside_source_is_kept(self, tmp_path):
+        outside = tmp_path / "outside.txt"
+        outside.write_text("x")
+        src = tmp_path / "src"
+        src.mkdir()
+        assert relativize_path(str(outside), str(src)) == str(outside)
+
+    def test_scan_dir_name_prefix_is_stripped_when_that_resolves(self, tmp_path):
+        src = tmp_path / "scan_target"
+        (src / "infra").mkdir(parents=True)
+        (src / "infra" / "s3.tf").write_text("x")
+        assert relativize_path("scan_target/infra/s3.tf", str(src)) == "infra/s3.tf"
+        assert relativize_path("/scan_target/infra/s3.tf", str(src)) == "infra/s3.tf"
+        # a real directory of that name inside the source wins
+        (src / "scan_target").mkdir()
+        (src / "scan_target" / "real.tf").write_text("x")
+        assert relativize_path("scan_target/real.tf", str(src)) == "scan_target/real.tf"
+
+    def test_checkov_absolute_path_missing_leading_slash(self, tmp_path):
+        src = tmp_path / "scan_target"
+        (src / "infra").mkdir(parents=True)
+        (src / "infra" / "main.tf").write_text("x")
+        no_slash = str(src / "infra" / "main.tf").lstrip("/")
+        assert relativize_path(no_slash, str(src)) == "infra/main.tf"

@@ -58,7 +58,17 @@ class BaseScanner:
         first = next((line.strip() for line in text.splitlines() if line.strip()), "")
         if first.startswith(("{", "[")) or len(first) > 120:
             return ""
-        return first
+        return self._strip_version_prefix(first)
+
+    def _strip_version_prefix(self, line: str) -> str:
+        """'trufflehog 3.97.4' -> '3.97.4'; 'Opengrep version: 1.29.0' -> '1.29.0'; 'v1.2.3' -> '1.2.3'."""
+        import re
+
+        text = line.strip()
+        text = re.sub(rf"^{re.escape(self.cli_name)}\b[\s:]*", "", text, flags=re.IGNORECASE)
+        text = re.sub(r"^version[\s:]*", "", text, flags=re.IGNORECASE)
+        text = re.sub(r"^v(?=\d)", "", text)
+        return text.strip()
 
     def show_version(self) -> None:
         """print the installed tool version to stdout."""

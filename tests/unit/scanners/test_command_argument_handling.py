@@ -202,3 +202,16 @@ def test_checkov_command_tokenization_source_path_with_spaces_regression(tmp_pat
         "--framework",
         "terraform kubernetes",
     ]
+
+
+class TestVersionPrefixStripping:
+    def test_common_version_line_shapes(self):
+        from dsoinabox.scanners.base import BaseScanner
+
+        s = BaseScanner("trufflehog")
+        assert s._strip_version_prefix("trufflehog 3.97.4") == "3.97.4"
+        assert s._strip_version_prefix("TruffleHog v3.97.4") == "3.97.4"
+        assert BaseScanner("opengrep")._strip_version_prefix("Opengrep version: 1.29.0") == "1.29.0"
+        assert BaseScanner("syft")._strip_version_prefix("syft 1.51.1") == "1.51.1"
+        assert BaseScanner("checkov")._strip_version_prefix("3.3.16") == "3.3.16"
+        assert BaseScanner("grype")._strip_version_prefix("Application: grype") == "Application: grype"

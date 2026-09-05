@@ -22,7 +22,8 @@ def _run(tmp_project: Path, source_dir: Path, *extra: str) -> tuple[int, dict]:
         "-t", "opengrep,grype",
         *extra,
     ])
-    json_files = list(reports.glob("*/dsoinabox_unified_report_*.json"))
+    latest = reports / "latest"
+    json_files = sorted(latest.glob("dsoinabox_unified_report_*.json")) if latest.exists() else []
     data = json.loads(json_files[-1].read_text()) if json_files else {}
     return code, data
 
@@ -69,10 +70,10 @@ def test_waived_findings_are_kept_flagged_and_do_not_gate(tmp_project, source_di
     assert meta["unused_count"] == 0 and meta["schema_version"] == "1.1"
     assert second["metadata"]["dsoinabox_version"]
 
-    reports = tmp_project / "reports"
-    html = sorted(reports.glob("*/dsoinabox_unified_report_*.html"))[-1].read_text()
+    latest = tmp_project / "reports" / "latest"
+    html = next(latest.glob("dsoinabox_unified_report_*.html")).read_text()
     assert "Waived findings (1)" in html and "risk acceptance" in html
-    sarif = json.loads(sorted(reports.glob("*/dsoinabox_unified_report_*.sarif"))[-1].read_text())
+    sarif = json.loads(next(latest.glob("dsoinabox_unified_report_*.sarif")).read_text())
     suppressed = [r for run in sarif["runs"] for r in run["results"] if r.get("suppressions")]
     assert len(suppressed) == 1
 
@@ -90,7 +91,7 @@ def test_expired_waiver_no_longer_suppresses(tmp_project, source_dir, fake_runne
     hit = [r for r in data["opengrep_data"]["results"] if r.get("expired_waivers")]
     assert len(hit) == 1 and hit[0]["waived"] is False
     assert data["metadata"]["waivers"]["expired_matches"] == 1
-    html = sorted((tmp_project / "reports").glob("*/dsoinabox_unified_report_*.html"))[-1].read_text()
+    html = next((tmp_project / "reports" / "latest").glob("dsoinabox_unified_report_*.html")).read_text()
     assert "Expired waivers (1)" in html
 
     # grace period keeps it active

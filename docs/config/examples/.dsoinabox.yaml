@@ -2,13 +2,24 @@
 # Precedence: .dsoinabox.yaml -> DSOINABOX_* env vars -> CLI flags.
 
 tools: all
-failure_threshold: none
-fail_on_secrets: false
+failure_threshold: none     # exit 1 when unwaived findings at/above this severity exist
+# report_threshold: none    # hide findings below this severity from reports (gate is unaffected)
+fail_on_secrets: false      # false | true | verified (only secrets TruffleHog verified as live)
+# verify_secrets: false     # let TruffleHog verify candidates against providers (network calls)
+# grype_db: auto            # auto | offline (never download the vulnerability DB)
 waiver_file: .dsoinabox_waivers.yaml
+# waiver_grace_days: 0      # keep expired waivers active for N extra days (flagged as expiring)
+# baseline: benchmark.yaml  # classify findings as new/known against this benchmark file
+# fail_on: all              # all | new (only findings not in the baseline fail the gate)
+# report_name: dsoinabox_unified_report   # base file name; <report_directory>/latest/ always points at the newest run
 output: html
-show_findings: true
+show_findings: false        # false | true (compact table) | full (details)
 tool_output: false
 benchmark: false
+# scan_timeout: 1800        # seconds per scanner; a timeout is a scanner failure (exit 2)
+# tool_timeouts:            # per-tool overrides in seconds
+#   trufflehog: 600
+# fail_fast: false          # stop remaining scanners after the first failure
 
 # Optional per-tool extra args (uncomment and customize):
 # trufflehog_args: "--filter-unverified"

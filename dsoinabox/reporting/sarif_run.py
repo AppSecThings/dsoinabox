@@ -174,16 +174,16 @@ def _sarif_run(scan: ScanResult, run: ScanRun) -> dict[str, Any]:
             "duration_s": round(scan.duration_s, 3),
         },
     }
-    if run.git_info:
-        vc: dict[str, Any] = {}
-        if run.git_info.get("origin_url"):
-            vc["repositoryUri"] = run.git_info["origin_url"]
+    if run.git_info and run.git_info.get("origin_url"):
+        # SARIF requires repositoryUri; a repository without a remote gets no provenance block
+        vc: dict[str, Any] = {"repositoryUri": run.git_info["origin_url"]}
         if run.git_info.get("last_commit_id"):
             vc["revisionId"] = run.git_info["last_commit_id"]
         if run.git_info.get("branch"):
             vc["branch"] = run.git_info["branch"]
-        if vc:
-            sarif_run["versionControlProvenance"] = [vc]
+        sarif_run["versionControlProvenance"] = [vc]
+    elif run.git_info and (run.git_info.get("last_commit_id") or run.git_info.get("branch")):
+        sarif_run["properties"]["git"] = {k: v for k, v in run.git_info.items() if v}
     return sarif_run
 
 

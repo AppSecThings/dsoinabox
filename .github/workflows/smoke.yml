@@ -58,7 +58,7 @@ jobs:
           assert any(f["path"] == "config.yaml" for f in by_tool.get("trufflehog", [])), "planted secret not found"
           assert any("os.system" in (f["snippet"] or "") or "shell" in f["rule_id"] for f in by_tool.get("opengrep", [])), "planted SAST hit not found"
           assert any(f["package"]["name"].lower() == "requests" for f in by_tool.get("grype", [])), "planted vulnerable dependency not found"
-          assert any(f["path"] == "infra/s3.tf" for f in by_tool.get("checkov", [])), "planted IaC issue not found"
+          assert any(f["path"] == "infra/main.tf" for f in by_tool.get("checkov", [])), "planted IaC issue not found"
           assert all(not p.startswith("/") and "<ROOT>" not in p for p in (f["path"] for f in report["findings"])), "paths must be repo-relative"
           assert all(s["status"] == "ok" for s in report["metadata"]["scanners"]), report["metadata"]["scanners"]
           print("planted findings present:", {k: len(v) for k, v in by_tool.items()})

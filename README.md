@@ -54,23 +54,28 @@ docker run --rm \
   appsecthings/dsoinabox:latest \
   -t all \
   -o html,sarif \
+  --report_name dsoinabox \
   --failure_threshold high \
-  --fail_on_secrets \
-  --show_findings false
+  --fail_on_secrets
 ```
 
-Output:
+Output (the block every run ends with):
 
 ```text
-[dsoinabox] tools: trufflehog, opengrep, syft, grype, checkov
-[dsoinabox] findings: critical=0 high=1 medium=4 low=9 info=12
-[dsoinabox] waived: 3 (from .dsoinabox_waivers.yaml)
+[dsoinabox] dsoinabox 1.0.0  project=github.com/example/app  source=/scan_target
+[dsoinabox] tools: trufflehog 3.97.4 (0.9s), opengrep 1.29.0 (4.5s), syft 1.51.1 (0.8s), grype 0.118.0 (db built 2026-09-05T06:27:00Z) (33.9s), checkov 3.3.16 (1.7s)
+[dsoinabox] findings: critical=3 high=3 medium=5 low=0 info=0
+[dsoinabox] waived: 2 (false_positive=1, risk_acceptance=1)  expired=1  unused=0  (from /scan_target/.dsoinabox_waivers.yaml)
 [dsoinabox] reports:
-  - reports/dsoinabox_unified_report_<timestamp>.html
-  - reports/dsoinabox_unified_report_<timestamp>.sarif
-[dsoinabox] policy: failure_threshold=high fail_on_secrets=true
+  - /reports/dsoinabox_2026_09_05T14_45_12/dsoinabox.html
+  - /reports/dsoinabox_2026_09_05T14_45_12/dsoinabox.sarif
+[dsoinabox] latest: /reports/latest
+[dsoinabox] policy: failure_threshold=high fail_on_secrets=true threshold exceeded (checkov=1, grype=4, opengrep=1) -> FAIL
 [dsoinabox] exit_code=1
 ```
+
+Exit codes: `0` pass, `1` policy failed, `2` a scanner failed (reports still written), `3` usage error.
+Add `--show_findings true` for a table of active findings.
 
 HTML report example:
 
@@ -80,21 +85,28 @@ SARIF result in GitHub Code Scanning example:
 
 ![Example GitHub SARIF result screenshot](docs/demo/images/github-sarif-example.svg)
 
-Example waiver file (`.dsoinabox_waivers.yaml`):
+Example waiver file (`.dsoinabox_waivers.yaml`, schema 1.1; older files keep working):
 
 ```yaml
-schema_version: "1.0"
+schema_version: "1.1"
+path_exclusions:
+  - pattern: "third_party/**"
+    reason: "Vendored code"
 finding_waivers:
-  - fingerprint: "og:1:RULE:sql-injection-risk:abc123"
-    type: "false_positive"
-    reason: "Validated safe by parameterization in wrapper layer"
-    created_by: "security@example.com"
-    created_at: "2026-03-28"
+  - fingerprint: "og:1:RULE:python.lang.security.audit.dangerous-system-call:abc123...:R:3895f288"
+    type: "risk_acceptance"
+    reason: "Input comes from a fixed allow-list"
+    expires_at: "2027-03-28"
+    ticket: "SEC-142"
 ```
 
-## GitHub Action Quick Start
+Waivers are applied to results, never to the scanners: path exclusions use gitignore globs, expired entries
+stop suppressing and are reported, waived findings stay visible (collapsed in HTML, `suppressions` in
+SARIF), and the run summary counts what each waiver did. `dsoinabox waivers validate|migrate|prune|add`
+maintain the file; `--baseline benchmark.yaml --fail_on new` gates only regressions on a legacy codebase.
+See [docs/waivers](docs/waivers/README.md) and the [compatibility contract](docs/waivers/compatibility.md).
 
-Use the composite action for the easiest GitHub Actions adoption:
+## GitHub Action Quick Start
 
 ```yaml
 name: AppSec Scan
@@ -114,35 +126,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run dsoinabox composite action
-        uses: owner/repo/.github/actions/dsoinabox-scan@v0.1.4
+      - name: Run dsoinabox
+        uses: AppSecThings/dsoinabox/.github/actions/dsoinabox-scan@main
         with:
           image: appsecthings/dsoinabox:latest
           failure_threshold: high
           targets: all
-          extra_args: --fail_on_secrets --show_findings false
-
-      - name: Find SARIF report
-        id: find_sarif
-        if: always()
-        shell: bash
-        run: |
-          sarif_file="$(find reports -type f -name '*.sarif' -print -quit || true)"
-          if [ -n "${sarif_file}" ]; then
-            echo "found=true" >> "$GITHUB_OUTPUT"
-            echo "sarif_file=${sarif_file}" >> "$GITHUB_OUTPUT"
-          else
-            echo "found=false" >> "$GITHUB_OUTPUT"
-          fi
+          extra_args: --fail_on_secrets
 
       - name: Upload SARIF to GitHub Security
-        if: always() && steps.find_sarif.outputs.found == 'true'
+        if: always() && hashFiles('reports/latest/dsoinabox.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: ${{ steps.find_sarif.outputs.sarif_file }}
+          sarif_file: reports/latest/dsoinabox.sarif
           category: dsoinabox
 
-      - name: Persist artifacts
+      - name: Persist reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -150,8 +149,9 @@ jobs:
           path: reports/**
 ```
 
-`extra_args` is passed through bash and shell-split, so quote/escape values that contain spaces.
-For full CI docs and raw Docker examples, see [docs/ci/github-actions.md](docs/ci/github-actions.md).
+The action writes `reports/latest/dsoinabox.{html,sarif}` on every run, so no directory search is needed.
+`extra_args` is shell-split; quote values containing spaces. See [docs/ci](docs/ci/README.md) for GitLab,
+Jenkins and Azure DevOps.
 
 ## Releasing
 
@@ -185,23 +185,12 @@ docker run --rm \
   -v /path/to/your/code:/scan_target \
   -v /path/to/reports:/reports \
   appsecthings/dsoinabox:latest \
-  --show_findings false \
   -t all \
-  -o sarif,html,ndjson \
-  --tool_output
+  -o html,sarif,json
 ```
 
-Apple Silicon (M1/M2/M3):
-
-```bash
-docker run --rm --platform linux/amd64 \
-  -v /path/to/your/code:/scan_target \
-  -v /path/to/reports:/reports \
-  appsecthings/dsoinabox:latest \
-  --show_findings false \
-  -t all \
-  -o html
-```
+The image is published for `linux/amd64` and `linux/arm64`; Apple Silicon runs it natively.
+Direct installs (`pip install dsoinabox`) need the five scanners on `PATH`.
 
 ## Typical CI Gate
 
@@ -210,26 +199,22 @@ docker run --rm \
   -v $(pwd):/scan_target \
   -v $(pwd)/reports:/reports \
   appsecthings/dsoinabox:latest \
-  --show_findings false \
   -t all \
   -o sarif \
+  --report_name dsoinabox \
   --failure_threshold high \
-  --fail_on_secrets
+  --report_threshold medium \
+  --fail_on_secrets verified
 ```
 
-Exit codes:
+- `--failure_threshold` decides the exit code; `--report_threshold` decides what reports show. They are independent.
+- `--fail_on_secrets verified` fails only on credentials TruffleHog could verify as live.
+- On a legacy codebase: `dsoinabox baseline update --from reports/latest/dsoinabox.json`, then add
+  `--baseline benchmark.yaml --fail_on new` so only regressions fail.
 
-- `0`: success, no threshold violations
-- `1`: scan failure or policy threshold exceeded
+## Documentation
 
-## Docs
-
-- [Documentation Index](docs/README.md)
-- [Getting Started](docs/getting-started/README.md)
-- [CLI and Policy Reference](docs/cli/README.md)
-- [Runtime Config (`.dsoinabox.yaml`)](docs/config/README.md)
-- [Waivers (`.dsoinabox_waivers.yaml`)](docs/waivers/README.md)
-- [Output Formats and Report Layout](docs/output/README.md)
-- [CI Examples (GitHub Actions, GitLab CI, Jenkins, Azure DevOps)](docs/ci/README.md)
-- [Usage Examples](docs/examples/README.md)
-- [Architecture Notes](docs/architecture/README.md)
+- [Getting started](docs/getting-started/README.md), [CLI and exit codes](docs/cli/README.md), [runtime config](docs/config/README.md)
+- [Waivers and baselines](docs/waivers/README.md), [waiver and fingerprint compatibility](docs/waivers/compatibility.md)
+- [Output formats and layout](docs/output/README.md), [CI examples](docs/ci/README.md), [architecture](docs/architecture/README.md)
+- [Upgrading to 1.0](docs/upgrading.md)
