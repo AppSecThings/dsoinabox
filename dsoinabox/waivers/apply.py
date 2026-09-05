@@ -244,3 +244,53 @@ def waived_findings(findings: list[dict[str, Any]] | None) -> list[dict[str, Any
     if not findings:
         return []
     return [f for f in findings if isinstance(f, dict) and f.get("waived")]
+
+
+def apply_waivers_to_model(tool: str, findings: list, engine: WaiverEngine | None) -> WaiverUsage:
+    """Same as ``apply_waivers`` but for normalized ``Finding`` objects.
+
+    Annotations are mirrored into ``finding.raw`` so tool-specific templates that
+    still read raw records see the same waived/waived_by/expired_waivers keys.
+    """
+    usage = WaiverUsage(total_findings=len(findings))
+    for finding in findings:
+        finding.waived = False
+        finding.waived_by = None
+        finding.expired_waivers = []
+        raw = finding.raw if isinstance(finding.raw, dict) else None
+        if raw is not None:
+            raw["waived"] = False
+            raw.pop("waived_by", None)
+            raw.pop("expired_waivers", None)
+        if engine is None:
+            continue
+        fps = dict(finding.fingerprints)
+        for i, legacy in enumerate(finding.legacy_fingerprints):
+            fps[f"legacy_{i}"] = legacy
+        matches = engine.matches_for(tool, fps, list(finding.paths))
+        if not matches:
+            continue
+        winner, expired = engine.decide(matches)
+        if expired:
+            finding.expired_waivers = [m.to_dict() for m in expired]
+            if raw is not None:
+                raw["expired_waivers"] = finding.expired_waivers
+            usage.expired_matches += len(expired)
+            for m in expired:
+                usage.expired_refs[m.ref] += 1
+        if winner is not None:
+            finding.waived = True
+            finding.waived_by = winner.to_dict()
+            if raw is not None:
+                raw["waived"] = True
+                raw["waived_by"] = finding.waived_by
+            usage.waived += 1
+            usage.waived_by_type[winner.type] += 1
+            usage.waived_by_kind[winner.kind] += 1
+            usage.matched_refs[winner.ref] += 1
+            if winner.expiring:
+                usage.expiring_matches += 1
+            for m in matches:
+                if not m.expired and m.ref != winner.ref:
+                    usage.matched_refs[m.ref] += 1
+    return usage

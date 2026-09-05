@@ -17,11 +17,12 @@ class SyftScanner(BaseScanner):
         source_path: str,
         extra_tool_args: str | list[str] | tuple[str, ...] | None = "",
         report_directory: str = "reports",
+        timeout: int | None = None,
     ) -> dict:
         """run the syft cli scan."""
         args = ["scan", f"dir:{source_path}", "-o", "json", "-q"]
         args.extend(self._parse_extra_tool_args(extra_tool_args))
-        result = self._run_command(args)
+        result = self._run_command(args, timeout=timeout)
         if result.returncode == 0:
             json_result = json.loads(result.stdout.strip())
             self._write_json_report(json_result, report_directory, "syft.json")

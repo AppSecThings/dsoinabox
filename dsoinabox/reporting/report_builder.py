@@ -120,7 +120,8 @@ def report_builder(
     output_format: str = "html",
     waiver_data: Any = None,
     waiver_summary: dict | None = None,
-) -> None:
+    scan_run: Any = None,
+) -> str | None:
     # Generate timestamp if not provided
     if timestamp is None:
         timestamp = utcnow().strftime('%Y_%m_%dT%H_%M_%S')
@@ -143,13 +144,17 @@ def report_builder(
         os.makedirs(output_dir, exist_ok=True)
         output_filename = f"dsoinabox_unified_report_{timestamp}.json"
         output_path = os.path.join(output_dir, output_filename)
+        metadata: dict[str, Any] = {
+            "dsoinabox_version": __version__,
+            "scan_timestamp": timestamp,
+            "git_repo_info": git_repo_info,
+            "waivers": waiver_summary,
+        }
+        if scan_run is not None:
+            metadata.update(scan_run.metadata_dict())
+            metadata["dsoinabox_version"] = __version__
         output_data = {
-            "metadata": {
-                "dsoinabox_version": __version__,
-                "scan_timestamp": timestamp,
-                "git_repo_info": git_repo_info,
-                "waivers": waiver_summary,
-            },
+            "metadata": metadata,
             "trufflehog_data": trufflehog_data,
             "opengrep_data": opengrep_data,
             "syft_data": syft_data,
@@ -157,9 +162,11 @@ def report_builder(
             "checkov_data": checkov_data,
             "git_repo_info": git_repo_info
         }
+        if scan_run is not None:
+            output_data["findings"] = [f.to_report_dict() for f in scan_run.findings]
         with open(output_path, "w") as out_file:
             json.dump(output_data, out_file, indent=4)
-        return
+        return output_path
     
     if output_format.lower() == "ndjson":
         #ensure output directory exists
@@ -171,13 +178,18 @@ def report_builder(
         findings = []
         
         #add metadata as first line
-        findings.append({
+        meta_line: dict[str, Any] = {
             "type": "metadata",
             "dsoinabox_version": __version__,
             "scan_timestamp": timestamp,
             "git_repo_info": git_repo_info,
             "waivers": waiver_summary,
-        })
+        }
+        if scan_run is not None:
+            meta_line.update(scan_run.metadata_dict())
+            meta_line["type"] = "metadata"
+            meta_line["dsoinabox_version"] = __version__
+        findings.append(meta_line)
         
         #add findings from each scanner
         if trufflehog_data:
@@ -215,7 +227,7 @@ def report_builder(
         with open(output_path, "w") as out_file:
             for finding in findings:
                 out_file.write(json.dumps(finding) + "\n")
-        return
+        return output_path
     
     if output_format.lower() == "sarif":
         #ensure output directory exists
@@ -242,7 +254,7 @@ def report_builder(
         #write sarif file
         with open(output_path, "w") as out_file:
             json.dump(sarif_log, out_file, indent=2)
-        return
+        return output_path
     
     #ensure output directory exists
     os.makedirs(output_dir, exist_ok=True)
@@ -299,3 +311,4 @@ def report_builder(
             if os.path.exists(assets_dest):
                 shutil.rmtree(assets_dest)
             shutil.copytree(assets_source, assets_dest)
+    return output_path

@@ -33,6 +33,7 @@ class OpengrepScanner(BaseScanner):
         source_path: str,
         extra_tool_args: str | list[str] | tuple[str, ...] | None = "",
         report_directory: str = "reports",
+        timeout: int | None = None,
     ) -> dict:
         """run the opengrep cli scan."""
         args = [
@@ -50,6 +51,7 @@ class OpengrepScanner(BaseScanner):
             args,
             env={"PYTHONIOENCODING": "utf-8"},
             text=False,
+            timeout=timeout,
         )
         stdout = result.stdout.decode("utf-8") if isinstance(result.stdout, bytes) else result.stdout
         stderr = result.stderr.decode("utf-8", errors="replace") if isinstance(result.stderr, bytes) else result.stderr

@@ -187,7 +187,6 @@ def test_repo_config_nested_tool_args_are_applied(tmp_project, monkeypatch):
         ),
     )
     monkeypatch.setattr(dsoinabox.utils.environment, "check_tool_available", lambda tool_name: True)
-    monkeypatch.setattr(dsoinabox.cli, "check_tool_available", lambda tool_name: True)
 
     exit_code = main(
         [
@@ -200,8 +199,9 @@ def test_repo_config_nested_tool_args_are_applied(tmp_project, monkeypatch):
         ]
     )
     assert exit_code == 0
-    opengrep_commands = [cmd for cmd in seen_commands if cmd and cmd[0] == "opengrep"]
-    assert opengrep_commands, "expected opengrep command to be executed"
+    # the version probe (`opengrep --version`) runs first; look at the scan invocation
+    opengrep_commands = [cmd for cmd in seen_commands if cmd and cmd[0] == "opengrep" and "scan" in cmd]
+    assert opengrep_commands, "expected opengrep scan command to be executed"
     assert "--severity" in opengrep_commands[0]
     assert "high" in opengrep_commands[0]
 

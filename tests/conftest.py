@@ -210,6 +210,5 @@ def fake_runner(golden_dir, monkeypatch):
     import dsoinabox.cli
     import dsoinabox.utils.environment
     monkeypatch.setattr(dsoinabox.utils.environment, "check_tool_available", lambda tool_name: True)
-    monkeypatch.setattr(dsoinabox.cli, "check_tool_available", lambda tool_name: True)
     
     return _fake_run_cmd

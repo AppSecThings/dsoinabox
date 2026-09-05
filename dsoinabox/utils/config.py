@@ -20,8 +20,11 @@ MERGEABLE_KEYS = (
     "project_id",
     "tools",
     "failure_threshold",
+    "report_threshold",
     "fail_on_secrets",
     "show_findings",
+    "scan_timeout",
+    "fail_fast",
     "waiver_file",
     "waiver_grace_days",
     "output",
@@ -36,6 +39,9 @@ ENV_KEY_MAP = {
     "project_id": "DSOINABOX_PROJECT_ID",
     "tools": "DSOINABOX_TOOLS",
     "failure_threshold": "DSOINABOX_FAILURE_THRESHOLD",
+    "report_threshold": "DSOINABOX_REPORT_THRESHOLD",
+    "scan_timeout": "DSOINABOX_SCAN_TIMEOUT",
+    "fail_fast": "DSOINABOX_FAIL_FAST",
     "fail_on_secrets": "DSOINABOX_FAIL_ON_SECRETS",
     "show_findings": "DSOINABOX_SHOW_FINDINGS",
     "waiver_file": "DSOINABOX_WAIVER_FILE",
@@ -51,8 +57,9 @@ ENV_KEY_MAP = {
     "config_file": CONFIG_ENV_VAR,
 }
 
-BOOL_KEYS = {"fail_on_secrets", "show_findings", "tool_output", "benchmark"}
-INT_KEYS = {"waiver_grace_days"}
+BOOL_KEYS = {"fail_on_secrets", "tool_output", "benchmark", "fail_fast"}
+INT_KEYS = {"waiver_grace_days", "scan_timeout"}
+SHOW_FINDINGS_CHOICES = ("false", "true", "full")
 STRING_LIST_KEYS = {"tools", "output"}
 NESTED_TOOL_ARG_KEYS = ("tool_args", "extra_tool_args")
 
@@ -60,14 +67,17 @@ DEFAULT_CONFIG_TEMPLATE = """# Repository-level defaults for dsoinabox.
 # Precedence: .dsoinabox.yaml -> DSOINABOX_* env vars -> CLI flags.
 
 tools: all
-failure_threshold: none
+failure_threshold: none     # exit 1 when unwaived findings at/above this severity exist
+# report_threshold: none    # hide findings below this severity from reports (gate is unaffected)
 fail_on_secrets: false
 waiver_file: .dsoinabox_waivers.yaml
-# waiver_grace_days: 0   # keep expired waivers active for N extra days (flagged as expiring)
+# waiver_grace_days: 0      # keep expired waivers active for N extra days (flagged as expiring)
 output: html
-show_findings: true
+show_findings: false        # false | true (compact table) | full (details)
 tool_output: false
 benchmark: false
+# scan_timeout: 1800        # seconds per scanner; a timeout is a scanner failure (exit 2)
+# fail_fast: false          # stop remaining scanners after the first failure
 
 # Optional per-tool extra args (uncomment and customize):
 # trufflehog_args: "--filter-unverified"
@@ -76,6 +86,18 @@ benchmark: false
 # grype_args: "--scope all-layers"
 # checkov_args: "--framework terraform"
 """
+
+
+def normalize_show_findings(value: bool | str | None) -> str:
+    """--show_findings accepts false/true/full (plus the usual yes/no/1/0 spellings)."""
+    if value is None:
+        return "true"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    text = str(value).strip().lower()
+    if text == "full":
+        return "full"
+    return "true" if str_to_bool(text) else "false"
 
 
 def str_to_bool(v: bool | str | None) -> bool:
@@ -112,6 +134,8 @@ def read_env_overrides() -> dict[str, Any]:
             continue
         if key in BOOL_KEYS:
             overrides[key] = str_to_bool(raw_value)
+        elif key == "show_findings":
+            overrides[key] = normalize_show_findings(raw_value)
         elif key in INT_KEYS:
             overrides[key] = int(raw_value)
         else:
@@ -123,6 +147,9 @@ def _normalize_value(key: str, value: Any) -> Any:
     """normalize a supported config value to runtime shape."""
     if key in BOOL_KEYS:
         return str_to_bool(value)
+
+    if key == "show_findings":
+        return normalize_show_findings(value)
 
     if key in INT_KEYS:
         return int(value)

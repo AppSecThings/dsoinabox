@@ -17,6 +17,7 @@ class TrufflehogScanner(BaseScanner):
         source_path: str,
         extra_tool_args: str | list[str] | tuple[str, ...] | None = "",
         report_directory: str = "reports",
+        timeout: int | None = None,
         git_repo=True,
     ) -> list:
         """run the trufflehog cli scan."""
@@ -25,7 +26,7 @@ class TrufflehogScanner(BaseScanner):
         else:
             args = ["filesystem", source_path, "--no-verification", "--no-update", "-j"]
         args.extend(self._parse_extra_tool_args(extra_tool_args))
-        result = self._run_command(args)
+        result = self._run_command(args, timeout=timeout)
         if result.returncode == 0:
             records = []
             for line in result.stdout.splitlines():

@@ -295,7 +295,7 @@ def fingerprint_findings(findings: dict, source_path: str, project_id: Optional[
     #use project_id as repo_hint if not explicitly provided
     repo_hint = project_id if project_id else "psf/requests"
 
-    for f in findings['results']:
+    for f in findings.get('results') or []:
         try:
             rule_fp, exact_fp, ctx_fp = fingerprint_opengrep(
                 finding=f,

@@ -7,34 +7,25 @@ import logging
 import os
 import shutil
 import sys
-import time
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
 
 from . import __version__
-from .reporting.parser import CheckovParser, GrypeParser, OpengrepParser, TrufflehogParser
-from .reporting.report_builder import report_builder
-from .scanners.base import ScannerError
-from .scanners.iac.checkov import run_scan as checkov_run_scan
-from .scanners.sast.opengrep import run_scan as opengrep_run_scan
-from .scanners.sbom.syft import dir_scan as syft_dir_scan
-from .scanners.sca.grype import run_scan as grype_run_scan
-from .scanners.secrets.trufflehog import run_scan as trufflehog_run_scan
+from .console import print_findings, print_summary
+from .model import ScanOptions, parse_threshold
+from .policy import EXIT_POLICY, EXIT_SCANNER, EXIT_USAGE
+from .run import UsageError, run_scan
+from .scanners.registry import TOOL_ORDER
 from .utils.config import (
     CONFIG_ENV_VAR,
     DEFAULT_CONFIG_FILE,
     MERGEABLE_KEYS,
     load_config_file,
+    normalize_show_findings,
     read_env_overrides,
     resolve_config_path,
-    str_to_bool,
 )
 from .utils.deterministic import utcnow
-from .utils.environment import check_tool_available, is_running_in_docker
-from .utils.git import GitRepoInfo, set_git_safe_directory
-from .utils.project_id import derive_project_id, is_git
-from .waivers import generate_benchmark_yaml, load_waiver_file
-from .waivers.apply import WaiverEngine, WaiverUsage, active_findings, apply_waivers
+from .utils.environment import is_running_in_docker
 
 logging.basicConfig(
     level=logging.INFO,
@@ -193,7 +184,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--failure_threshold",
         action="store",
         default="none",
-        help="failure threshold for the scan. should be one of: none, info, low, medium, high, critical. returns non-zero exit code if findings at or above this severity.",
+        help="policy gate: exit 1 when unwaived findings at or above this severity exist. one of: none, info, low, medium, high, critical. default none. secrets are gated by --fail_on_secrets instead.",
+    )
+
+    parser.add_argument(
+        "--report_threshold",
+        action="store",
+        default="none",
+        help="hide findings below this severity from generated reports and the console table. does not affect the exit code. one of: none, info, low, medium, high, critical. default none (show everything).",
     )
 
     #fail on secrets if found
@@ -205,11 +203,25 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser.add_argument(
         "--show_findings",
-        type=str_to_bool,
-        default=True,
+        type=normalize_show_findings,
+        default="false",
         nargs='?',
-        const=True,
-        help="show findings from tools in cli. default is True. use --show_findings False to disable.",
+        const="true",
+        help="list active findings in the terminal after the summary: false (default), true (compact table) or full (details).",
+    )
+
+    parser.add_argument(
+        "--scan_timeout",
+        type=int,
+        default=1800,
+        help="seconds each scanner may run before it is treated as failed (exit 2). default 1800.",
+    )
+
+    parser.add_argument(
+        "--fail_fast",
+        action="store_true",
+        default=False,
+        help="stop launching scanners after the first scanner failure. default: run everything and report failures.",
     )
 
     
@@ -249,14 +261,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     return parser
-
-def prep_env(args: argparse.Namespace):
-    """create reports directory if it doesn't exist"""
-    os.makedirs(args.report_directory, exist_ok=True)
-    
-    # create tools_output directory for tool output files
-    tools_output_dir = os.path.join(args.report_directory, "tools_output")
-    os.makedirs(tools_output_dir, exist_ok=True)
 
 def parse_cli_overrides(argv: list[str]) -> dict[str, object]:
     """parse only explicitly provided CLI values (suppress parser defaults)."""
@@ -313,7 +317,7 @@ def main(argv: list[str] | None = None) -> int:
         return commands[argv[0]](argv[1:])
     if not argv[0].startswith("-"):
         logger.error(f"Unknown command '{argv[0]}'. Expected one of: {', '.join(commands)} (or flags for scan).")
-        return 3
+        return EXIT_USAGE
     # legacy flat invocation: every flag belongs to scan
     return scan_main(argv)
 
@@ -374,10 +378,10 @@ def scan_main(argv: list[str]) -> int:
             logger.info(f"Loaded runtime config: {config_path}")
         except Exception as e:
             logger.error(f"Failed to load config file {config_path}: {e}")
-            return 1
+            return EXIT_USAGE
     elif config_file_override:
         logger.error(f"Configured runtime config file was not found: {config_path}")
-        return 1
+        return EXIT_USAGE
 
     merged_values: dict[str, object] = {}
     merged_values.update(config_values)
@@ -398,388 +402,72 @@ def scan_main(argv: list[str]) -> int:
     if args.source is None:
         args.source = "/scan_target" if in_docker else "."
         logger.info(f"Using default source path: {args.source}")
-    
+
     # Set default report directory based on environment
     if args.report_directory is None:
         args.report_directory = "reports"
         logger.info(f"Using default report directory: {args.report_directory}")
 
-    # Make report_directory relative to current working directory (pwd) if it's a relative path
-    # This ensures reports are created relative to where the user invoked dsoinabox, not relative to source
+    # Relative report_directory is resolved from the invocation directory, not from --source
     if not os.path.isabs(args.report_directory):
         args.report_directory = os.path.join(os.getcwd(), args.report_directory)
-    
-    # Create timestamp early - this will be used for the timestamped subdirectory
-    # This eliminates the need for cleanup since each run gets its own timestamped directory
+
+    # Each run gets its own timestamped directory so parallel CI jobs never collide
     timestamp = utcnow().strftime('%Y_%m_%dT%H_%M_%S')
-    
-    # Create timestamped subdirectory within the base report directory
-    # This ensures each run has its own isolated directory, preventing conflicts in Jenkins pipelines
-    timestamped_report_dir = os.path.join(args.report_directory, f"dsoinabox_{timestamp}")
-    args.report_directory = timestamped_report_dir
-    logger.info(f"Using timestamped report directory: {args.report_directory}")
+    report_directory = os.path.join(args.report_directory, f"dsoinabox_{timestamp}")
+    logger.info(f"Using timestamped report directory: {report_directory}")
 
-    if not os.path.exists(args.source):
-        logger.error(f"Source code path {args.source} does not exist.")
-        return 1
-
-    # check if source is a git repository
-    if is_git(args.source):
-        is_git_repo = True
-        logger.info(f"Source is a git repository: {args.source}")
-    else:
-        is_git_repo = False
-        logger.info(f"Source is not a git repository: {args.source}")
-
-    prep_env(args)
-    set_git_safe_directory(args.source)
-
-    #derive project_id
     try:
-        project_id = derive_project_id(args.source, args.project_id)
-        logger.info(f"Using project ID: {project_id}")
-    except ValueError as e:
-        logger.error(str(e))
-        return 1
-    
-    #load waiver file if provided
-    waiver_data = None
-    if args.waiver_file:
-        try:
-            logger.info(f"Loading waiver file: {args.waiver_file}")
-            waiver_data = load_waiver_file(os.path.join(args.source, args.waiver_file))
-            logger.info(
-                f"Waiver file loaded successfully (schema {waiver_data.schema_version}). "
-                f"Found {len(waiver_data.finding_waivers)} finding waivers and {len(waiver_data.benchmark)} benchmark waivers."
-            )
-        except FileNotFoundError:
-            logger.info(f"Did not find waiver file: {args.waiver_file}")
-            if args.waiver_file != default_waiver_file:
-                logger.error(f"Failed to load the specified waiver file: {args.waiver_file}.")
-                return 1
-        except Exception as e:
-            logger.error(f"An error occurred while loading the waiver file: {e}")
-            return 1
+        failure_threshold = parse_threshold(args.failure_threshold)
+        report_threshold = parse_threshold(args.report_threshold)
+    except ValueError as exc:
+        logger.error(str(exc))
+        return EXIT_USAGE
 
-    waiver_engine = WaiverEngine(waiver_data, grace_days=args.waiver_grace_days) if waiver_data else None
-    waiver_usages: dict[str, WaiverUsage] = {}
-    
-    #normalize failure threshold
-    if args.failure_threshold and args.failure_threshold.lower() == "none":
-        args.failure_threshold = None
-    
-    #normalize tools to set for lookup
-    tools_set = {tool.strip().lower() for tool in args.tools.split(",")}
-    all_tools = "all" in tools_set
-    
-    #helper to check if tool should run
-    def should_run_tool(tool_names: list[str]) -> bool:
-        """check if any tool name matches selected tools."""
-        return all_tools or any(name in tools_set for name in tool_names)
-    
-    # Map tool categories/names to executable names
-    tool_executables = {
-        "trufflehog": "trufflehog",
-        "opengrep": "opengrep",
-        "syft": "syft",
-        "grype": "grype",
-        "checkov": "checkov",
-    }
-    
-    # Check tool availability for requested tools
-    missing_tools = []
-    tools_to_check = []
-    if should_run_tool(["trufflehog", "secret", "secrets"]):
-        tools_to_check.append("trufflehog")
-    if should_run_tool(["opengrep", "sast"]):
-        tools_to_check.append("opengrep")
-    if should_run_tool(["syft", "sbom"]):
-        tools_to_check.append("syft")
-    if should_run_tool(["grype", "sca"]):
-        tools_to_check.append("grype")
-    if should_run_tool(["checkov", "iac"]):
-        tools_to_check.append("checkov")
-    
-    for tool in tools_to_check:
-        if not check_tool_available(tool_executables[tool]):
-            missing_tools.append(tool_executables[tool])
-    
-    if missing_tools:
-        logger.error(
-            f"The following required tools are not available in PATH: {', '.join(missing_tools)}. "
-            f"Please ensure these tools are installed and available in your PATH."
-        )
-        return 1
+    tools = [t.strip().lower() for t in str(args.tools).split(",") if t.strip()]
+    outputs = [fmt.strip().lower() for fmt in str(args.output).split(",") if fmt.strip()]
+    tool_args = {tool: getattr(args, f"{tool}_args", None) for tool in TOOL_ORDER}
 
-    # Create tools_output directory path
-    tools_output_dir = os.path.join(args.report_directory, "tools_output")
-    
-    #helper functions for parallel execution
-    def run_trufflehog_workflow():
-        """run trufflehog scan and processing."""
-        logger.info(f"Running Trufflehog scan on {args.source}")
-        scan_start = time.perf_counter()
-        data = trufflehog_run_scan(args.source, args.trufflehog_args, tools_output_dir, git_repo=is_git_repo)
-        scan_duration = time.perf_counter() - scan_start
-        logger.info(f"Trufflehog scan completed in {scan_duration:.2f} seconds")
-        tp = TrufflehogParser(report_directory=tools_output_dir, report_filename="trufflehog.json", data=data)
-        logger.info("Processing Trufflehog findings")
-        processing_start = time.perf_counter()
-        tp.fingerprint_findings(args.source, project_id=project_id)
-        waiver_usages["trufflehog"] = apply_waivers("trufflehog", tp.data, waiver_engine, source_path=args.source)
-        if args.show_findings:
-            tp.cli_display_findings()
-        processing_duration = time.perf_counter() - processing_start
-        logger.info(f"Trufflehog findings processed in {processing_duration:.2f} seconds")
-        return tp.data
+    options = ScanOptions(
+        source=args.source,
+        report_directory=report_directory,
+        timestamp=timestamp,
+        project_id=args.project_id,
+        tools=tools or ["all"],
+        failure_threshold=failure_threshold,
+        report_threshold=report_threshold,
+        fail_on_secrets=bool(args.fail_on_secrets),
+        waiver_file=args.waiver_file or None,
+        waiver_file_is_default=(args.waiver_file == default_waiver_file),
+        waiver_grace_days=int(args.waiver_grace_days or 0),
+        outputs=outputs or ["html"],
+        keep_tool_output=bool(args.tool_output),
+        benchmark=bool(args.benchmark),
+        tool_args=tool_args,
+        scan_timeout=int(args.scan_timeout) if args.scan_timeout else None,
+        fail_fast=bool(args.fail_fast),
+    )
 
-    def run_opengrep_workflow():
-        """run opengrep scan and processing."""
-        logger.info(f"Running OpenGrep scan on {args.source}")
-        scan_start = time.perf_counter()
-        data = opengrep_run_scan(args.source, args.opengrep_args, tools_output_dir)
-        scan_duration = time.perf_counter() - scan_start
-        logger.info(f"OpenGrep scan completed in {scan_duration:.2f} seconds")
-        ogp = OpengrepParser(report_directory=tools_output_dir, report_filename="opengrep.json", data=data)
-        logger.info("Processing OpenGrep findings")
-        processing_start = time.perf_counter()
-        ogp.apply_threshold(args.failure_threshold)
-        ogp.fingerprint_findings(args.source, project_id=project_id)
-        waiver_usages["opengrep"] = apply_waivers("opengrep", ogp.data.get("results", []), waiver_engine, source_path=args.source)
-        if args.show_findings:
-            ogp.cli_display_findings()
-        processing_duration = time.perf_counter() - processing_start
-        logger.info(f"OpenGrep findings processed in {processing_duration:.2f} seconds")
-        return ogp.data
-
-    def run_syft_workflow():
-        """run syft scan."""
-        logger.info(f"Running Syft scan on {args.source}")
-        scan_start = time.perf_counter()
-        data = syft_dir_scan(args.source, args.syft_args, tools_output_dir)
-        scan_duration = time.perf_counter() - scan_start
-        logger.info(f"Syft scan completed in {scan_duration:.2f} seconds")
-        #syft doesn't need fingerprints or waiver checking
-        return data
-
-    def run_grype_workflow():
-        """run grype scan and processing."""
-        logger.info(f"Running Grype scan on {args.source}")
-        scan_start = time.perf_counter()
-        data = grype_run_scan(args.source, args.grype_args, tools_output_dir)
-        scan_duration = time.perf_counter() - scan_start
-        logger.info(f"Grype scan completed in {scan_duration:.2f} seconds")
-        gp = GrypeParser(report_directory=tools_output_dir, report_filename="grype.json", data=data)
-        logger.info("Processing Grype findings")
-        processing_start = time.perf_counter()
-        gp.apply_threshold(args.failure_threshold)
-        gp.fingerprint_findings(project_id=project_id)
-        waiver_usages["grype"] = apply_waivers("grype", gp.data.get("matches", []), waiver_engine, source_path=args.source)
-        if args.show_findings:
-            gp.cli_display_findings()
-        processing_duration = time.perf_counter() - processing_start
-        logger.info(f"Grype findings processed in {processing_duration:.2f} seconds")
-        return gp.data
-
-    def run_checkov_workflow():
-        """run checkov scan and processing."""
-        logger.info(f"Running Checkov scan on {args.source}")
-        scan_start = time.perf_counter()
-        data = checkov_run_scan(args.source, args.checkov_args, tools_output_dir)
-        scan_duration = time.perf_counter() - scan_start
-        logger.info(f"Checkov scan completed in {scan_duration:.2f} seconds")
-        cp = CheckovParser(report_directory=tools_output_dir, report_filename="checkov.json", data=data)
-        logger.info("Processing Checkov findings")
-        processing_start = time.perf_counter()
-        cp.apply_threshold(args.failure_threshold)
-        cp.fingerprint_findings(args.source, project_id=project_id)
-        checkov_runs = cp.data.get("runs", [])
-        checkov_results = checkov_runs[0].get("results", []) if checkov_runs else []
-        waiver_usages["checkov"] = apply_waivers("checkov", checkov_results, waiver_engine, source_path=args.source)
-        if args.show_findings:
-            cp.cli_display_findings()
-        processing_duration = time.perf_counter() - processing_start
-        logger.info(f"Checkov findings processed in {processing_duration:.2f} seconds")
-        return cp.data
-
-    #run independent scans in parallel
-    trufflehog_data, opengrep_data, syft_data, grype_data, checkov_data = None, None, None, None, None
-    
-    #get git repo info early (doesn't depend on scan results)
-    # Contract: GitRepoInfo is optional - if source is not a git repo, continue without git info
-    git_repo_info = None
     try:
-        git_repo_info = GitRepoInfo(args.source)
-    except ValueError:
-        # Source directory is not a git repository - this is acceptable, continue without git info
-        logger.debug(f"Source directory {args.source} is not a git repository, continuing without git info")
-        pass
-    
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        futures = {}
-        
-        #submit independent scans
-        if should_run_tool(["trufflehog", "secret", "secrets"]):
-            futures["trufflehog"] = executor.submit(run_trufflehog_workflow)
-        
-        if should_run_tool(["opengrep", "sast"]):
-            futures["opengrep"] = executor.submit(run_opengrep_workflow)
-        
-        if should_run_tool(["syft", "sbom"]):
-            futures["syft"] = executor.submit(run_syft_workflow)
-        
-        if should_run_tool(["checkov", "iac"]):
-            futures["checkov"] = executor.submit(run_checkov_workflow)
-        
-        #wait for syft to complete first (grype depends on it)
-        if "syft" in futures:
-            try:
-                syft_data = futures["syft"].result()
-            except ScannerError as e:
-                logger.error(f"Scanner error running syft: {e}")
-                return 1
-            except Exception as e:
-                logger.error(f"Error running syft: {e}")
-                return 1
-        
-        #now run grype in thread pool (after syft completes)
-        if should_run_tool(["grype", "sca"]):
-            futures["grype"] = executor.submit(run_grype_workflow)
-        
-        #collect all remaining results
-        for tool_name, future in futures.items():
-            if tool_name == "syft":
-                continue  #already collected
-            try:
-                result = future.result()
-                if tool_name == "trufflehog":
-                    trufflehog_data = result
-                elif tool_name == "opengrep":
-                    opengrep_data = result
-                elif tool_name == "grype":
-                    grype_data = result
-                elif tool_name == "checkov":
-                    checkov_data = result
-            except ScannerError as e:
-                logger.error(f"Scanner error running {tool_name}: {e}")
-                return 1
-            except Exception as e:
-                logger.error(f"Error running {tool_name}: {e}")
-                return 1
+        run = run_scan(options)
+    except UsageError as exc:
+        logger.error(str(exc))
+        return EXIT_USAGE
 
-    #security gate - check thresholds
-    threshold_exceeded = False
-    if args.failure_threshold and args.failure_threshold != "none":
-        logger.info(f"Applying failure threshold of {args.failure_threshold}")
-        
-        active_opengrep = active_findings(opengrep_data.get("results")) if opengrep_data else []
-        if active_opengrep:
-            threshold_exceeded = True
-            logger.warning(
-                f"Found {len(active_opengrep)} OpenGrep findings "
-                f"that exceed the failure threshold of {args.failure_threshold}"
-            )
-
-        active_grype = active_findings(grype_data.get("matches")) if grype_data else []
-        if active_grype:
-            threshold_exceeded = True
-            logger.warning(
-                f"Found {len(active_grype)} Grype findings "
-                f"that exceed the failure threshold of {args.failure_threshold}"
-            )
-
-        if checkov_data:
-            runs = checkov_data.get("runs", [])
-            active_checkov = active_findings(runs[0].get("results")) if runs else []
-            if active_checkov:
-                threshold_exceeded = True
-                logger.warning(
-                    f"Found {len(active_checkov)} Checkov findings "
-                    f"that exceed the failure threshold of {args.failure_threshold}"
-                )
-
-    active_secrets = active_findings(trufflehog_data) if trufflehog_data else []
-    if args.fail_on_secrets and active_secrets:
-        threshold_exceeded = True
-        logger.warning(f"Found {len(active_secrets)} Trufflehog findings (fail_on_secrets enabled)")
-
-    # waiver usage summary across tools
-    waiver_usage_total = WaiverUsage()
-    for usage in waiver_usages.values():
-        waiver_usage_total.merge(usage)
-    waiver_summary = waiver_usage_total.summary_dict(waiver_data) if waiver_data else None
-    if waiver_summary:
-        by_type = ", ".join(f"{k}={v}" for k, v in sorted(waiver_summary["waived_by_type"].items())) or "none"
-        logger.info(
-            f"Waivers applied: {waiver_summary['waived']} waived ({by_type}); "
-            f"{waiver_summary['expired_matches']} expired match(es); "
-            f"{waiver_summary['unused_count']} unused entr{'y' if waiver_summary['unused_count'] == 1 else 'ies'}"
-        )
-        for ref in waiver_summary["unused"]:
-            logger.debug(f"Unused waiver entry: {ref}")
-
-    # Generate benchmark.yaml if --benchmark flag is set
-    if args.benchmark:
-        logger.info("Generating benchmark.yaml file")
-        benchmark_path = os.path.join(args.report_directory, "benchmark.yaml")
-        try:
-            generate_benchmark_yaml(
-                trufflehog_data=active_findings(trufflehog_data) if trufflehog_data else None,
-                opengrep_data={"results": active_findings(opengrep_data.get("results"))} if opengrep_data else None,
-                grype_data={"matches": active_findings(grype_data.get("matches"))} if grype_data else None,
-                checkov_data=(
-                    {"runs": [{"results": active_findings(checkov_data["runs"][0].get("results"))}]}
-                    if checkov_data and checkov_data.get("runs") else None
-                ),
-                output_path=benchmark_path
-            )
-            logger.info(f"Benchmark file generated: {benchmark_path}")
-        except Exception as e:
-            logger.error(f"Failed to generate benchmark.yaml: {e}")
-            return 1
-    
-    # Parse output formats (comma-separated)
-    output_formats = [fmt.strip().lower() for fmt in args.output.split(",")]
-    # Validate output formats
-    valid_formats = {"html", "jenkins_html", "json", "ndjson", "sarif"}
-    for fmt in output_formats:
-        if fmt not in valid_formats:
-            logger.error(f"Invalid output format: {fmt}. Supported formats: {', '.join(sorted(valid_formats))}")
-            return 1
-    
-    # Generate reports for each requested format
-    for output_format in output_formats:
-        report_builder(
-            reports_directory=args.report_directory,
-            output_dir=args.report_directory,
-            timestamp=timestamp,
-            git_repo_info=git_repo_info.as_dict() if git_repo_info else None,
-            data=(trufflehog_data, opengrep_data, syft_data, grype_data, checkov_data),
-            output_format=output_format,
-            waiver_data=waiver_data,
-            waiver_summary=waiver_summary,
-        )
-    
-    # Clean up tools_output directory if --tool_output is False
-    if not args.tool_output:
-        tools_output_dir = os.path.join(args.report_directory, "tools_output")
-        if os.path.exists(tools_output_dir):
-            shutil.rmtree(tools_output_dir)
-
-    #if running in Docker and "/reports" mount exists, copy reports to timestamped directory
-    # Note: args.report_directory is already a timestamped directory, so we copy it directly
+    # Docker: copy the timestamped directory to the /reports mount when present
     if in_docker and os.path.exists("/reports"):
         logger.info("Copying reports to /reports mount")
-        # The report_directory is already timestamped, so copy it to /reports with the same name
-        shutil.copytree(args.report_directory, os.path.join("/reports", os.path.basename(args.report_directory)))
+        shutil.copytree(run.report_directory, os.path.join("/reports", os.path.basename(run.report_directory)))
 
-    #security gate failure
-    if threshold_exceeded:
-        logger.error(
-            "All scans completed successfully, but one or more thresholds were exceeded, "
-            "so exiting with a non-zero exit code"
-        )
-        return 1
-    
-    logger.info("All scans completed successfully.")
-    return 0
+    show = normalize_show_findings(args.show_findings)
+    if show != "false":
+        print_findings(run, show)
+    print_summary(run, options)
+
+    if run.policy.scanner_failures:
+        logger.error(f"One or more scanners failed: {', '.join(run.policy.scanner_failures)} (exit code {EXIT_SCANNER})")
+    elif run.policy.exit_code == EXIT_POLICY:
+        logger.error("All scans completed, but the policy gate failed, so exiting with a non-zero exit code")
+    else:
+        logger.info("All scans completed successfully.")
+    return run.policy.exit_code
