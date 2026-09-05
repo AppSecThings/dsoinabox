@@ -8,6 +8,7 @@ import yaml
 from dsoinabox.waivers.benchmark import _extract_primary_fingerprint, generate_benchmark_yaml
 from dsoinabox.waivers.loader import load_waiver_file
 from dsoinabox.waivers.matcher import apply_waivers_to_findings, check_waiver
+from dsoinabox.waivers.schema import CURRENT_SCHEMA_VERSION
 
 
 class TestBenchmarkLoader:
@@ -367,7 +368,7 @@ class TestBenchmarkGeneration:
         with open(output_path, 'r') as f:
             data = yaml.safe_load(f)
         
-        assert data['schema_version'] == '1.0'
+        assert data['schema_version'] == CURRENT_SCHEMA_VERSION
         assert len(data['benchmark']) == 1
         assert data['benchmark'][0]['fingerprint'] == 'th:1:SECRET:URI:abc123'
         assert data['benchmark'][0]['type'] == 'benchmark'
@@ -536,7 +537,7 @@ class TestBenchmarkGeneration:
         with open(output_path, 'r') as f:
             data = yaml.safe_load(f)
         
-        assert data['schema_version'] == '1.0'
+        assert data['schema_version'] == CURRENT_SCHEMA_VERSION
         assert data['benchmark'] == []
     
     def test_generate_benchmark_yaml_findings_without_fingerprints(self, tmp_path):

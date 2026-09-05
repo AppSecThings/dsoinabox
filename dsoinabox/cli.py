@@ -8,6 +8,7 @@ import os
 import shutil
 import sys
 import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 
 from . import __version__
@@ -15,20 +16,10 @@ from .reporting.parser import CheckovParser, GrypeParser, OpengrepParser, Truffl
 from .reporting.report_builder import report_builder
 from .scanners.base import ScannerError
 from .scanners.iac.checkov import run_scan as checkov_run_scan
-from .scanners.iac.checkov import show_help as checkov_show_help
-from .scanners.iac.checkov import show_version as checkov_show_version
 from .scanners.sast.opengrep import run_scan as opengrep_run_scan
-from .scanners.sast.opengrep import show_help as opengrep_show_help
-from .scanners.sast.opengrep import show_version as opengrep_show_version
 from .scanners.sbom.syft import dir_scan as syft_dir_scan
-from .scanners.sbom.syft import show_help as syft_show_help
-from .scanners.sbom.syft import show_version as syft_show_version
 from .scanners.sca.grype import run_scan as grype_run_scan
-from .scanners.sca.grype import show_help as grype_show_help
-from .scanners.sca.grype import show_version as grype_show_version
 from .scanners.secrets.trufflehog import run_scan as trufflehog_run_scan
-from .scanners.secrets.trufflehog import show_help as trufflehog_show_help
-from .scanners.secrets.trufflehog import show_version as trufflehog_show_version
 from .utils.config import (
     CONFIG_ENV_VAR,
     DEFAULT_CONFIG_FILE,
@@ -37,7 +28,6 @@ from .utils.config import (
     read_env_overrides,
     resolve_config_path,
     str_to_bool,
-    write_default_config,
 )
 from .utils.deterministic import utcnow
 from .utils.environment import check_tool_available, is_running_in_docker
@@ -70,8 +60,13 @@ def configure_logging(*, verbose: bool, quiet: bool) -> None:
 def build_parser() -> argparse.ArgumentParser:
     """build top-level arg parser"""
     parser = argparse.ArgumentParser(
-        prog="dsoinabox",
-        description="dsoinabox app scaffold.",
+        prog="dsoinabox scan",
+        description=(
+            "Run the bundled AppSec scanners against a source tree and produce unified reports. "
+            "`dsoinabox scan` is the default command: `dsoinabox -t all` and `dsoinabox scan -t all` are equivalent."
+        ),
+        epilog=SUBCOMMAND_OVERVIEW,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
         "--version",
@@ -80,21 +75,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="show the app version and exit.",
     )
 
-    parser.add_argument(
-        "--tool_versions",
-        action="store_true",
-        help="show tool versions and exit.",
-    )
-
-    parser.add_argument(
-        "--init-config",
-        action="store_true",
-        dest="init_config",
-        help=(
-            f"write a starter runtime config file ({default_repo_config_file}) and exit. "
-            "respects --config_file and DSOINABOX_CONFIG."
-        ),
-    )
+    # legacy aliases kept for one release; the subcommands are the documented form
+    parser.add_argument("--tool_versions", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--init-config", "--init_config", action="store_true", dest="init_config", help=argparse.SUPPRESS)
     
     verbosity_group = parser.add_mutually_exclusive_group()
     verbosity_group.add_argument(
@@ -129,11 +112,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # trufflehog
-    parser.add_argument(
-        "--trufflehog_help",
-        action="store_true",
-        help="show trufflehog help and exit",
-    )
+    parser.add_argument("--trufflehog_help", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument(
         "--trufflehog_args",
@@ -142,11 +121,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # opengrep
-    parser.add_argument(
-        "--opengrep_help",
-        action="store_true",
-        help="show opengrep help and exit",
-    )
+    parser.add_argument("--opengrep_help", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument(
         "--opengrep_args",
@@ -155,11 +130,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # syft
-    parser.add_argument(
-        "--syft_help",
-        action="store_true",
-        help="show syft help and exit",
-    )
+    parser.add_argument("--syft_help", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument(
         "--syft_args",
@@ -168,11 +139,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # grype
-    parser.add_argument(
-        "--grype_help",
-        action="store_true",
-        help="show grype help and exit",
-    )
+    parser.add_argument("--grype_help", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument(
         "--grype_args",
@@ -181,11 +148,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # checkov
-    parser.add_argument(
-        "--checkov_help",
-        action="store_true",
-        help="show checkov help and exit",
-    )
+    parser.add_argument("--checkov_help", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument(
         "--checkov_args",
@@ -298,22 +261,67 @@ def parse_cli_overrides(argv: list[str]) -> dict[str, object]:
     return vars(parsed)
 
 
-def main(argv: list[str] | None = None) -> int:
-    """app entrypoint. Returns exit code instead of calling sys.exit().
-    
-    Args:
-        argv: Command-line arguments. If None, uses sys.argv[1:]
-        
-    Returns:
-        Exit code: 0 for success, non-zero for failure
-    """
-    parser = build_parser()
+SUBCOMMAND_OVERVIEW = """\
+subcommands:
+  scan                 run scanners and build reports (default when the first argument is a flag)
+  waivers validate     check a waiver file for schema, expired and duplicate entries
+  waivers migrate      rewrite a waiver file to the current schema, preserving comments
+  config init          write a starter .dsoinabox.yaml
+  tools versions       print dsoinabox and scanner versions
+  tools help <tool>    print a scanner's own help
 
+run `dsoinabox <subcommand> --help` for details.
+"""
+
+
+def _subcommands() -> dict[str, Callable[[list[str]], int]]:
+    from .commands import config as config_cmd
+    from .commands import tools as tools_cmd
+    from .commands import waivers as waivers_cmd
+
+    return {
+        "scan": scan_main,
+        "waivers": waivers_cmd.main,
+        "config": config_cmd.main,
+        "tools": tools_cmd.main,
+    }
+
+
+def main(argv: list[str] | None = None) -> int:
+    """app entrypoint. Dispatches to a subcommand; a leading flag means `scan`.
+
+    Returns an exit code instead of calling sys.exit().
+    """
     if argv is None:
         argv = sys.argv[1:]
+    argv = list(argv)
 
     if not argv:
-        #no args provided, show help and exit
+        build_parser().print_help()
+        return 0
+
+    commands = _subcommands()
+    if argv[0] in commands:
+        return commands[argv[0]](argv[1:])
+    if not argv[0].startswith("-"):
+        logger.error(f"Unknown command '{argv[0]}'. Expected one of: {', '.join(commands)} (or flags for scan).")
+        return 3
+    # legacy flat invocation: every flag belongs to scan
+    return scan_main(argv)
+
+
+def _legacy_flag_notice(flag: str, replacement: str) -> None:
+    logger.warning(f"{flag} is deprecated and will be removed in a future release; use `dsoinabox {replacement}`")
+
+
+def scan_main(argv: list[str]) -> int:
+    """`dsoinabox scan` implementation."""
+    from .commands import config as config_cmd
+    from .commands import tools as tools_cmd
+
+    parser = build_parser()
+
+    if not argv:
         parser.print_help()
         return 0
 
@@ -322,18 +330,13 @@ def main(argv: list[str] | None = None) -> int:
     configure_logging(verbose=args.verbose, quiet=args.quiet)
 
     if args.tool_versions:
-        invoked_pkg = __package__ or "dsoinabox"
-        print(f"{invoked_pkg} {__version__}")
-        try:
-            syft_show_version()
-            grype_show_version()
-            trufflehog_show_version()
-            opengrep_show_version()
-            checkov_show_version()
-        except ScannerError as e:
-            logger.error(f"Version check failed: {e}")
-            return 1
-        return 0
+        _legacy_flag_notice("--tool_versions", "tools versions")
+        return tools_cmd.show_versions()
+
+    for tool_name in ("trufflehog", "opengrep", "syft", "grype", "checkov"):
+        if getattr(args, f"{tool_name}_help", False):
+            _legacy_flag_notice(f"--{tool_name}_help", f"tools help {tool_name}")
+            return tools_cmd.show_tool_help(tool_name)
 
     cli_overrides = parse_cli_overrides(argv)
 
@@ -377,12 +380,11 @@ def main(argv: list[str] | None = None) -> int:
             setattr(args, key, merged_values[key])
 
     if args.init_config:
-        created = write_default_config(config_path, overwrite=False)
-        if created:
-            logger.info(f"Created starter config at: {config_path}")
-        else:
-            logger.info(f"Config already exists, not overwriting: {config_path}")
-        return 0
+        _legacy_flag_notice("--init-config", "config init")
+        return config_cmd.init_config(
+            source=str(source_for_config),
+            config_file=str(config_file_override) if config_file_override else None,
+        )
 
     # Set default source path based on environment
     if args.source is None:
@@ -408,52 +410,6 @@ def main(argv: list[str] | None = None) -> int:
     timestamped_report_dir = os.path.join(args.report_directory, f"dsoinabox_{timestamp}")
     args.report_directory = timestamped_report_dir
     logger.info(f"Using timestamped report directory: {args.report_directory}")
-
-    #trufflehog help
-    if args.trufflehog_help:
-        try:
-            trufflehog_show_help()
-        except ScannerError as e:
-            logger.error(f"TruffleHog help failed: {e}")
-            return 1
-        return 0
-    
-    #opengrep help
-    if args.opengrep_help:
-        try:
-            opengrep_show_help()
-        except ScannerError as e:
-            logger.error(f"OpenGrep help failed: {e}")
-            return 1
-        return 0
-    
-    #syft help
-    if args.syft_help:
-        try:
-            syft_show_help()
-        except ScannerError as e:
-            logger.error(f"Syft help failed: {e}")
-            return 1
-        return 0
-    
-    #grype help
-    if args.grype_help:
-        try:
-            grype_show_help()
-        except ScannerError as e:
-            logger.error(f"Grype help failed: {e}")
-            return 1
-        return 0
-    
-    #checkov help
-    if args.checkov_help:
-        try:
-            checkov_show_help()
-        except ScannerError as e:
-            logger.error(f"Checkov help failed: {e}")
-            return 1
-        return 0
-
 
     if not os.path.exists(args.source):
         logger.error(f"Source code path {args.source} does not exist.")
