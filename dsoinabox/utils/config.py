@@ -23,6 +23,7 @@ MERGEABLE_KEYS = (
     "fail_on_secrets",
     "show_findings",
     "waiver_file",
+    "waiver_grace_days",
     "output",
     "tool_output",
     "benchmark",
@@ -38,6 +39,7 @@ ENV_KEY_MAP = {
     "fail_on_secrets": "DSOINABOX_FAIL_ON_SECRETS",
     "show_findings": "DSOINABOX_SHOW_FINDINGS",
     "waiver_file": "DSOINABOX_WAIVER_FILE",
+    "waiver_grace_days": "DSOINABOX_WAIVER_GRACE_DAYS",
     "output": "DSOINABOX_OUTPUT",
     "tool_output": "DSOINABOX_TOOL_OUTPUT",
     "benchmark": "DSOINABOX_BENCHMARK",
@@ -50,6 +52,7 @@ ENV_KEY_MAP = {
 }
 
 BOOL_KEYS = {"fail_on_secrets", "show_findings", "tool_output", "benchmark"}
+INT_KEYS = {"waiver_grace_days"}
 STRING_LIST_KEYS = {"tools", "output"}
 NESTED_TOOL_ARG_KEYS = ("tool_args", "extra_tool_args")
 
@@ -60,6 +63,7 @@ tools: all
 failure_threshold: none
 fail_on_secrets: false
 waiver_file: .dsoinabox_waivers.yaml
+# waiver_grace_days: 0   # keep expired waivers active for N extra days (flagged as expiring)
 output: html
 show_findings: true
 tool_output: false
@@ -108,6 +112,8 @@ def read_env_overrides() -> dict[str, Any]:
             continue
         if key in BOOL_KEYS:
             overrides[key] = str_to_bool(raw_value)
+        elif key in INT_KEYS:
+            overrides[key] = int(raw_value)
         else:
             overrides[key] = raw_value
     return overrides
@@ -117,6 +123,9 @@ def _normalize_value(key: str, value: Any) -> Any:
     """normalize a supported config value to runtime shape."""
     if key in BOOL_KEYS:
         return str_to_bool(value)
+
+    if key in INT_KEYS:
+        return int(value)
 
     if key in STRING_LIST_KEYS and isinstance(value, list):
         return ",".join(str(item).strip() for item in value if str(item).strip())

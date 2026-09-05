@@ -4,6 +4,7 @@ import textwrap
 from abc import ABC, abstractmethod
 
 from ..utils.deterministic import normalize_path
+from ..waivers.apply import active_findings
 from .checkov import _extract_severity
 from .checkov import fingerprint_findings as checkov_fingerprint_findings
 from .grype import fingerprint_findings as grype_fingerprint_findings
@@ -126,7 +127,7 @@ class OpengrepParser(BaseParser):
             through small edits or whitespace changes but loses specificity
             if the finding moves significantly.
             """))
-        for finding in self.data["results"]:
+        for finding in active_findings(self.data["results"]):
     
             print(textwrap.dedent(f"""
                 ######### Finding Details ##########
@@ -189,7 +190,7 @@ class GrypeParser(BaseParser):
             - EXACT: Location-bound identifier derived from the package name, version, and namespace
             - CTX: Contextual identifier derived from the package name, version, and namespace
             """))
-        for finding in self.data.get("matches", []):
+        for finding in active_findings(self.data.get("matches", [])):
             print(textwrap.dedent(f"""
                 Severity: {finding.get('vulnerability', {}).get('severity', '')}
                 Package: {finding.get('artifact', {}).get('name', '')}
@@ -277,7 +278,7 @@ class TrufflehogParser(BaseParser):
             through small edits or whitespace changes but loses specificity
             if the finding moves significantly.
             """))
-        for finding in self.data:
+        for finding in active_findings(self.data):
             file_path = self.get_trufflehog_file_path(finding)
             print(textwrap.dedent(f"""
                 Path: {file_path}:{finding.get('line', '')}
@@ -349,7 +350,7 @@ class CheckovParser(BaseParser):
             normalized relative file path, and a hash of the code snippet.
             This fingerprint remains valid through small edits or whitespace changes.
             """))
-        results = self._get_results_from_sarif()
+        results = active_findings(self._get_results_from_sarif())
         for result in results:
             # Extract information from SARIF result
             rule_id = result.get("ruleId", "unknown")

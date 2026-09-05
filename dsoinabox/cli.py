@@ -33,7 +33,8 @@ from .utils.deterministic import utcnow
 from .utils.environment import check_tool_available, is_running_in_docker
 from .utils.git import GitRepoInfo, set_git_safe_directory
 from .utils.project_id import derive_project_id, is_git
-from .waivers import apply_waivers_to_findings, generate_benchmark_yaml, load_waiver_file
+from .waivers import generate_benchmark_yaml, load_waiver_file
+from .waivers.apply import WaiverEngine, WaiverUsage, active_findings, apply_waivers
 
 logging.basicConfig(
     level=logging.INFO,
@@ -217,6 +218,13 @@ def build_parser() -> argparse.ArgumentParser:
         action="store",
         default=default_waiver_file,
         help="path to waiver file (YAML format). if provided, findings matching waiver fingerprints will be marked as waived.",
+    )
+
+    parser.add_argument(
+        "--waiver_grace_days",
+        type=int,
+        default=0,
+        help="keep expired waivers active for this many extra days after expires_at, flagged as expiring. default 0.",
     )
 
     parser.add_argument(
@@ -450,8 +458,11 @@ def scan_main(argv: list[str]) -> int:
                 logger.error(f"Failed to load the specified waiver file: {args.waiver_file}.")
                 return 1
         except Exception as e:
-            logger.info(f"An error occurred while loading the waiver file: {e}")
+            logger.error(f"An error occurred while loading the waiver file: {e}")
             return 1
+
+    waiver_engine = WaiverEngine(waiver_data, grace_days=args.waiver_grace_days) if waiver_data else None
+    waiver_usages: dict[str, WaiverUsage] = {}
     
     #normalize failure threshold
     if args.failure_threshold and args.failure_threshold.lower() == "none":
@@ -515,10 +526,7 @@ def scan_main(argv: list[str]) -> int:
         logger.info("Processing Trufflehog findings")
         processing_start = time.perf_counter()
         tp.fingerprint_findings(args.source, project_id=project_id)
-        #apply waiver checking
-        if waiver_data:
-            logger.info("Applying waiver checking to Trufflehog findings")
-            apply_waivers_to_findings(tp.data, waiver_data)
+        waiver_usages["trufflehog"] = apply_waivers("trufflehog", tp.data, waiver_engine, source_path=args.source)
         if args.show_findings:
             tp.cli_display_findings()
         processing_duration = time.perf_counter() - processing_start
@@ -537,10 +545,7 @@ def scan_main(argv: list[str]) -> int:
         processing_start = time.perf_counter()
         ogp.apply_threshold(args.failure_threshold)
         ogp.fingerprint_findings(args.source, project_id=project_id)
-        #apply waiver checking
-        if waiver_data:
-            logger.info("Applying waiver checking to OpenGrep findings")
-            apply_waivers_to_findings(ogp.data, waiver_data, findings_key="results", persist_waived_findings=False)
+        waiver_usages["opengrep"] = apply_waivers("opengrep", ogp.data.get("results", []), waiver_engine, source_path=args.source)
         if args.show_findings:
             ogp.cli_display_findings()
         processing_duration = time.perf_counter() - processing_start
@@ -569,10 +574,7 @@ def scan_main(argv: list[str]) -> int:
         processing_start = time.perf_counter()
         gp.apply_threshold(args.failure_threshold)
         gp.fingerprint_findings(project_id=project_id)
-        #apply waiver checking
-        if waiver_data:
-            logger.info("Applying waiver checking to Grype findings")
-            apply_waivers_to_findings(gp.data, waiver_data, findings_key="matches")
+        waiver_usages["grype"] = apply_waivers("grype", gp.data.get("matches", []), waiver_engine, source_path=args.source)
         if args.show_findings:
             gp.cli_display_findings()
         processing_duration = time.perf_counter() - processing_start
@@ -591,25 +593,9 @@ def scan_main(argv: list[str]) -> int:
         processing_start = time.perf_counter()
         cp.apply_threshold(args.failure_threshold)
         cp.fingerprint_findings(args.source, project_id=project_id)
-        #apply waiver checking
-        if waiver_data:
-            logger.info("Applying waiver checking to Checkov findings")
-            # For SARIF format, we need to extract results from runs[0].results
-            runs = cp.data.get("runs", [])
-            if runs:
-                results = runs[0].get("results", [])
-                # Apply waivers to results list
-                filtered_results = []
-                for result in results:
-                    finding_fingerprints = result.get("fingerprints", {})
-                    if isinstance(finding_fingerprints, dict):
-                        from .waivers.matcher import check_waiver
-                        is_waived = check_waiver(finding_fingerprints, waiver_data)
-                        if not is_waived:
-                            filtered_results.append(result)
-                    else:
-                        filtered_results.append(result)
-                runs[0]["results"] = filtered_results
+        checkov_runs = cp.data.get("runs", [])
+        checkov_results = checkov_runs[0].get("results", []) if checkov_runs else []
+        waiver_usages["checkov"] = apply_waivers("checkov", checkov_results, waiver_engine, source_path=args.source)
         if args.show_findings:
             cp.cli_display_findings()
         processing_duration = time.perf_counter() - processing_start
@@ -686,34 +672,51 @@ def scan_main(argv: list[str]) -> int:
     if args.failure_threshold and args.failure_threshold != "none":
         logger.info(f"Applying failure threshold of {args.failure_threshold}")
         
-        if opengrep_data and opengrep_data.get("results"):
+        active_opengrep = active_findings(opengrep_data.get("results")) if opengrep_data else []
+        if active_opengrep:
             threshold_exceeded = True
             logger.warning(
-                f"Found {len(opengrep_data['results'])} OpenGrep findings "
+                f"Found {len(active_opengrep)} OpenGrep findings "
                 f"that exceed the failure threshold of {args.failure_threshold}"
             )
-        
-        if grype_data and grype_data.get("matches"):
+
+        active_grype = active_findings(grype_data.get("matches")) if grype_data else []
+        if active_grype:
             threshold_exceeded = True
             logger.warning(
-                f"Found {len(grype_data['matches'])} Grype findings "
+                f"Found {len(active_grype)} Grype findings "
                 f"that exceed the failure threshold of {args.failure_threshold}"
             )
-        
+
         if checkov_data:
             runs = checkov_data.get("runs", [])
-            if runs:
-                results = runs[0].get("results", [])
-                if results:
-                    threshold_exceeded = True
-                    logger.warning(
-                        f"Found {len(results)} Checkov findings "
-                        f"that exceed the failure threshold of {args.failure_threshold}"
-                    )
-    
-    if args.fail_on_secrets and trufflehog_data:
+            active_checkov = active_findings(runs[0].get("results")) if runs else []
+            if active_checkov:
+                threshold_exceeded = True
+                logger.warning(
+                    f"Found {len(active_checkov)} Checkov findings "
+                    f"that exceed the failure threshold of {args.failure_threshold}"
+                )
+
+    active_secrets = active_findings(trufflehog_data) if trufflehog_data else []
+    if args.fail_on_secrets and active_secrets:
         threshold_exceeded = True
-        logger.warning(f"Found {len(trufflehog_data)} Trufflehog findings (fail_on_secrets enabled)")
+        logger.warning(f"Found {len(active_secrets)} Trufflehog findings (fail_on_secrets enabled)")
+
+    # waiver usage summary across tools
+    waiver_usage_total = WaiverUsage()
+    for usage in waiver_usages.values():
+        waiver_usage_total.merge(usage)
+    waiver_summary = waiver_usage_total.summary_dict(waiver_data) if waiver_data else None
+    if waiver_summary:
+        by_type = ", ".join(f"{k}={v}" for k, v in sorted(waiver_summary["waived_by_type"].items())) or "none"
+        logger.info(
+            f"Waivers applied: {waiver_summary['waived']} waived ({by_type}); "
+            f"{waiver_summary['expired_matches']} expired match(es); "
+            f"{waiver_summary['unused_count']} unused entr{'y' if waiver_summary['unused_count'] == 1 else 'ies'}"
+        )
+        for ref in waiver_summary["unused"]:
+            logger.debug(f"Unused waiver entry: {ref}")
 
     # Generate benchmark.yaml if --benchmark flag is set
     if args.benchmark:
@@ -721,10 +724,13 @@ def scan_main(argv: list[str]) -> int:
         benchmark_path = os.path.join(args.report_directory, "benchmark.yaml")
         try:
             generate_benchmark_yaml(
-                trufflehog_data=trufflehog_data,
-                opengrep_data=opengrep_data,
-                grype_data=grype_data,
-                checkov_data=checkov_data,
+                trufflehog_data=active_findings(trufflehog_data) if trufflehog_data else None,
+                opengrep_data={"results": active_findings(opengrep_data.get("results"))} if opengrep_data else None,
+                grype_data={"matches": active_findings(grype_data.get("matches"))} if grype_data else None,
+                checkov_data=(
+                    {"runs": [{"results": active_findings(checkov_data["runs"][0].get("results"))}]}
+                    if checkov_data and checkov_data.get("runs") else None
+                ),
                 output_path=benchmark_path
             )
             logger.info(f"Benchmark file generated: {benchmark_path}")
@@ -750,7 +756,8 @@ def scan_main(argv: list[str]) -> int:
             git_repo_info=git_repo_info.as_dict() if git_repo_info else None,
             data=(trufflehog_data, opengrep_data, syft_data, grype_data, checkov_data),
             output_format=output_format,
-            waiver_data=waiver_data
+            waiver_data=waiver_data,
+            waiver_summary=waiver_summary,
         )
     
     # Clean up tools_output directory if --tool_output is False

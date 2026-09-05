@@ -5,8 +5,78 @@ from typing import Any
 
 from jinja2 import Environment, FileSystemLoader
 
+from .. import __version__
 from ..utils.deterministic import normalize_path, utcnow
-from .sarif_formatter import convert_unified_json_to_sarif
+from ..waivers.apply import active_findings, waived_findings
+from .sarif_formatter import (
+    _extract_file_path_from_finding,
+    _extract_line_info_from_finding,
+    _extract_rule_id_from_finding,
+    _extract_severity_from_finding,
+    convert_unified_json_to_sarif,
+)
+
+
+def _tool_findings(tool: str, data: Any) -> list[dict[str, Any]]:
+    """The findings list inside a raw tool payload."""
+    if not data:
+        return []
+    if tool == "trufflehog":
+        return data if isinstance(data, list) else [data]
+    if tool == "opengrep":
+        return data.get("results", []) or []
+    if tool == "grype":
+        return data.get("matches", []) or []
+    if tool == "checkov":
+        runs = data.get("runs", []) or []
+        return (runs[0].get("results", []) or []) if runs else []
+    return []
+
+
+def _with_findings(tool: str, data: Any, findings: list[dict[str, Any]]) -> Any:
+    """Shallow copy of a raw tool payload with its findings list replaced."""
+    if not data:
+        return data
+    if tool == "trufflehog":
+        return findings
+    if tool == "opengrep":
+        return {**data, "results": findings}
+    if tool == "grype":
+        return {**data, "matches": findings}
+    if tool == "checkov":
+        runs = list(data.get("runs", []) or [])
+        if runs:
+            runs[0] = {**runs[0], "results": findings}
+        return {**data, "runs": runs}
+    return data
+
+
+def _waiver_row(tool: str, finding: dict[str, Any], record: dict[str, Any]) -> dict[str, Any]:
+    start, _end = _extract_line_info_from_finding(finding, tool)
+    return {
+        "tool": tool,
+        "severity": _extract_severity_from_finding(finding, tool),
+        "rule_id": _extract_rule_id_from_finding(finding, tool),
+        "path": _extract_file_path_from_finding(finding, tool),
+        "line": start or "",
+        "waiver": record,
+    }
+
+
+def split_waived(tool_payloads: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
+    """Return (payloads with only active findings, waived rows, expired-waiver rows)."""
+    active: dict[str, Any] = {}
+    waived_rows: list[dict[str, Any]] = []
+    expired_rows: list[dict[str, Any]] = []
+    for tool, data in tool_payloads.items():
+        findings = _tool_findings(tool, data)
+        active[tool] = _with_findings(tool, data, active_findings(findings)) if findings else data
+        for f in waived_findings(findings):
+            waived_rows.append(_waiver_row(tool, f, f.get("waived_by") or {}))
+        for f in active_findings(findings):
+            for record in f.get("expired_waivers") or []:
+                expired_rows.append(_waiver_row(tool, f, record))
+    return active, waived_rows, expired_rows
 
 
 def _normalize_paths_in_data(data: Any) -> Any:
@@ -49,6 +119,7 @@ def report_builder(
     data: tuple = None,
     output_format: str = "html",
     waiver_data: Any = None,
+    waiver_summary: dict | None = None,
 ) -> None:
     # Generate timestamp if not provided
     if timestamp is None:
@@ -74,8 +145,10 @@ def report_builder(
         output_path = os.path.join(output_dir, output_filename)
         output_data = {
             "metadata": {
+                "dsoinabox_version": __version__,
                 "scan_timestamp": timestamp,
-                "git_repo_info": git_repo_info
+                "git_repo_info": git_repo_info,
+                "waivers": waiver_summary,
             },
             "trufflehog_data": trufflehog_data,
             "opengrep_data": opengrep_data,
@@ -100,8 +173,10 @@ def report_builder(
         #add metadata as first line
         findings.append({
             "type": "metadata",
+            "dsoinabox_version": __version__,
             "scan_timestamp": timestamp,
-            "git_repo_info": git_repo_info
+            "git_repo_info": git_repo_info,
+            "waivers": waiver_summary,
         })
         
         #add findings from each scanner
@@ -188,15 +263,27 @@ def report_builder(
     env.filters['tojson'] = lambda value: json.dumps(value)
     template = env.get_template(template_file)
 
+    #waived findings leave the per-tool tables and get their own section
+    active_payloads, waived_rows, expired_rows = split_waived({
+        "trufflehog": trufflehog_data,
+        "opengrep": opengrep_data,
+        "grype": grype_data,
+        "checkov": checkov_data,
+    })
+
     #render template with data
     rendered = template.render(
-        grype_data=grype_data,
+        grype_data=active_payloads["grype"],
         syft_data=syft_data,
-        trufflehog_data=trufflehog_data,
-        opengrep_data=opengrep_data,
-        checkov_data=checkov_data,
+        trufflehog_data=active_payloads["trufflehog"],
+        opengrep_data=active_payloads["opengrep"],
+        checkov_data=active_payloads["checkov"],
         git_repo_info=git_repo_info,
-        waiver_data=waiver_data
+        waiver_data=waiver_data,
+        waiver_summary=waiver_summary,
+        waived_findings=waived_rows,
+        expired_waiver_findings=expired_rows,
+        dsoinabox_version=__version__,
     )
 
     #write rendered output to file
