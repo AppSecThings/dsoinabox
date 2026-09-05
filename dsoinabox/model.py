@@ -171,6 +171,8 @@ class Finding(BaseModel):
     expired_waivers: list[dict[str, Any]] = Field(default_factory=list)
     location_status: str = ""
     verified: bool | None = None
+    baseline_status: Literal["new", "known"] | None = None
+    """Set when a baseline is loaded: known = fingerprint present in the baseline."""
     package: Package | None = None
     references: list[str] = Field(default_factory=list)
     raw: dict[str, Any] = Field(default_factory=dict, exclude=True)
@@ -242,6 +244,7 @@ class PolicyResult(BaseModel):
     failure_threshold: Severity | None = None
     fail_on_secrets: bool = False
     report_threshold: Severity | None = None
+    fail_on: str = "all"
     threshold_exceeded: bool = False
     secrets_found: int = 0
     secrets_failed: bool = False
@@ -277,6 +280,10 @@ class ScanOptions(BaseModel):
     benchmark: bool = False
     report_name: str | None = None
     """Base file name for reports; default is dsoinabox_unified_report_<timestamp>."""
+    baseline: str | None = None
+    """Path to a benchmark/baseline file; findings are classified new/known against it."""
+    fail_on: Literal["all", "new"] = "all"
+    """With a baseline, 'new' gates only findings not in the baseline."""
     base_report_directory: str | None = None
     """Parent of the timestamped directory; a `latest` pointer is maintained there."""
     tool_args: dict[str, Any] = Field(default_factory=dict)
@@ -303,6 +310,7 @@ class ScanRun(BaseModel):
     report_paths: list[str] = Field(default_factory=list)
     latest_directory: str | None = None
     hidden_by_report_threshold: int = 0
+    baseline_summary: dict[str, Any] | None = None
     fingerprint_aliases: dict[str, str] = Field(default_factory=dict)
     """legacy fingerprint -> current fingerprint, for `waivers migrate --from-report`."""
 
@@ -354,6 +362,7 @@ class ScanRun(BaseModel):
             "severity_counts": self.severity_counts(),
             "hidden_by_report_threshold": self.hidden_by_report_threshold,
             "fingerprint_aliases": self.fingerprint_aliases,
+            "baseline": self.baseline_summary,
             "policy": self.policy.summary_dict(),
             "waivers": self.waiver_summary,
         }

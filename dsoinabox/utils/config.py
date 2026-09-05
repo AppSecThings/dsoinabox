@@ -27,6 +27,8 @@ MERGEABLE_KEYS = (
     "fail_fast",
     "waiver_file",
     "waiver_grace_days",
+    "baseline",
+    "fail_on",
     "output",
     "report_name",
     "tool_output",
@@ -47,6 +49,8 @@ ENV_KEY_MAP = {
     "show_findings": "DSOINABOX_SHOW_FINDINGS",
     "waiver_file": "DSOINABOX_WAIVER_FILE",
     "waiver_grace_days": "DSOINABOX_WAIVER_GRACE_DAYS",
+    "baseline": "DSOINABOX_BASELINE",
+    "fail_on": "DSOINABOX_FAIL_ON",
     "output": "DSOINABOX_OUTPUT",
     "report_name": "DSOINABOX_REPORT_NAME",
     "tool_output": "DSOINABOX_TOOL_OUTPUT",
@@ -74,6 +78,8 @@ failure_threshold: none     # exit 1 when unwaived findings at/above this severi
 fail_on_secrets: false
 waiver_file: .dsoinabox_waivers.yaml
 # waiver_grace_days: 0      # keep expired waivers active for N extra days (flagged as expiring)
+# baseline: benchmark.yaml  # classify findings as new/known against this benchmark file
+# fail_on: all              # all | new (only findings not in the baseline fail the gate)
 # report_name: dsoinabox_unified_report   # base file name; <report_directory>/latest/ always points at the newest run
 output: html
 show_findings: false        # false | true (compact table) | full (details)

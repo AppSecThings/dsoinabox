@@ -19,12 +19,16 @@ def evaluate(run: ScanRun, options: ScanOptions) -> PolicyResult:
         failure_threshold=options.failure_threshold,
         fail_on_secrets=options.fail_on_secrets,
         report_threshold=options.report_threshold,
+        fail_on=options.fail_on,
     )
+    only_new = options.fail_on == "new" and options.baseline is not None
     threshold: Severity | None = options.failure_threshold
     failing: dict[str, int] = {}
     secrets = 0
     for scan in run.results:
         for finding in scan.active_findings:
+            if only_new and finding.baseline_status == "known":
+                continue
             if finding.category == "secret":
                 secrets += 1
                 continue

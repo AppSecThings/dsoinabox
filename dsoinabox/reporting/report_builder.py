@@ -15,6 +15,7 @@ from .sarif_formatter import (
     _extract_severity_from_finding,
     convert_unified_json_to_sarif,
 )
+from .sarif_run import convert_run_to_sarif
 
 
 def _tool_findings(tool: str, data: Any) -> list[dict[str, Any]]:
@@ -213,8 +214,8 @@ def report_builder(
             "checkov_data": checkov_data
         }
         
-        #convert to sarif format
-        sarif_log = convert_unified_json_to_sarif(unified_data)
+        #convert to sarif format (normalized run when available, legacy raw payloads otherwise)
+        sarif_log = convert_run_to_sarif(scan_run) if scan_run is not None else convert_unified_json_to_sarif(unified_data)
         
         #write sarif file
         with open(output_path, "w") as out_file:

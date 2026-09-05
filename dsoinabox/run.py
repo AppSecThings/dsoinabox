@@ -24,6 +24,7 @@ from .utils.git import GitRepoInfo, set_git_safe_directory
 from .utils.project_id import derive_project_id, is_git
 from .waivers import generate_benchmark_yaml, load_waiver_file
 from .waivers.apply import WaiverEngine, WaiverUsage, apply_waivers_to_model
+from .waivers.baseline import apply_baseline
 from .waivers.models import WaiverSet
 
 logger = logging.getLogger(__name__)
@@ -257,6 +258,16 @@ def run_scan(options: ScanOptions) -> ScanRun:
         results=results,
         waiver_summary=usage.summary_dict(waiver_set) if waiver_set else None,
     )
+    if options.baseline:
+        try:
+            run.baseline_summary = apply_baseline(run.findings, os.path.join(options.source, options.baseline)
+                                                   if not os.path.isabs(options.baseline) else options.baseline)
+        except FileNotFoundError:
+            raise UsageError(f"Baseline file not found: {options.baseline}") from None
+        except ValueError as exc:
+            raise UsageError(f"Invalid baseline file {options.baseline}: {exc}") from None
+        bs = run.baseline_summary
+        logger.info(f"Baseline {bs['file']}: {bs['new']} new, {bs['known']} known finding(s)")
     run.policy = evaluate(run, options)
     run.fingerprint_aliases = fingerprint_aliases(run.findings)
 

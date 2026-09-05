@@ -75,6 +75,10 @@ def summary_lines(run: ScanRun, options: ScanOptions, *, color: bool = False) ->
         if ws.get("deprecated_schema"):
             extras.append(_paint(f"schema={ws['schema_version']} (deprecated, run `dsoinabox waivers migrate`)", "medium", color))
         lines.append(f"{PREFIX} waived: {waived}{'  ' + '  '.join(extras) if extras else ''}  (from {ws.get('file')})")
+    bs = run.baseline_summary
+    if bs:
+        new_txt = _paint(f"new={bs['new']}", "high" if bs["new"] else "ok", color)
+        lines.append(f"{PREFIX} baseline: {new_txt} known={bs['known']}  (from {bs.get('file')}, {bs.get('entries')} entries)")
     if run.hidden_by_report_threshold:
         lines.append(
             f"{PREFIX} hidden from reports by report_threshold={options.report_threshold.value if options.report_threshold else 'none'}: "
@@ -92,6 +96,8 @@ def summary_lines(run: ScanRun, options: ScanOptions, *, color: bool = False) ->
         f"failure_threshold={policy.failure_threshold.value if policy.failure_threshold else 'none'}",
         f"fail_on_secrets={'true' if policy.fail_on_secrets else 'false'}",
     ]
+    if policy.fail_on != "all":
+        verdict_bits.append(f"fail_on={policy.fail_on}")
     if policy.threshold_exceeded:
         detail = ", ".join(f"{k}={v}" for k, v in sorted(policy.failing_by_tool.items()))
         verdict_bits.append(_paint(f"threshold exceeded ({detail})", "fail", color))

@@ -287,6 +287,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--baseline",
+        action="store",
+        default=None,
+        help="benchmark/baseline file (relative to --source unless absolute). findings are classified new or known "
+             "against it; combine with --fail_on new to gate only regressions.",
+    )
+
+    parser.add_argument(
+        "--fail_on",
+        action="store",
+        default="all",
+        choices=["all", "new"],
+        help="which unwaived findings the policy gate considers: all (default) or only those new since --baseline.",
+    )
+
+    parser.add_argument(
         "--benchmark",
         action="store_true",
         default=False,
@@ -311,6 +327,7 @@ subcommands:
   scan                 run scanners and build reports (default when the first argument is a flag)
   waivers validate     check a waiver file for schema, expired and duplicate entries
   waivers migrate      rewrite a waiver file to the current schema, preserving comments
+  baseline update      refresh a benchmark/baseline file from a JSON report
   config init          write a starter .dsoinabox.yaml
   tools versions       print dsoinabox and scanner versions
   tools help <tool>    print a scanner's own help
@@ -320,6 +337,7 @@ run `dsoinabox <subcommand> --help` for details.
 
 
 def _subcommands() -> dict[str, Callable[[list[str]], int]]:
+    from .commands import baseline as baseline_cmd
     from .commands import config as config_cmd
     from .commands import tools as tools_cmd
     from .commands import waivers as waivers_cmd
@@ -327,6 +345,7 @@ def _subcommands() -> dict[str, Callable[[list[str]], int]]:
     return {
         "scan": scan_main,
         "waivers": waivers_cmd.main,
+        "baseline": baseline_cmd.main,
         "config": config_cmd.main,
         "tools": tools_cmd.main,
     }
@@ -477,6 +496,8 @@ def scan_main(argv: list[str]) -> int:
         keep_tool_output=bool(args.tool_output),
         report_name=args.report_name or None,
         base_report_directory=args.report_directory,
+        baseline=args.baseline or None,
+        fail_on=args.fail_on or "all",
         benchmark=bool(args.benchmark),
         tool_args=tool_args,
         scan_timeout=int(args.scan_timeout) if args.scan_timeout else None,
