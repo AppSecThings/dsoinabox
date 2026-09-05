@@ -69,7 +69,7 @@ def build_cases(root: Path) -> dict[str, dict[str, str]]:
     cases: dict[str, dict[str, str]] = {}
 
     # ---------------- opengrep ----------------
-    from dsoinabox.reporting import opengrep as og
+    from dsoinabox.fingerprints import opengrep as og
 
     og_findings = {
         "og_span_with_metavars": {
@@ -117,7 +117,7 @@ def build_cases(root: Path) -> dict[str, dict[str, str]]:
     # the absolute on-disk path, so they are environment-dependent. Git-mode
     # findings hash the repo-relative path. Git mode is used for every tier
     # here; one filesystem case freezes only the path-independent tiers.
-    from dsoinabox.reporting import trufflehog as th
+    from dsoinabox.fingerprints import trufflehog as th
 
     FROZEN_HEAD = "deadbeefcafe0000000000000000000000000000"
     th_findings = [
@@ -170,7 +170,7 @@ def build_cases(root: Path) -> dict[str, dict[str, str]]:
         }
 
     # ---------------- grype ----------------
-    from dsoinabox.reporting import grype as gy
+    from dsoinabox.fingerprints import grype as gy
 
     report = {
         "source": {"type": "directory", "target": {"userInput": "/scan_target"}},
@@ -203,7 +203,7 @@ def build_cases(root: Path) -> dict[str, dict[str, str]]:
         cases[name] = {"pkg": pkg, "exact": exact, "ctx": ctx}
 
     # ---------------- checkov ----------------
-    from dsoinabox.reporting import checkov as ck
+    from dsoinabox.fingerprints import checkov as ck
 
     sarif = {
         "runs": [{

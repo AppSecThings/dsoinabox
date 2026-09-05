@@ -138,7 +138,39 @@ class MigrateResult:
         )
 
 
-def migrate_data(data: CommentedMap, *, to_version: str | None = None) -> tuple[str, str, list[str]]:
+def load_fingerprint_aliases(report_path: str | Path) -> dict[str, str]:
+    """Read ``fingerprint_aliases`` from a dsoinabox JSON report (metadata or top level)."""
+    import json
+
+    with Path(report_path).open(encoding="utf-8") as fh:
+        report = json.load(fh)
+    if not isinstance(report, dict):
+        raise ValueError(f"{report_path}: not a dsoinabox JSON report")
+    aliases = (report.get("metadata") or {}).get("fingerprint_aliases") or report.get("fingerprint_aliases") or {}
+    if not isinstance(aliases, dict):
+        raise ValueError(f"{report_path}: fingerprint_aliases is not a mapping")
+    return {str(k): str(v) for k, v in aliases.items()}
+
+
+def rewrite_fingerprints(data: CommentedMap, aliases: dict[str, str]) -> list[str]:
+    """Replace legacy fingerprints with their current equivalents, in place."""
+    notes: list[str] = []
+    if not aliases:
+        return notes
+    for section in ("finding_waivers", "benchmark"):
+        for i, entry in enumerate(data.get(section) or []):
+            if not isinstance(entry, CommentedMap):
+                continue
+            current = entry.get("fingerprint")
+            if isinstance(current, str) and current in aliases and aliases[current] != current:
+                entry["fingerprint"] = DoubleQuotedScalarString(aliases[current])
+                notes.append(f"{section}[{i}]: fingerprint {current} -> {aliases[current]}")
+    return notes
+
+
+def migrate_data(
+    data: CommentedMap, *, to_version: str | None = None, aliases: dict[str, str] | None = None
+) -> tuple[str, str, list[str]]:
     """Migrate a round-trip tree in place. Returns (from_version, to_version, notes)."""
     raw_version = data.get("schema_version")
     from_version = normalize_version(raw_version) if raw_version is not None else "1.0"
@@ -152,6 +184,8 @@ def migrate_data(data: CommentedMap, *, to_version: str | None = None) -> tuple[
         # nothing to migrate, but normalize the version scalar to a quoted string
         _set_version(data, target)
         notes.append("normalized schema_version to a quoted string")
+    if aliases:
+        notes.extend(rewrite_fingerprints(data, aliases))
     # validate the result with the regular loader before anyone writes it
     load_waiver_data(_plain(data))
     return from_version, target, notes
@@ -164,6 +198,7 @@ def migrate_file(
     in_place: bool = False,
     output: str | Path | None = None,
     dry_run: bool = False,
+    aliases: dict[str, str] | None = None,
 ) -> MigrateResult:
     """Migrate a file. Writes only when ``in_place`` or ``output`` is given and not ``dry_run``."""
     src = Path(path)
@@ -171,7 +206,7 @@ def migrate_file(
         raise FileNotFoundError(f"Waiver file not found: {src}")
     original_text = src.read_text(encoding="utf-8")
     data = load_round_trip(src)
-    from_version, target, notes = migrate_data(data, to_version=to_version)
+    from_version, target, notes = migrate_data(data, to_version=to_version, aliases=aliases)
     migrated_text = dump_round_trip(data)
     result = MigrateResult(
         path=src,

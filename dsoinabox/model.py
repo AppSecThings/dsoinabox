@@ -298,6 +298,8 @@ class ScanRun(BaseModel):
     policy: PolicyResult = Field(default_factory=PolicyResult)
     report_paths: list[str] = Field(default_factory=list)
     hidden_by_report_threshold: int = 0
+    fingerprint_aliases: dict[str, str] = Field(default_factory=dict)
+    """legacy fingerprint -> current fingerprint, for `waivers migrate --from-report`."""
 
     def result_for(self, tool: str) -> ScanResult | None:
         for r in self.results:
@@ -346,6 +348,7 @@ class ScanRun(BaseModel):
             "scanners": [r.summary_dict() for r in self.results],
             "severity_counts": self.severity_counts(),
             "hidden_by_report_threshold": self.hidden_by_report_threshold,
+            "fingerprint_aliases": self.fingerprint_aliases,
             "policy": self.policy.summary_dict(),
             "waivers": self.waiver_summary,
         }

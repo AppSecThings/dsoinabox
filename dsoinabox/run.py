@@ -256,6 +256,7 @@ def run_scan(options: ScanOptions) -> ScanRun:
         waiver_summary=usage.summary_dict(waiver_set) if waiver_set else None,
     )
     run.policy = evaluate(run, options)
+    run.fingerprint_aliases = fingerprint_aliases(run.findings)
 
     if run.waiver_summary:
         ws = run.waiver_summary
@@ -324,6 +325,26 @@ def run_scan(options: ScanOptions) -> ScanRun:
 
     run.finished_at = utcnow()
     return run
+
+
+def fingerprint_aliases(findings: list[Finding]) -> dict[str, str]:
+    """Map every legacy fingerprint to the current fingerprint of the same tier."""
+    from .fingerprints.registry import parse_fingerprint
+
+    aliases: dict[str, str] = {}
+    for f in findings:
+        if not f.legacy_fingerprints:
+            continue
+        by_tier: dict[str, str] = {}
+        for value in f.fingerprints.values():
+            parsed = parse_fingerprint(value)
+            if parsed:
+                by_tier[parsed[2]] = value
+        for legacy in f.legacy_fingerprints:
+            parsed = parse_fingerprint(legacy)
+            if parsed and parsed[2] in by_tier:
+                aliases[legacy] = by_tier[parsed[2]]
+    return aliases
 
 
 def findings_for_console(run: ScanRun) -> list[Finding]:

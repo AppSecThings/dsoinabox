@@ -95,25 +95,25 @@ def _run_checkov(ctx: RunContext) -> Any:
 
 
 def _fp_trufflehog(raw: Any, ctx: RunContext) -> Any:
-    from ..reporting.trufflehog import fingerprint_findings
+    from ..fingerprints.trufflehog import fingerprint_findings
 
     return fingerprint_findings(raw, ctx.source, project_id=ctx.project_id)
 
 
 def _fp_opengrep(raw: Any, ctx: RunContext) -> Any:
-    from ..reporting.opengrep import fingerprint_findings
+    from ..fingerprints.opengrep import fingerprint_findings
 
     return fingerprint_findings(raw, ctx.source, project_id=ctx.project_id)
 
 
 def _fp_grype(raw: Any, ctx: RunContext) -> Any:
-    from ..reporting.grype import fingerprint_findings
+    from ..fingerprints.grype import fingerprint_findings
 
     return fingerprint_findings(raw, project_id=ctx.project_id)
 
 
 def _fp_checkov(raw: Any, ctx: RunContext) -> Any:
-    from ..reporting.checkov import fingerprint_findings
+    from ..fingerprints.checkov import fingerprint_findings
 
     return fingerprint_findings(raw, ctx.source, project_id=ctx.project_id)
 

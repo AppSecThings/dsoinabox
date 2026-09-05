@@ -78,7 +78,7 @@ class TestTrufflehogParserNormalization:
                 finding_copy.pop("RawV2", None)
             fixture_copy.append(finding_copy)
         
-        result = fingerprint_findings(fixture_copy, tmp_source_dir)
+        result = fingerprint_findings(fixture_copy, tmp_source_dir, project_id="test-project")
         
         assert isinstance(result, list)
         assert len(result) > 0
@@ -111,7 +111,7 @@ class TestTrufflehogParserNormalization:
                 finding_copy.pop("RawV2", None)
             fixture_copy.append(finding_copy)
         
-        result = fingerprint_findings(fixture_copy, tmp_source_dir)
+        result = fingerprint_findings(fixture_copy, tmp_source_dir, project_id="test-project")
         
         for finding in result:
             fps = finding["fingerprints"]
@@ -151,7 +151,7 @@ class TestTrufflehogParserNormalization:
                 finding_copy.pop("RawV2", None)
             fixture_copy.append(finding_copy)
         
-        result = fingerprint_findings(fixture_copy, tmp_source_dir)
+        result = fingerprint_findings(fixture_copy, tmp_source_dir, project_id="test-project")
         
         for finding in result:
             # Required fields from original schema
@@ -196,7 +196,7 @@ class TestTrufflehogParserNormalization:
                 finding_copy.pop("RawV2", None)
             fixture_copy.append(finding_copy)
         
-        result = fingerprint_findings(fixture_copy, tmp_source_dir)
+        result = fingerprint_findings(fixture_copy, tmp_source_dir, project_id="test-project")
         
         for finding in result:
             assert field in finding
@@ -221,7 +221,7 @@ class TestTrufflehogParserNormalization:
                 finding_copy.pop("RawV2", None)
             fixture_copy.append(finding_copy)
         
-        result = fingerprint_findings(fixture_copy, tmp_source_dir)
+        result = fingerprint_findings(fixture_copy, tmp_source_dir, project_id="test-project")
         
         for finding in result:
             detector = finding.get("DetectorName", "")
@@ -250,7 +250,7 @@ class TestTrufflehogParserNormalization:
                 finding_copy.pop("RawV2", None)
             fixture_copy.append(finding_copy)
         
-        result = fingerprint_findings(fixture_copy, tmp_source_dir)
+        result = fingerprint_findings(fixture_copy, tmp_source_dir, project_id="test-project")
         
         for finding in result:
             assert "location_status" in finding
@@ -270,7 +270,7 @@ class TestTrufflehogParserEdgeCases:
         """Test handling of empty findings list."""
         empty_data = []
         
-        result = fingerprint_findings(empty_data, tmp_source_dir)
+        result = fingerprint_findings(empty_data, tmp_source_dir, project_id="test-project")
         
         assert isinstance(result, list)
         assert len(result) == 0
@@ -297,7 +297,7 @@ class TestTrufflehogParserEdgeCases:
             }
         ]
         
-        result = fingerprint_findings(data_with_missing_detector, source_dir)
+        result = fingerprint_findings(data_with_missing_detector, source_dir, project_id="test-project")
         
         assert len(result) == 1
         finding = result[0]
@@ -329,7 +329,7 @@ class TestTrufflehogParserEdgeCases:
             }
         ]
         
-        result = fingerprint_findings(data_with_missing_raw, source_dir)
+        result = fingerprint_findings(data_with_missing_raw, source_dir, project_id="test-project")
         
         assert len(result) == 1
         finding = result[0]
@@ -349,7 +349,7 @@ class TestTrufflehogParserEdgeCases:
         ]
         
         # Should handle gracefully and mark as UNLOCATABLE
-        result = fingerprint_findings(data_with_missing_metadata, tmp_source_dir)
+        result = fingerprint_findings(data_with_missing_metadata, tmp_source_dir, project_id="test-project")
         assert len(result) == 1
         finding = result[0]
         # Should have fingerprints and be marked as UNLOCATABLE
@@ -392,7 +392,7 @@ class TestTrufflehogParserEdgeCases:
             }
         ]
         
-        result = fingerprint_findings(data_with_both_modes, source_dir)
+        result = fingerprint_findings(data_with_both_modes, source_dir, project_id="test-project")
         
         assert len(result) == 2
         for finding in result:
@@ -427,7 +427,7 @@ class TestTrufflehogParserRobustness:
             data_with_extra[0]["unexpected_field"] = "should be preserved"
             data_with_extra[0]["nested_unexpected"] = {"key": "value"}
         
-        result = fingerprint_findings(data_with_extra, tmp_source_dir)
+        result = fingerprint_findings(data_with_extra, tmp_source_dir, project_id="test-project")
         
         # Should still process normally
         assert len(result) > 0
@@ -466,7 +466,7 @@ class TestTrufflehogParserRobustness:
             }
         ]
         
-        result = fingerprint_findings(data_with_drift, source_dir)
+        result = fingerprint_findings(data_with_drift, source_dir, project_id="test-project")
         
         # Should process successfully
         assert len(result) == 1
@@ -503,7 +503,7 @@ class TestTrufflehogParserRobustness:
             }
         ]
         
-        result = fingerprint_findings(data_with_nulls, source_dir)
+        result = fingerprint_findings(data_with_nulls, source_dir, project_id="test-project")
         
         # Should handle nulls gracefully
         assert len(result) == 1
@@ -533,7 +533,7 @@ class TestTrufflehogParserRobustness:
             }
         ]
         
-        result = fingerprint_findings(data_with_both, source_dir)
+        result = fingerprint_findings(data_with_both, source_dir, project_id="test-project")
         
         # Should process using RawV2
         assert len(result) == 1
@@ -564,7 +564,7 @@ class TestTrufflehogParserRobustness:
         ]
         
         # Should handle gracefully
-        result = fingerprint_findings(data_with_missing_commit, source_dir)
+        result = fingerprint_findings(data_with_missing_commit, source_dir, project_id="test-project")
         
         assert len(result) == 1
         finding = result[0]
@@ -590,7 +590,7 @@ class TestTrufflehogParserRobustness:
                 finding_copy.pop("RawV2", None)
             fixture_copy.append(finding_copy)
         
-        result = fingerprint_findings(fixture_copy, tmp_source_dir)
+        result = fingerprint_findings(fixture_copy, tmp_source_dir, project_id="test-project")
         
         for finding in result:
             # Verified field should be preserved if present
@@ -622,7 +622,7 @@ class TestTrufflehogParserRobustness:
             }
         ]
         
-        result = fingerprint_findings(data_with_file, source_dir)
+        result = fingerprint_findings(data_with_file, source_dir, project_id="test-project")
         assert len(result) == 1
         finding = result[0]
         assert "fingerprints" in finding
@@ -646,7 +646,7 @@ class TestTrufflehogParserRobustness:
             }
         ]
         
-        result = fingerprint_findings(data_with_file_path, source_dir)
+        result = fingerprint_findings(data_with_file_path, source_dir, project_id="test-project")
         assert len(result) == 1
         finding = result[0]
         assert "fingerprints" in finding
@@ -667,7 +667,7 @@ class TestTrufflehogParserRobustness:
             }
         ]
         
-        result = fingerprint_findings(data_with_path, source_dir)
+        result = fingerprint_findings(data_with_path, source_dir, project_id="test-project")
         assert len(result) == 1
         finding = result[0]
         assert "fingerprints" in finding

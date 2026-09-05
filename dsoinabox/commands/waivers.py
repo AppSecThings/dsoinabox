@@ -5,8 +5,9 @@ from __future__ import annotations
 import argparse
 import logging
 
+from ..fingerprints.registry import fingerprint_version_status
 from ..waivers.loader import load_waiver_file
-from ..waivers.migrate import migrate_file, parse_version_arg
+from ..waivers.migrate import load_fingerprint_aliases, migrate_file, parse_version_arg
 from ..waivers.schema import CURRENT_SCHEMA_VERSION, SUPPORTED_SCHEMA_VERSIONS
 from ..waivers.validate import validate_waiver_set
 from . import EXIT_OK, EXIT_POLICY, EXIT_USAGE
@@ -34,6 +35,8 @@ def build_parser() -> argparse.ArgumentParser:
                         help="overwrite the file, keeping a .bak copy next to it")
     target.add_argument("--output", "-o", metavar="PATH", help="write the migrated file here (single input only)")
     m.add_argument("--dry-run", "--dry_run", dest="dry_run", action="store_true", help="print a diff and change nothing")
+    m.add_argument("--from-report", "--from_report", dest="from_report", metavar="REPORT.json", default=None,
+                   help="also rewrite legacy fingerprints using the fingerprint_aliases recorded in a dsoinabox JSON report")
     m.add_argument("--to", metavar="VERSION", type=parse_version_arg, default=None,
                    help=f"stop at this schema version (default {CURRENT_SCHEMA_VERSION}; supported: {', '.join(SUPPORTED_SCHEMA_VERSIONS)})")
     return parser
@@ -53,6 +56,14 @@ def _validate(args: argparse.Namespace) -> int:
             worst = max(worst, EXIT_POLICY)
             continue
         report = validate_waiver_set(ws, soon_days=args.soon_days)
+        for i, entry in enumerate(ws.finding_waivers):
+            status = fingerprint_version_status(entry.fingerprint)
+            if status == "legacy":
+                report.warnings.append(f"finding_waivers[{i}] uses a legacy fingerprint version: {entry.fingerprint}")
+            elif status == "unsupported":
+                report.warnings.append(f"finding_waivers[{i}] uses an unsupported fingerprint version: {entry.fingerprint}")
+            elif status == "unknown":
+                report.warnings.append(f"finding_waivers[{i}] fingerprint is not in <tool>:<version>:<TIER>:... form: {entry.fingerprint}")
         print("\n".join(report.lines()))
         if args.strict and not report.ok:
             worst = max(worst, EXIT_POLICY)
@@ -63,11 +74,20 @@ def _migrate(args: argparse.Namespace) -> int:
     if args.output and len(args.paths) > 1:
         print("--output accepts a single input file")
         return EXIT_USAGE
+    aliases: dict[str, str] | None = None
+    if args.from_report:
+        try:
+            aliases = load_fingerprint_aliases(args.from_report)
+        except (OSError, ValueError) as exc:
+            print(f"{args.from_report}: {exc}")
+            return EXIT_USAGE
+        print(f"{args.from_report}: {len(aliases)} fingerprint alias(es) loaded")
     worst = EXIT_OK
     for path in args.paths:
         try:
             result = migrate_file(
-                path, to_version=args.to, in_place=args.in_place, output=args.output, dry_run=args.dry_run
+                path, to_version=args.to, in_place=args.in_place, output=args.output, dry_run=args.dry_run,
+                aliases=aliases,
             )
         except FileNotFoundError as exc:
             print(f"{path}: {exc}")

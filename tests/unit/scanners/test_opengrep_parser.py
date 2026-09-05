@@ -49,7 +49,7 @@ class TestOpenGrepParserNormalization:
     
     def test_fingerprint_findings_adds_fingerprints(self, opengrep_fixture, tmp_source_dir):
         """Test that fingerprint_findings adds fingerprints to all findings."""
-        result = fingerprint_findings(opengrep_fixture, tmp_source_dir)
+        result = fingerprint_findings(opengrep_fixture, tmp_source_dir, project_id="test-project")
         
         assert "results" in result
         assert len(result["results"]) > 0
@@ -63,7 +63,7 @@ class TestOpenGrepParserNormalization:
     
     def test_fingerprint_format(self, opengrep_fixture, tmp_source_dir):
         """Test that fingerprints follow the expected format."""
-        result = fingerprint_findings(opengrep_fixture, tmp_source_dir)
+        result = fingerprint_findings(opengrep_fixture, tmp_source_dir, project_id="test-project")
         
         for finding in result["results"]:
             fps = finding["fingerprints"]
@@ -79,7 +79,7 @@ class TestOpenGrepParserNormalization:
     
     def test_normalized_schema_fields(self, opengrep_fixture, tmp_source_dir):
         """Test that findings have all normalized schema fields."""
-        result = fingerprint_findings(opengrep_fixture, tmp_source_dir)
+        result = fingerprint_findings(opengrep_fixture, tmp_source_dir, project_id="test-project")
         
         for finding in result["results"]:
             # Required fields from original schema
@@ -101,7 +101,7 @@ class TestOpenGrepParserNormalization:
     ])
     def test_required_fields_present(self, opengrep_fixture, tmp_source_dir, field):
         """Test that required fields are present in findings."""
-        result = fingerprint_findings(opengrep_fixture, tmp_source_dir)
+        result = fingerprint_findings(opengrep_fixture, tmp_source_dir, project_id="test-project")
         
         for finding in result["results"]:
             if field == "extra":
@@ -115,7 +115,7 @@ class TestOpenGrepParserNormalization:
     
     def test_severity_values(self, opengrep_fixture, tmp_source_dir):
         """Test that severity values are normalized correctly."""
-        result = fingerprint_findings(opengrep_fixture, tmp_source_dir)
+        result = fingerprint_findings(opengrep_fixture, tmp_source_dir, project_id="test-project")
         
         valid_severities = {"LOW", "MEDIUM", "HIGH", "CRITICAL", "ERROR", "WARNING", "INFO"}
         
@@ -126,7 +126,7 @@ class TestOpenGrepParserNormalization:
     
     def test_snapshot_normalized_findings(self, opengrep_fixture, tmp_source_dir, snapshot: SnapshotAssertion):
         """Snapshot test for normalized findings (golden example)."""
-        result = fingerprint_findings(opengrep_fixture, tmp_source_dir)
+        result = fingerprint_findings(opengrep_fixture, tmp_source_dir, project_id="test-project")
         
         # Extract normalized findings for snapshot
         normalized = []
@@ -160,7 +160,7 @@ class TestOpenGrepParserEdgeCases:
             "errors": []
         }
         
-        result = fingerprint_findings(empty_data, tmp_source_dir)
+        result = fingerprint_findings(empty_data, tmp_source_dir, project_id="test-project")
         
         assert "results" in result
         assert len(result["results"]) == 0
@@ -186,7 +186,7 @@ class TestOpenGrepParserEdgeCases:
         }
         
         # Should not raise an error, but may have issues with severity
-        result = fingerprint_findings(data_with_missing_extra, source_dir)
+        result = fingerprint_findings(data_with_missing_extra, source_dir, project_id="test-project")
         
         assert len(result["results"]) == 1
         finding = result["results"][0]
@@ -217,7 +217,7 @@ class TestOpenGrepParserEdgeCases:
             ]
         }
         
-        result = fingerprint_findings(data_with_unknown_severity, source_dir)
+        result = fingerprint_findings(data_with_unknown_severity, source_dir, project_id="test-project")
         
         assert len(result["results"]) == 1
         finding = result["results"][0]
@@ -245,7 +245,7 @@ class TestOpenGrepParserEdgeCases:
         }
         
         # Should handle gracefully and mark as unlocatable
-        result = fingerprint_findings(data_with_missing_path, tmp_source_dir)
+        result = fingerprint_findings(data_with_missing_path, tmp_source_dir, project_id="test-project")
         assert len(result["results"]) == 1
         finding = result["results"][0]
         # Should have fingerprints with unlocatable markers
@@ -277,7 +277,7 @@ class TestOpenGrepParserEdgeCases:
         }
         
         # Should handle gracefully, using snippet to locate
-        result = fingerprint_findings(data_with_missing_span, source_dir)
+        result = fingerprint_findings(data_with_missing_span, source_dir, project_id="test-project")
         
         assert len(result["results"]) == 1
         finding = result["results"][0]
@@ -294,7 +294,7 @@ class TestOpenGrepParserRobustness:
         data_with_extra["unexpected_field"] = "should be ignored"
         data_with_extra["another_unexpected"] = {"nested": "data"}
         
-        result = fingerprint_findings(data_with_extra, tmp_source_dir)
+        result = fingerprint_findings(data_with_extra, tmp_source_dir, project_id="test-project")
         
         # Should still process normally
         assert "results" in result
@@ -310,7 +310,7 @@ class TestOpenGrepParserRobustness:
             data_with_extra["results"][0]["unexpected_field"] = "should be preserved"
             data_with_extra["results"][0]["nested_unexpected"] = {"key": "value"}
         
-        result = fingerprint_findings(data_with_extra, tmp_source_dir)
+        result = fingerprint_findings(data_with_extra, tmp_source_dir, project_id="test-project")
         
         # Should still process normally
         assert len(result["results"]) > 0
@@ -349,7 +349,7 @@ class TestOpenGrepParserRobustness:
             ]
         }
         
-        result = fingerprint_findings(data_with_drift, source_dir)
+        result = fingerprint_findings(data_with_drift, source_dir, project_id="test-project")
         
         # Should process successfully
         assert len(result["results"]) == 1
@@ -385,7 +385,7 @@ class TestOpenGrepParserRobustness:
             ]
         }
         
-        result = fingerprint_findings(data_with_nulls, source_dir)
+        result = fingerprint_findings(data_with_nulls, source_dir, project_id="test-project")
         
         # Should handle nulls gracefully
         assert len(result["results"]) == 1

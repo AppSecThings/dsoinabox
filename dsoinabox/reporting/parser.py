@@ -3,13 +3,13 @@ import os
 import textwrap
 from abc import ABC, abstractmethod
 
+from ..fingerprints.checkov import _extract_severity
+from ..fingerprints.checkov import fingerprint_findings as checkov_fingerprint_findings
+from ..fingerprints.grype import fingerprint_findings as grype_fingerprint_findings
+from ..fingerprints.opengrep import fingerprint_findings as opengrep_fingerprint_findings
+from ..fingerprints.trufflehog import fingerprint_findings as trufflehog_fingerprint_findings
 from ..waivers.apply import active_findings
-from .checkov import _extract_severity
-from .checkov import fingerprint_findings as checkov_fingerprint_findings
 from .fields import relativize_path
-from .grype import fingerprint_findings as grype_fingerprint_findings
-from .opengrep import fingerprint_findings as opengrep_fingerprint_findings
-from .trufflehog import fingerprint_findings as trufflehog_fingerprint_findings
 
 #threshold mapping: cleaner than if/elif chain
 #old format for semgrep/opengrep severity thresholds:
