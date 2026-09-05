@@ -1,5 +1,5 @@
 name: dsoinabox Scan
-description: Run dsoinabox Docker scanner against the checked-out repository and emit HTML/SARIF reports.
+description: Run dsoinabox Docker scanner against the checked-out repository and emit HTML/SARIF reports under reports/latest/.
 
 inputs:
   image:
@@ -49,5 +49,6 @@ runs:
           "${INPUT_IMAGE}" \
           -t "${INPUT_TARGETS}" \
           -o sarif,html \
+          --report_name dsoinabox \
           --failure_threshold "${INPUT_FAILURE_THRESHOLD}" \
           "${extra_args[@]}"

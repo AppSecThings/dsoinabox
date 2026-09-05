@@ -28,6 +28,7 @@ MERGEABLE_KEYS = (
     "waiver_file",
     "waiver_grace_days",
     "output",
+    "report_name",
     "tool_output",
     "benchmark",
     *TOOL_ARG_KEYS,
@@ -47,6 +48,7 @@ ENV_KEY_MAP = {
     "waiver_file": "DSOINABOX_WAIVER_FILE",
     "waiver_grace_days": "DSOINABOX_WAIVER_GRACE_DAYS",
     "output": "DSOINABOX_OUTPUT",
+    "report_name": "DSOINABOX_REPORT_NAME",
     "tool_output": "DSOINABOX_TOOL_OUTPUT",
     "benchmark": "DSOINABOX_BENCHMARK",
     "trufflehog_args": "DSOINABOX_TRUFFLEHOG_ARGS",
@@ -72,6 +74,7 @@ failure_threshold: none     # exit 1 when unwaived findings at/above this severi
 fail_on_secrets: false
 waiver_file: .dsoinabox_waivers.yaml
 # waiver_grace_days: 0      # keep expired waivers active for N extra days (flagged as expiring)
+# report_name: dsoinabox_unified_report   # base file name; <report_directory>/latest/ always points at the newest run
 output: html
 show_findings: false        # false | true (compact table) | full (details)
 tool_output: false

@@ -90,11 +90,13 @@ def report_builder(
     waiver_data: Any = None,
     waiver_summary: dict | None = None,
     scan_run: Any = None,
+    report_name: str | None = None,
 ) -> str | None:
     # Generate timestamp if not provided
     if timestamp is None:
         timestamp = utcnow().strftime('%Y_%m_%dT%H_%M_%S')
     trufflehog_data, opengrep_data, syft_data, grype_data, checkov_data = data or (None, None, None, None, None)
+    base_name = report_name or f"dsoinabox_unified_report_{timestamp}"
     '''report builder supports report outputs in html, jenkins_html, json, and ndjson formats'''
     
     #templates and json need a plain dict; accept WaiverSet or legacy dict
@@ -105,7 +107,7 @@ def report_builder(
     if output_format.lower() == "json":
         #ensure output directory exists
         os.makedirs(output_dir, exist_ok=True)
-        output_filename = f"dsoinabox_unified_report_{timestamp}.json"
+        output_filename = f"{base_name}.json"
         output_path = os.path.join(output_dir, output_filename)
         metadata: dict[str, Any] = {
             "dsoinabox_version": __version__,
@@ -134,7 +136,7 @@ def report_builder(
     if output_format.lower() == "ndjson":
         #ensure output directory exists
         os.makedirs(output_dir, exist_ok=True)
-        output_filename = f"dsoinabox_unified_report_{timestamp}.ndjson"
+        output_filename = f"{base_name}.ndjson"
         output_path = os.path.join(output_dir, output_filename)
         
         #collect all findings from different scanners
@@ -195,7 +197,7 @@ def report_builder(
     if output_format.lower() == "sarif":
         #ensure output directory exists
         os.makedirs(output_dir, exist_ok=True)
-        output_filename = f"dsoinabox_unified_report_{timestamp}.sarif"
+        output_filename = f"{base_name}.sarif"
         output_path = os.path.join(output_dir, output_filename)
         
         #build unified data structure
@@ -222,9 +224,9 @@ def report_builder(
     #ensure output directory exists
     os.makedirs(output_dir, exist_ok=True)
     if output_format == "jenkins_html":
-        output_filename = f"dsoinabox_unified_report_{timestamp}_jenkins.html"
+        output_filename = f"{base_name}_jenkins.html"
     else:
-        output_filename = f"dsoinabox_unified_report_{timestamp}.html"
+        output_filename = f"{base_name}.html"
     #determine template directory based on output format
     templates_dir = os.path.join(os.path.dirname(__file__), "templates")
     if output_format == "jenkins_html":

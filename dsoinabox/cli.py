@@ -49,9 +49,33 @@ def configure_logging(*, verbose: bool, quiet: bool) -> None:
     level = resolve_log_level(verbose=verbose, quiet=quiet)
     logger.setLevel(level)
 
+class KebabAliasParser(argparse.ArgumentParser):
+    """ArgumentParser that accepts ``--foo-bar`` for every ``--foo_bar`` option.
+
+    The snake_case spelling stays the documented one; the kebab-case twin is a
+    hidden alias with the same destination, so help output stays uncluttered
+    and no existing invocation changes.
+    """
+
+    def add_argument(self, *names, **kwargs):
+        action = super().add_argument(*names, **kwargs)
+        if kwargs.get("action") == "version" or kwargs.get("action") == "help":
+            return action
+        aliases = [n.replace("_", "-") for n in names if n.startswith("--") and "_" in n]
+        aliases = [a for a in aliases if a not in names and a not in self._option_string_actions]
+        if not aliases:
+            return action
+        alias_kwargs = dict(kwargs)
+        alias_kwargs["help"] = argparse.SUPPRESS
+        alias_kwargs["dest"] = action.dest
+        alias_kwargs["default"] = argparse.SUPPRESS
+        super().add_argument(*aliases, **alias_kwargs)
+        return action
+
+
 def build_parser() -> argparse.ArgumentParser:
     """build top-level arg parser"""
-    parser = argparse.ArgumentParser(
+    parser = KebabAliasParser(
         prog="dsoinabox scan",
         description=(
             "Run the bundled AppSec scanners against a source tree and produce unified reports. "
@@ -243,7 +267,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--output", "-o",
         action="store",
         default="html",
-        help="output format(s) for the report. comma-separated list of formats: html, jenkins_html, json, ndjson, sarif. default is html. example: --output json,ndjson,html,sarif",
+        help="output format(s). comma-separated: html, jenkins_html, json, ndjson, sarif, cyclonedx, spdx "
+             "(the last two write the Syft SBOM as a standalone file). default is html.",
     )
 
     parser.add_argument(
@@ -251,6 +276,14 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         default=False,
         help="if True, keep tool output files in tools_output subdirectory. default is False (tool outputs are deleted after report generation).",
+    )
+
+    parser.add_argument(
+        "--report_name",
+        action="store",
+        default=None,
+        help="base file name for generated reports (default 'dsoinabox_unified_report_<timestamp>'). "
+             "a copy of the run is always available under <report_directory>/latest/.",
     )
 
     parser.add_argument(
@@ -442,6 +475,8 @@ def scan_main(argv: list[str]) -> int:
         waiver_grace_days=int(args.waiver_grace_days or 0),
         outputs=outputs or ["html"],
         keep_tool_output=bool(args.tool_output),
+        report_name=args.report_name or None,
+        base_report_directory=args.report_directory,
         benchmark=bool(args.benchmark),
         tool_args=tool_args,
         scan_timeout=int(args.scan_timeout) if args.scan_timeout else None,

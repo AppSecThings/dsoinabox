@@ -30,6 +30,25 @@ class SyftScanner(BaseScanner):
         else:
             raise ScannerError(f"Syft scan failed: {result.stderr}")
 
+    SBOM_FORMATS = {"cyclonedx": ("cyclonedx-json", "sbom.cdx.json"), "spdx": ("spdx-json", "sbom.spdx.json")}
+
+    def convert(self, syft_json_path: str, output_path: str, fmt: str, timeout: int | None = None) -> str:
+        """convert a saved syft JSON document into CycloneDX or SPDX JSON using `syft convert`."""
+        if fmt not in self.SBOM_FORMATS:
+            raise ScannerError(f"Unsupported SBOM format: {fmt}. Supported: {', '.join(self.SBOM_FORMATS)}")
+        syft_format, _ = self.SBOM_FORMATS[fmt]
+        result = self._run_command(["convert", syft_json_path, "-o", f"{syft_format}={output_path}", "-q"], timeout=timeout)
+        if result.returncode != 0:
+            raise ScannerError(f"Syft convert to {fmt} failed: {result.stderr}")
+        if not os.path.exists(output_path):
+            # some fakes/older syft versions print to stdout instead of writing the file
+            text = result.stdout if isinstance(result.stdout, str) else result.stdout.decode("utf-8", "replace")
+            if not text.strip():
+                raise ScannerError(f"Syft convert to {fmt} produced no output")
+            with open(output_path, "w", encoding="utf-8") as fd:
+                fd.write(text)
+        return output_path
+
     def _write_json_report(self, data: dict | list, report_directory: str, filename: str) -> None:
         """write json report to file."""
         os.makedirs(report_directory, exist_ok=True)
@@ -42,4 +61,5 @@ _scanner = SyftScanner()
 show_version = _scanner.show_version
 show_help = _scanner.show_help
 run_scan = _scanner.run_scan
+convert = _scanner.convert
 dir_scan = run_scan  #alias for backward compatibility

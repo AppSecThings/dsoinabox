@@ -275,6 +275,10 @@ class ScanOptions(BaseModel):
     outputs: list[str] = Field(default_factory=lambda: ["html"])
     keep_tool_output: bool = False
     benchmark: bool = False
+    report_name: str | None = None
+    """Base file name for reports; default is dsoinabox_unified_report_<timestamp>."""
+    base_report_directory: str | None = None
+    """Parent of the timestamped directory; a `latest` pointer is maintained there."""
     tool_args: dict[str, Any] = Field(default_factory=dict)
     scan_timeout: int | None = 1800
     tool_timeouts: dict[str, int] = Field(default_factory=dict)
@@ -297,6 +301,7 @@ class ScanRun(BaseModel):
     waiver_summary: dict[str, Any] | None = None
     policy: PolicyResult = Field(default_factory=PolicyResult)
     report_paths: list[str] = Field(default_factory=list)
+    latest_directory: str | None = None
     hidden_by_report_threshold: int = 0
     fingerprint_aliases: dict[str, str] = Field(default_factory=dict)
     """legacy fingerprint -> current fingerprint, for `waivers migrate --from-report`."""

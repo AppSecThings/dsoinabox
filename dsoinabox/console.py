@@ -84,6 +84,8 @@ def summary_lines(run: ScanRun, options: ScanOptions, *, color: bool = False) ->
         lines.append(f"{PREFIX} reports:")
         for path in run.report_paths:
             lines.append(f"  - {path}")
+        if run.latest_directory:
+            lines.append(f"{PREFIX} latest: {run.latest_directory}")
 
     policy = run.policy
     verdict_bits = [

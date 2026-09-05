@@ -28,7 +28,9 @@ from .waivers.models import WaiverSet
 
 logger = logging.getLogger(__name__)
 
-VALID_OUTPUTS: tuple[str, ...] = ("html", "jenkins_html", "json", "ndjson", "sarif")
+REPORT_OUTPUTS: tuple[str, ...] = ("html", "jenkins_html", "json", "ndjson", "sarif")
+SBOM_OUTPUTS: tuple[str, ...] = ("cyclonedx", "spdx")
+VALID_OUTPUTS: tuple[str, ...] = REPORT_OUTPUTS + SBOM_OUTPUTS
 
 
 class UsageError(ValueError):
@@ -297,7 +299,7 @@ def run_scan(options: ScanOptions) -> ScanRun:
         hidden_total += hidden
     run.hidden_by_report_threshold = hidden_total
 
-    for fmt in options.outputs:
+    for fmt in [f for f in options.outputs if f in REPORT_OUTPUTS]:
         path = report_builder(
             reports_directory=options.report_directory,
             output_dir=options.report_directory,
@@ -314,17 +316,73 @@ def run_scan(options: ScanOptions) -> ScanRun:
             waiver_data=waiver_set,
             waiver_summary=run.waiver_summary,
             scan_run=run,
+            report_name=options.report_name,
         )
         if path:
             run.report_paths.append(path)
+
+    _export_sboms(run, options, tools_output_dir)
 
     if not options.keep_tool_output and os.path.exists(tools_output_dir):
         shutil.rmtree(tools_output_dir)
         for r in results:
             r.raw_output_path = ""
 
+    run.latest_directory = _update_latest_pointer(options)
     run.finished_at = utcnow()
     return run
+
+
+def _export_sboms(run: ScanRun, options: ScanOptions, tools_output_dir: str) -> None:
+    """Write the Syft SBOM as standalone CycloneDX / SPDX files when requested."""
+    wanted = [f for f in options.outputs if f in SBOM_OUTPUTS]
+    if not wanted:
+        return
+    syft_result = run.result_for("syft")
+    if syft_result is None or syft_result.status != "ok":
+        logger.warning("SBOM output requested but syft did not run successfully; skipping cyclonedx/spdx export")
+        return
+    syft_json = os.path.join(tools_output_dir, "syft.json")
+    if not os.path.exists(syft_json):
+        logger.warning(f"SBOM output requested but {syft_json} is missing; skipping export")
+        return
+    from .scanners.sbom import syft as syft_mod
+
+    for fmt in wanted:
+        _syft_fmt, default_name = syft_mod.SyftScanner.SBOM_FORMATS[fmt]
+        name = f"{options.report_name}.{default_name.split('.', 1)[1]}" if options.report_name else default_name
+        out = os.path.join(options.report_directory, name)
+        try:
+            syft_mod.convert(syft_json, out, fmt, timeout=options.tool_timeouts.get("syft", options.scan_timeout))
+            run.report_paths.append(out)
+            logger.info(f"SBOM written: {out}")
+        except ScannerError as exc:
+            logger.error(str(exc))
+            syft_result.status = "failed"
+            syft_result.error = str(exc)
+            run.policy = evaluate(run, options)
+
+
+def _update_latest_pointer(options: ScanOptions) -> str | None:
+    """Maintain <base_report_directory>/latest -> this run (symlink, or a copy where symlinks are unavailable)."""
+    base = options.base_report_directory
+    if not base:
+        return None
+    latest = os.path.join(base, "latest")
+    target = options.report_directory
+    try:
+        if os.path.islink(latest) or os.path.isfile(latest):
+            os.unlink(latest)
+        elif os.path.isdir(latest):
+            shutil.rmtree(latest)
+        try:
+            os.symlink(os.path.basename(target), latest, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            shutil.copytree(target, latest)
+        return latest
+    except OSError as exc:
+        logger.warning(f"Could not update {latest}: {exc}")
+        return None
 
 
 def fingerprint_aliases(findings: list[Finding]) -> dict[str, str]:
