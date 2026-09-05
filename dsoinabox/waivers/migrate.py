@@ -217,20 +217,156 @@ def migrate_file(
         migrated_text=migrated_text,
         notes=notes,
     )
+    _write_result(result, in_place=in_place, output=output, dry_run=dry_run)
+    return result
+
+
+# ---------------------------------------------------------------------------
+# prune / add (share the round-trip writer so comments survive)
+# ---------------------------------------------------------------------------
+
+
+def prune_data(
+    data: CommentedMap,
+    *,
+    now: Any,
+    unused_refs: set[str] | None = None,
+) -> list[str]:
+    """Remove expired entries (and optionally entries named in ``unused_refs``). Returns notes."""
+    from .models import parse_datetime
+
+    notes: list[str] = []
+    bench_expiry = parse_datetime(data.get("benchmark_expires_at")) if data.get("benchmark_expires_at") is not None else None
+    for section in ("finding_waivers", "benchmark", "path_exclusions"):
+        entries = data.get(section)
+        if not isinstance(entries, CommentedSeq):
+            continue
+        keep_indexes: list[int] = []
+        for i, entry in enumerate(entries):
+            ref = f"{section}[{i}]"
+            if not isinstance(entry, CommentedMap):
+                keep_indexes.append(i)
+                continue
+            expires = parse_datetime(entry.get("expires_at")) if entry.get("expires_at") is not None else None
+            if section == "benchmark" and bench_expiry is not None and (expires is None or bench_expiry < expires):
+                expires = bench_expiry
+            key = entry.get("fingerprint") or entry.get("pattern") or "?"
+            if expires is not None and expires <= now:
+                notes.append(f"{ref}: removed expired entry {key} (expired {expires.date().isoformat()})")
+                continue
+            if unused_refs and ref in unused_refs:
+                notes.append(f"{ref}: removed unused entry {key}")
+                continue
+            keep_indexes.append(i)
+        for i in reversed([i for i in range(len(entries)) if i not in keep_indexes]):
+            del entries[i]
+    return notes
+
+
+def prune_file(
+    path: str | Path,
+    *,
+    now: Any,
+    unused_refs: set[str] | None = None,
+    in_place: bool = False,
+    output: str | Path | None = None,
+    dry_run: bool = False,
+) -> MigrateResult:
+    src = Path(path)
+    if not src.exists():
+        raise FileNotFoundError(f"Waiver file not found: {src}")
+    original_text = src.read_text(encoding="utf-8")
+    data = load_round_trip(src)
+    raw_version = data.get("schema_version")
+    version = normalize_version(raw_version) if raw_version is not None else "1.0"
+    notes = prune_data(data, now=now, unused_refs=unused_refs)
+    load_waiver_data(_plain(data))
+    text = dump_round_trip(data)
+    result = MigrateResult(path=src, from_version=version, to_version=version, changed=text != original_text,
+                           original_text=original_text, migrated_text=text, notes=notes)
+    _write_result(result, in_place=in_place, output=output, dry_run=dry_run)
+    return result
+
+
+def add_entry(
+    path: str | Path,
+    *,
+    fingerprints: list[str],
+    type_: str,
+    reason: str | None = None,
+    expires_at: str | None = None,
+    ticket: str | None = None,
+    created_by: str | None = None,
+    created_at: str | None = None,
+    tools: list[str] | None = None,
+    in_place: bool = True,
+    output: str | Path | None = None,
+    dry_run: bool = False,
+) -> MigrateResult:
+    """Append finding waivers (or benchmark entries when type_ == 'benchmark') to a file, creating it if needed."""
+    src = Path(path)
+    if src.exists():
+        original_text = src.read_text(encoding="utf-8")
+        data = load_round_trip(src)
+    else:
+        original_text = ""
+        data = CommentedMap()
+        _set_version(data, CURRENT_SCHEMA_VERSION)
+    raw_version = data.get("schema_version")
+    version = normalize_version(raw_version) if raw_version is not None else "1.0"
+    section = "benchmark" if type_ == "benchmark" else "finding_waivers"
+    entries = data.get(section)
+    if entries is None:
+        entries = CommentedSeq()
+        data[section] = entries
+    existing = {e.get("fingerprint") for e in entries if isinstance(e, CommentedMap)}
+    notes: list[str] = []
+    for fp in fingerprints:
+        if fp in existing:
+            notes.append(f"{section}: {fp} already present, skipped")
+            continue
+        entry = CommentedMap()
+        entry["fingerprint"] = DoubleQuotedScalarString(fp)
+        entry["type"] = type_
+        if reason:
+            entry["reason"] = reason
+        if expires_at:
+            entry["expires_at"] = DoubleQuotedScalarString(expires_at)
+        if created_by:
+            entry["created_by"] = created_by
+        if created_at:
+            entry["created_at"] = DoubleQuotedScalarString(created_at)
+        if ticket:
+            entry["ticket"] = ticket
+        if tools and section == "finding_waivers":
+            entry["tools"] = list(tools)
+        entries.append(entry)
+        existing.add(fp)
+        notes.append(f"{section}: added {fp}")
+    load_waiver_data(_plain(data))
+    text = dump_round_trip(data)
+    result = MigrateResult(path=src, from_version=version, to_version=version, changed=text != original_text,
+                           original_text=original_text, migrated_text=text, notes=notes)
+    _write_result(result, in_place=in_place, output=output, dry_run=dry_run)
+    return result
+
+
+def _write_result(result: MigrateResult, *, in_place: bool, output: str | Path | None, dry_run: bool) -> None:
     if dry_run or not result.changed:
-        return result
+        return
     if output is not None:
         out = Path(output)
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(migrated_text, encoding="utf-8")
+        out.write_text(result.migrated_text, encoding="utf-8")
         result.output_path = out
     elif in_place:
-        backup = src.with_name(src.name + ".bak")
-        shutil.copy2(src, backup)
-        src.write_text(migrated_text, encoding="utf-8")
-        result.output_path = src
-        result.backup_path = backup
-    return result
+        if result.path.exists():
+            backup = result.path.with_name(result.path.name + ".bak")
+            shutil.copy2(result.path, backup)
+            result.backup_path = backup
+        result.path.parent.mkdir(parents=True, exist_ok=True)
+        result.path.write_text(result.migrated_text, encoding="utf-8")
+        result.output_path = result.path
 
 
 def parse_version_arg(value: str) -> str:
