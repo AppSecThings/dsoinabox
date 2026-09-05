@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml
 
@@ -22,9 +22,12 @@ MERGEABLE_KEYS = (
     "failure_threshold",
     "report_threshold",
     "fail_on_secrets",
+    "verify_secrets",
+    "grype_db",
     "show_findings",
     "scan_timeout",
     "fail_fast",
+    "tool_timeouts",
     "waiver_file",
     "waiver_grace_days",
     "baseline",
@@ -46,6 +49,9 @@ ENV_KEY_MAP = {
     "scan_timeout": "DSOINABOX_SCAN_TIMEOUT",
     "fail_fast": "DSOINABOX_FAIL_FAST",
     "fail_on_secrets": "DSOINABOX_FAIL_ON_SECRETS",
+    "verify_secrets": "DSOINABOX_VERIFY_SECRETS",
+    "grype_db": "DSOINABOX_GRYPE_DB",
+    "tool_timeouts": "DSOINABOX_TOOL_TIMEOUTS",
     "show_findings": "DSOINABOX_SHOW_FINDINGS",
     "waiver_file": "DSOINABOX_WAIVER_FILE",
     "waiver_grace_days": "DSOINABOX_WAIVER_GRACE_DAYS",
@@ -63,7 +69,7 @@ ENV_KEY_MAP = {
     "config_file": CONFIG_ENV_VAR,
 }
 
-BOOL_KEYS = {"fail_on_secrets", "tool_output", "benchmark", "fail_fast"}
+BOOL_KEYS = {"tool_output", "benchmark", "fail_fast", "verify_secrets"}
 INT_KEYS = {"waiver_grace_days", "scan_timeout"}
 SHOW_FINDINGS_CHOICES = ("false", "true", "full")
 STRING_LIST_KEYS = {"tools", "output"}
@@ -75,7 +81,9 @@ DEFAULT_CONFIG_TEMPLATE = """# Repository-level defaults for dsoinabox.
 tools: all
 failure_threshold: none     # exit 1 when unwaived findings at/above this severity exist
 # report_threshold: none    # hide findings below this severity from reports (gate is unaffected)
-fail_on_secrets: false
+fail_on_secrets: false      # false | true | verified (only secrets TruffleHog verified as live)
+# verify_secrets: false     # let TruffleHog verify candidates against providers (network calls)
+# grype_db: auto            # auto | offline (never download the vulnerability DB)
 waiver_file: .dsoinabox_waivers.yaml
 # waiver_grace_days: 0      # keep expired waivers active for N extra days (flagged as expiring)
 # baseline: benchmark.yaml  # classify findings as new/known against this benchmark file
@@ -86,6 +94,8 @@ show_findings: false        # false | true (compact table) | full (details)
 tool_output: false
 benchmark: false
 # scan_timeout: 1800        # seconds per scanner; a timeout is a scanner failure (exit 2)
+# tool_timeouts:            # per-tool overrides in seconds
+#   trufflehog: 600
 # fail_fast: false          # stop remaining scanners after the first failure
 
 # Optional per-tool extra args (uncomment and customize):
@@ -95,6 +105,20 @@ benchmark: false
 # grype_args: "--scope all-layers"
 # checkov_args: "--framework terraform"
 """
+
+
+def parse_fail_on_secrets(value: bool | str | None) -> tuple[bool, Literal["any", "verified"]]:
+    """--fail_on_secrets accepts false/true/any/verified. Returns (enabled, mode)."""
+    if value is None or value is False:
+        return False, "any"
+    if value is True:
+        return True, "any"
+    text = str(value).strip().lower()
+    if text == "verified":
+        return True, "verified"
+    if text == "any":
+        return True, "any"
+    return str_to_bool(text), "any"
 
 
 def normalize_show_findings(value: bool | str | None) -> str:
@@ -145,6 +169,11 @@ def read_env_overrides() -> dict[str, Any]:
             overrides[key] = str_to_bool(raw_value)
         elif key == "show_findings":
             overrides[key] = normalize_show_findings(raw_value)
+        elif key == "fail_on_secrets":
+            enabled, mode = parse_fail_on_secrets(raw_value)
+            overrides[key] = mode if enabled else False
+        elif key == "tool_timeouts":
+            overrides[key] = {kv.split("=", 1)[0].strip().lower(): int(kv.split("=", 1)[1]) for kv in raw_value.split(",") if "=" in kv}
         elif key in INT_KEYS:
             overrides[key] = int(raw_value)
         else:
@@ -159,6 +188,15 @@ def _normalize_value(key: str, value: Any) -> Any:
 
     if key == "show_findings":
         return normalize_show_findings(value)
+
+    if key == "fail_on_secrets":
+        enabled, mode = parse_fail_on_secrets(value)
+        return mode if enabled else False
+
+    if key == "tool_timeouts":
+        if not isinstance(value, dict):
+            raise ValueError("tool_timeouts must be a mapping of tool name to seconds")
+        return {str(k).strip().lower(): int(v) for k, v in value.items()}
 
     if key in INT_KEYS:
         return int(value)

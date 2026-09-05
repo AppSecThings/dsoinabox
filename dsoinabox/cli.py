@@ -21,6 +21,7 @@ from .utils.config import (
     MERGEABLE_KEYS,
     load_config_file,
     normalize_show_findings,
+    parse_fail_on_secrets,
     read_env_overrides,
     resolve_config_path,
 )
@@ -221,8 +222,28 @@ def build_parser() -> argparse.ArgumentParser:
     #fail on secrets if found
     parser.add_argument(
         "--fail_on_secrets",
+        nargs="?",
+        const="any",
+        default=False,
+        help="fail the scan when unwaived secrets are found. optional value: any (default when the flag is given) "
+             "or verified (only secrets TruffleHog verified as live; implies --verify_secrets).",
+    )
+
+    parser.add_argument(
+        "--verify_secrets",
         action="store_true",
-        help="fail the scan if any secrets are found.",
+        default=False,
+        help="let TruffleHog verify candidate secrets against their providers. default off: verification makes "
+             "outbound network calls. without it every secret shows as unverified.",
+    )
+
+    parser.add_argument(
+        "--grype_db",
+        action="store",
+        default="auto",
+        choices=["auto", "offline"],
+        help="grype vulnerability database handling: auto (default, downloads/updates as needed) or offline "
+             "(never touches the network; fails clearly when no database is cached).",
     )
 
     parser.add_argument(
@@ -476,6 +497,7 @@ def scan_main(argv: list[str]) -> int:
         logger.error(str(exc))
         return EXIT_USAGE
 
+    fail_on_secrets_enabled, fail_on_secrets_mode = parse_fail_on_secrets(args.fail_on_secrets)
     tools = [t.strip().lower() for t in str(args.tools).split(",") if t.strip()]
     outputs = [fmt.strip().lower() for fmt in str(args.output).split(",") if fmt.strip()]
     tool_args = {tool: getattr(args, f"{tool}_args", None) for tool in TOOL_ORDER}
@@ -488,7 +510,10 @@ def scan_main(argv: list[str]) -> int:
         tools=tools or ["all"],
         failure_threshold=failure_threshold,
         report_threshold=report_threshold,
-        fail_on_secrets=bool(args.fail_on_secrets),
+        fail_on_secrets=fail_on_secrets_enabled,
+        fail_on_secrets_mode=fail_on_secrets_mode,
+        verify_secrets=bool(args.verify_secrets) or fail_on_secrets_mode == "verified",
+        grype_db=args.grype_db or "auto",
         waiver_file=args.waiver_file or None,
         waiver_file_is_default=(args.waiver_file == default_waiver_file),
         waiver_grace_days=int(args.waiver_grace_days or 0),
@@ -501,6 +526,7 @@ def scan_main(argv: list[str]) -> int:
         benchmark=bool(args.benchmark),
         tool_args=tool_args,
         scan_timeout=int(args.scan_timeout) if args.scan_timeout else None,
+        tool_timeouts=dict(getattr(args, "tool_timeouts", None) or {}),
         fail_fast=bool(args.fail_fast),
     )
 

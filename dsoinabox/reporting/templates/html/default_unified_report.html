@@ -263,6 +263,14 @@
     .chip--bad{ color: var(--chip-bad); border-color: color-mix(in oklab, var(--chip-bad) 40%, var(--border)); }
     .chip--neutral{ color: var(--chip-neutral); border-color: color-mix(in oklab, var(--chip-neutral) 40%, var(--border)); }
 
+
+    /* baseline status */
+    tr[data-baseline="new"] > td:first-child::before{
+      content: "NEW"; display:inline-block; margin-right:6px; padding:0 6px; border-radius:999px;
+      font-size:10px; font-weight:800; letter-spacing:0.5px; color: var(--chip-bad);
+      border:1px solid color-mix(in oklab, var(--chip-bad) 40%, var(--border)); vertical-align: middle;
+    }
+
     /* Code */
     code, pre code{
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -396,6 +404,8 @@
         </button>
       </div>
     </header>
+
+    {% include "default_summary.html" %}
 
     <!-- Git Repo Info -->
     {% if git_repo_info %}

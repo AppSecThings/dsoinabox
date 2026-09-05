@@ -87,7 +87,7 @@
                   {% set default_fp = fingerprint_list[0][1] %}
                 {% endif %}
 
-                <tr class="row-expandable" data-report-row data-severity="{{ sev | e }}" {% if fingerprint_list|length > 0 %}data-fingerprints='{{ fingerprint_list|map(attribute=1)|list|tojson }}'{% endif %}>
+                <tr class="row-expandable" data-baseline="{{ m.baseline_status | default('') }}" data-report-row data-severity="{{ sev | e }}" {% if fingerprint_list|length > 0 %}data-fingerprints='{{ fingerprint_list|map(attribute=1)|list|tojson }}'{% endif %}>
                   <td>{{ art.name | default('') | e }}</td>
                   <td>{{ art.version | default('') | e }}</td>
                   <td>{{ art.type | default('') | e }}</td>

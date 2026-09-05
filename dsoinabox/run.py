@@ -241,11 +241,22 @@ def run_scan(options: ScanOptions) -> ScanRun:
             is_git_repo=is_git_repo,
             extra_args=options.tool_args.get(spec.name),
             timeout=options.tool_timeouts.get(spec.name, options.scan_timeout),
+            verify_secrets=options.verify_secrets,
+            grype_db=options.grype_db,
         )
 
     results, usage = _schedule(specs, ctx_for, engine, fail_fast=options.fail_fast, max_workers=options.max_workers)
     for r in results:
         r.tool_version = versions.get(r.tool, "")
+        if r.tool == "grype" and r.status == "ok":
+            try:
+                from .scanners.sca import grype as grype_mod
+
+                status = grype_mod.db_status()
+                if status:
+                    r.tool_version = f"{r.tool_version} (db {status})".strip()
+            except Exception as exc:  # best effort only
+                logger.debug(f"grype db status unavailable: {exc}")
 
     run = ScanRun(
         started_at=started_at,

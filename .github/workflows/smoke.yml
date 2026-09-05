@@ -1,0 +1,74 @@
+name: Live smoke test
+
+# Builds the image and scans tests/fixtures/sample_repo with the real scanners.
+# Non-blocking: runs nightly and on demand, because it depends on upstream
+# scanner downloads and vulnerability databases.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+
+      - name: Build image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          load: true
+          tags: dsoinabox:smoke
+
+      - name: Image sanity
+        run: |
+          docker run --rm dsoinabox:smoke --version
+          docker run --rm dsoinabox:smoke tools versions
+          docker run --rm dsoinabox:smoke ls /app | grep -v -E '^(tests|docs)$' >/dev/null
+
+      - name: Scan the sample repository
+        run: |
+          mkdir -p reports
+          cd tests/fixtures/sample_repo && git init -q && git add . && git -c user.email=ci@example.com -c user.name=ci commit -qm "fixture" && cd -
+          set +e
+          docker run --rm \
+            -v "$PWD/tests/fixtures/sample_repo:/scan_target" \
+            -v "$PWD/reports:/reports" \
+            dsoinabox:smoke -t all -o html,sarif,json --report_name smoke --show_findings true --failure_threshold high
+          echo "exit_code=$?" >> "$GITHUB_ENV"
+
+      - name: Assert planted findings
+        run: |
+          set -euo pipefail
+          test "$exit_code" = "1" || (echo "expected policy failure (exit 1), got $exit_code"; exit 1)
+          python3 - <<'PY'
+          import json, glob
+          report = json.load(open(sorted(glob.glob("reports/*/smoke.json"))[-1]))
+          by_tool = {}
+          for f in report["findings"]:
+              by_tool.setdefault(f["tool"], []).append(f)
+          assert any(f["path"] == "config.yaml" for f in by_tool.get("trufflehog", [])), "planted secret not found"
+          assert any("os.system" in (f["snippet"] or "") or "shell" in f["rule_id"] for f in by_tool.get("opengrep", [])), "planted SAST hit not found"
+          assert any(f["package"]["name"].lower() == "requests" for f in by_tool.get("grype", [])), "planted vulnerable dependency not found"
+          assert any(f["path"] == "infra/s3.tf" for f in by_tool.get("checkov", [])), "planted IaC issue not found"
+          assert all(not p.startswith("/") and "<ROOT>" not in p for p in (f["path"] for f in report["findings"])), "paths must be repo-relative"
+          assert all(s["status"] == "ok" for s in report["metadata"]["scanners"]), report["metadata"]["scanners"]
+          print("planted findings present:", {k: len(v) for k, v in by_tool.items()})
+          PY
+          pip install --quiet jsonschema
+          python3 -c "import json, jsonschema, glob; jsonschema.validate(json.load(open(sorted(glob.glob('reports/*/smoke.sarif'))[-1])), json.load(open('tests/fixtures/schemas/sarif-schema-2.1.0.json'))); print('SARIF valid')"
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: smoke-reports
+          path: reports/**

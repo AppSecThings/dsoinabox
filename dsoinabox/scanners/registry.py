@@ -25,6 +25,8 @@ class RunContext:
     is_git_repo: bool
     extra_args: Any = None
     timeout: int | None = None
+    verify_secrets: bool = False
+    grype_db: str = "auto"
 
 
 # --- spec ------------------------------------------------------------------
@@ -67,7 +69,8 @@ class ScannerSpec:
 def _run_trufflehog(ctx: RunContext) -> Any:
     from .secrets import trufflehog
 
-    return trufflehog.run_scan(ctx.source, ctx.extra_args, ctx.tools_output_dir, git_repo=ctx.is_git_repo, timeout=ctx.timeout)
+    return trufflehog.run_scan(ctx.source, ctx.extra_args, ctx.tools_output_dir, git_repo=ctx.is_git_repo,
+                               timeout=ctx.timeout, verify=ctx.verify_secrets)
 
 
 def _run_opengrep(ctx: RunContext) -> Any:
@@ -85,7 +88,7 @@ def _run_syft(ctx: RunContext) -> Any:
 def _run_grype(ctx: RunContext) -> Any:
     from .sca import grype
 
-    return grype.run_scan(ctx.source, ctx.extra_args, ctx.tools_output_dir, timeout=ctx.timeout)
+    return grype.run_scan(ctx.source, ctx.extra_args, ctx.tools_output_dir, timeout=ctx.timeout, db_mode=ctx.grype_db)
 
 
 def _run_checkov(ctx: RunContext) -> Any:

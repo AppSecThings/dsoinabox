@@ -245,8 +245,10 @@ class PolicyResult(BaseModel):
     fail_on_secrets: bool = False
     report_threshold: Severity | None = None
     fail_on: str = "all"
+    fail_on_secrets_mode: str = "any"
     threshold_exceeded: bool = False
     secrets_found: int = 0
+    secrets_verified: int = 0
     secrets_failed: bool = False
     failing_by_tool: dict[str, int] = Field(default_factory=dict)
     scanner_failures: list[str] = Field(default_factory=list)
@@ -272,6 +274,12 @@ class ScanOptions(BaseModel):
     failure_threshold: Severity | None = None
     report_threshold: Severity | None = None
     fail_on_secrets: bool = False
+    fail_on_secrets_mode: Literal["any", "verified"] = "any"
+    """With fail_on_secrets, 'verified' fails only on secrets TruffleHog verified as live."""
+    verify_secrets: bool = False
+    """Let TruffleHog verify candidates against their providers (network calls)."""
+    grype_db: Literal["auto", "offline"] = "auto"
+    """offline disables Grype's DB auto-update and fails clearly when no DB is cached."""
     waiver_file: str | None = ".dsoinabox_waivers.yaml"
     waiver_file_is_default: bool = True
     waiver_grace_days: int = 0

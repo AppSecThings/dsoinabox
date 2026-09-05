@@ -19,12 +19,13 @@ class TrufflehogScanner(BaseScanner):
         report_directory: str = "reports",
         timeout: int | None = None,
         git_repo=True,
+        verify: bool = False,
     ) -> list:
-        """run the trufflehog cli scan."""
-        if git_repo:
-            args = ["git", f"file://{source_path}", "--no-verification", "--no-update", "-j"]
-        else:
-            args = ["filesystem", source_path, "--no-verification", "--no-update", "-j"]
+        """run the trufflehog cli scan. verification is opt-in because it contacts the credential's provider."""
+        target = ["git", f"file://{source_path}"] if git_repo else ["filesystem", source_path]
+        args = [*target, "--no-update", "-j"]
+        if not verify:
+            args.insert(len(target), "--no-verification")
         args.extend(self._parse_extra_tool_args(extra_tool_args))
         result = self._run_command(args, timeout=timeout)
         if result.returncode == 0:

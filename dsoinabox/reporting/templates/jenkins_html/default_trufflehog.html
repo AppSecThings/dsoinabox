@@ -43,7 +43,7 @@
                 {% set repository = git_data.repository if git_data.repository is defined else '' %}
                 {% set commit = git_data.commit if git_data.commit is defined else '' %}
 
-            <tr>
+            <tr data-baseline="{{ finding.baseline_status | default('') }}">
                     <td>
                 {{ file_path | e }}
                 </td>

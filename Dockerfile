@@ -5,10 +5,16 @@
 ############################
 FROM debian:bookworm-slim AS tools
 
-# Optional pins: pass at build-time, e.g.
-#   --build-arg SYFT_VERSION=v1.20.0 --build-arg GRYPE_VERSION=v0.77.0
-ARG SYFT_VERSION
-ARG GRYPE_VERSION
+# Scanner versions are pinned so two builds of the same commit produce the same
+# image. Override at build time, e.g. --build-arg SYFT_VERSION=v1.52.0.
+# Renovate (renovate.json) proposes bumps for these ARGs.
+# renovate: datasource=github-releases depName=anchore/syft
+ARG SYFT_VERSION=v1.51.1
+# renovate: datasource=github-releases depName=anchore/grype
+ARG GRYPE_VERSION=v0.118.0
+# renovate: datasource=github-releases depName=opengrep/opengrep
+ARG OPENGREP_VERSION=v1.29.0
+ARG TARGETARCH
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates curl tar git bash && \
@@ -19,22 +25,18 @@ RUN mkdir -p /out
 
 # syft
 RUN set -eux; \
-    SYFT_FLAG=""; \
-    if [ -n "${SYFT_VERSION:-}" ]; then SYFT_FLAG="--version ${SYFT_VERSION}"; fi; \
     curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh \
-      | sh -s -- -b /out ${SYFT_FLAG}
+      | sh -s -- -b /out "${SYFT_VERSION}"
 
 # grype
 RUN set -eux; \
-    GRYPE_FLAG=""; \
-    if [ -n "${GRYPE_VERSION:-}" ]; then GRYPE_FLAG="--version ${GRYPE_VERSION}"; fi; \
     curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh \
-      | sh -s -- -b /out ${GRYPE_FLAG}
+      | sh -s -- -b /out "${GRYPE_VERSION}"
 
-# Opengrep (SAST)
+# Opengrep (SAST): pinned release, arch-aware (amd64 -> x86, arm64 -> aarch64)
 RUN set -eux; \
     curl -fsSL https://raw.githubusercontent.com/opengrep/opengrep/main/install.sh -o /tmp/opengrep-install.sh; \
-    bash /tmp/opengrep-install.sh || (echo "ERROR: opengrep installer failed with exit code $?"; exit 1); \
+    bash /tmp/opengrep-install.sh -v "${OPENGREP_VERSION}" || (echo "ERROR: opengrep installer failed with exit code $?"; exit 1); \
     if [ ! -d /root/.opengrep/cli/latest/ ]; then \
         echo "ERROR: opengrep installation directory /root/.opengrep/cli/latest/ does not exist"; \
         exit 1; \
@@ -53,24 +55,25 @@ RUN set -eux; \
 ############################
 FROM debian:bookworm-slim AS trufflehog-install
 
-# Pin (or override at build: --build-arg TRUFFLEHOG_VERSION=v3.9x.y)
-ARG TRUFFLEHOG_VERSION
+# renovate: datasource=github-releases depName=trufflesecurity/trufflehog
+ARG TRUFFLEHOG_VERSION=v3.97.4
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl tar bash && \
     rm -rf /var/lib/apt/lists/*
 
 # Use official installer; install into /out so we can copy to runtime
 RUN set -eux; \
     mkdir -p /out; \
-    TH_FLAG=""; \
-    if [ -n "${TRUFFLEHOG_VERSION:-}" ]; then TH_FLAG="${TRUFFLEHOG_VERSION}"; fi; \
     curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh \
-      | sh -s -- -b /out ${TH_FLAG}; \
+      | sh -s -- -b /out "${TRUFFLEHOG_VERSION}"; \
     test -x /out/trufflehog
 
 ############################
 # Stage: runtime
 ############################
 FROM python:3.12-slim AS runtime
+
+# renovate: datasource=pypi depName=checkov
+ARG CHECKOV_VERSION=3.3.16
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -101,7 +104,7 @@ WORKDIR /app
 COPY pyproject.toml LICENSE NOTICE ./
 COPY dsoinabox ./dsoinabox
 RUN pip install --no-cache-dir . \
-    && pip install --no-cache-dir checkov
+    && pip install --no-cache-dir "checkov==${CHECKOV_VERSION}"
 
 # Build-time sanity checks: every scanner and the package itself must run.
 RUN trufflehog --version || (echo "trufflehog not runnable"; exit 1) \
