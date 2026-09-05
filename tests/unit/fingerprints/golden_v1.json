@@ -1,0 +1,78 @@
+{
+  "ck_abs_path_with_snippet": {
+    "ctx": "ck:1:CTX:CKV_AWS_20:fa80fbbd:398f0beab3b4b950:R:3895f288",
+    "exact": "ck:1:EXACT:CKV_AWS_20:fa80fbbd:3:9:R:3895f288",
+    "rule": "ck:1:RULE:CKV_AWS_20:40958087b788f0c642dae7479c6ce340539a731f:R:3895f288"
+  },
+  "ck_no_location": {
+    "ctx": "ck:1:CTX:CKV_AWS_20:b23a6a84:0000000000000000:R:3895f288",
+    "exact": "ck:1:EXACT:CKV_AWS_20:b23a6a84:0:0:R:3895f288",
+    "rule": "ck:1:RULE:CKV_AWS_20:c35341f9af9317c16adf2ba364b3fb475f4abc3d:R:3895f288"
+  },
+  "ck_relative_no_snippet": {
+    "ctx": "ck:1:CTX:CKV_K8S_1:0998da28:0000000000000000:R:3895f288",
+    "exact": "ck:1:EXACT:CKV_K8S_1:0998da28:12:12:R:3895f288",
+    "rule": "ck:1:RULE:CKV_K8S_1:824ab74cd720c006cc501f51c92c5040d2114560:R:3895f288"
+  },
+  "gy_full": {
+    "ctx": "gy:1:CTX:CVE-2024-12345:9d2e87f9:855e1755708547c0:R:3895f288",
+    "exact": "gy:1:EXACT:CVE-2024-12345:3f53a5f3:bc614ea0:8e6f0cd3:R:3895f288",
+    "pkg": "gy:1:PKG:CVE-2024-12345:f27e829b23ca0b0ddb30d4b9bd8e13bb429da94e:R:3895f288"
+  },
+  "gy_minimal_distro_ns": {
+    "ctx": "gy:1:CTX:GHSA-xxxx-yyyy-zzzz:cd393a5d:a57454e6fe35ae21:R:3895f288",
+    "exact": "gy:1:EXACT:GHSA-xxxx-yyyy-zzzz:3f53a5f3:00000000:892bef45:R:3895f288",
+    "pkg": "gy:1:PKG:GHSA-xxxx-yyyy-zzzz:0a20ab5e09dd97e3b3b9338054bcd61cfb72362e:R:3895f288"
+  },
+  "og_no_anchor": {
+    "ctx": "og:1:CTX:generic.rule:7cbc4a96:7fbd601ba908b184:R:3895f288",
+    "exact": "og:1:EXACT:generic.rule:36662fbb81a1:0:0:R:3895f288",
+    "rule": "og:1:RULE:generic.rule:d213a6832a1f7b1af98af27ca4338422d08418e3:R:3895f288"
+  },
+  "og_snippet_only_no_span": {
+    "ctx": "og:1:CTX:html.security.audit.missing-integrity:c9f5db8c:f5cba7b80b4fe28d:R:3895f288",
+    "exact": "og:1:EXACT:html.security.audit.missing-integrity:8e6b2105d2f3:13:67:R:3895f288",
+    "rule": "og:1:RULE:html.security.audit.missing-integrity:5b66a47776d148767e8c0d8b4a6bc0ecf32945f1:R:3895f288"
+  },
+  "og_span_with_metavars": {
+    "ctx": "og:1:CTX:python.lang.security.audit.dangerous-system-call:04791d82:4cd6f0b3de0bda5e:R:3895f288",
+    "exact": "og:1:EXACT:python.lang.security.audit.dangerous-system-call:22cbf79e5c19:170:195:R:3895f288",
+    "rule": "og:1:RULE:python.lang.security.audit.dangerous-system-call:4165f737f0f8c9f2831153fc31a9465495e7fcf1:R:3895f288"
+  },
+  "og_unlocatable": {
+    "ctx": "og:1:CTX:x.rule:29af3c25:<unlocatable>",
+    "exact": "og:1:EXACT:x.rule:<unlocatable>",
+    "rule": "og:1:RULE:x.rule:4c1647d33d33df1219f55e5703df2029ea2b014f:R:3895f288"
+  },
+  "th_0_aws": {
+    "ctx": "th:1:CTX:AWS:7cbc4a96:276bb382d9dc75bd:R:3895f288",
+    "exact": "th:1:EXACT:AWS:36662fbb81a1:22:42:R:3895f288",
+    "location_status": "FOUND_EXACT",
+    "secret": "th:1:SECRET:AWS:eefad7711d7c29b476010b1678c8d411a0f9d41b:R:3895f288"
+  },
+  "th_1_uri": {
+    "ctx": "th:1:CTX:URI:04791d82:006ed3aeee01f4c0:R:3895f288",
+    "exact": "th:1:EXACT:URI:22cbf79e5c19:101:157:R:3895f288",
+    "location_status": "FOUND_EXACT",
+    "secret": "th:1:SECRET:URI:5805f795a799f565187ad542ffb9abe7178e2c10:R:3895f288"
+  },
+  "th_2_generic": {
+    "ctx_soft": "th:1:CTXSOFT:Generic:04791d82:22cbf79e5c19:1",
+    "location_status": "UNLOCATABLE",
+    "secret": "th:1:SECRET:Generic:0a18d2253a30d17b4d98c53a45eaa6d547885411:R:3895f288"
+  },
+  "th_3_slack": {
+    "location_status": "UNLOCATABLE",
+    "secret": "th:1:SECRET:Slack:4e431e3e55f74aec2de723b210a8442fcd39de92:R:3895f288"
+  },
+  "th_4_hexkey": {
+    "ctx_soft": "th:1:CTXSOFT:HexKey:c9f5db8c:8e6b2105d2f3:0",
+    "location_status": "UNLOCATABLE",
+    "secret": "th:1:SECRET:HexKey:883d12953545a2d827cf2d95ce52137666bdb594:R:3895f288"
+  },
+  "th_5_aws": {
+    "exact": "th:1:EXACT:AWS:36662fbb81a1:64:104:R:3895f288",
+    "location_status": "FOUND_EXACT",
+    "secret": "th:1:SECRET:AWS:76c2b4c8a36a7d9a204a523ab9e268484bd7c934:R:3895f288"
+  }
+}
