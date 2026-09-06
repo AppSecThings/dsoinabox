@@ -128,9 +128,10 @@ def test_invalid_output_format_is_usage_error(tmp_project, fake_runner):
 
 
 def test_docker_mount_copy_keeps_latest_pointer(tmp_project):
+    from datetime import datetime, timezone
+
     from dsoinabox.cli import copy_reports_to_mount
     from dsoinabox.model import ScanRun
-    from datetime import datetime, timezone
 
     run_dir = tmp_project / "app_reports" / "dsoinabox_2026_09_06T00_00_00"
     run_dir.mkdir(parents=True)
