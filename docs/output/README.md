@@ -65,8 +65,10 @@ record, kept for tool-specific detail. Paths are repo-relative POSIX everywhere.
 - One `run` per scanner with the real tool version and `informationUri`.
 - `invocations[0].executionSuccessful` is false for a failed scanner, with the error in
   `toolExecutionNotifications`.
-- Waived findings carry `suppressions` with the waiver reason as `justification`, so GitHub code scanning
-  closes them instead of leaving alerts open.
+- Waived findings are left out of SARIF by default. GitHub code scanning ignores SARIF `suppressions`
+  (every suppressed result would still open an alert), so the run records `properties.waived_omitted`
+  instead. `--sarif_include_waived` emits them with `suppressions` (reason as `justification`) for
+  consumers that honour the field.
 - Rules carry `security-severity` and `defaultConfiguration.level`; URIs are relative to `%SRCROOT%`.
 - `automationDetails.id` is `dsoinabox/<tool>/` so several uploads do not collide.
 - Secret snippets are never emitted.

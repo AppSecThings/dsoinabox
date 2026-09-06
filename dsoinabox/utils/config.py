@@ -32,6 +32,7 @@ MERGEABLE_KEYS = (
     "waiver_grace_days",
     "baseline",
     "fail_on",
+    "sarif_include_waived",
     "output",
     "report_name",
     "tool_output",
@@ -57,6 +58,7 @@ ENV_KEY_MAP = {
     "waiver_grace_days": "DSOINABOX_WAIVER_GRACE_DAYS",
     "baseline": "DSOINABOX_BASELINE",
     "fail_on": "DSOINABOX_FAIL_ON",
+    "sarif_include_waived": "DSOINABOX_SARIF_INCLUDE_WAIVED",
     "output": "DSOINABOX_OUTPUT",
     "report_name": "DSOINABOX_REPORT_NAME",
     "tool_output": "DSOINABOX_TOOL_OUTPUT",
@@ -69,7 +71,7 @@ ENV_KEY_MAP = {
     "config_file": CONFIG_ENV_VAR,
 }
 
-BOOL_KEYS = {"tool_output", "benchmark", "fail_fast", "verify_secrets"}
+BOOL_KEYS = {"tool_output", "benchmark", "fail_fast", "verify_secrets", "sarif_include_waived"}
 INT_KEYS = {"waiver_grace_days", "scan_timeout"}
 SHOW_FINDINGS_CHOICES = ("false", "true", "full")
 STRING_LIST_KEYS = {"tools", "output"}

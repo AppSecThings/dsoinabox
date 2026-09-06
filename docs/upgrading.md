@@ -19,8 +19,9 @@ are now waived.
 active finding. To keep the old, trimmed reports set `report_threshold` to the same value as
 `failure_threshold` (flag `--report_threshold` or the config key).
 
-**Waived findings stay in reports** with `waived: true` and a `waived_by` record (JSON, NDJSON), as SARIF
-`suppressions`, and in a collapsed section of the HTML. They were deleted before.
+**Waived findings stay in reports** with `waived: true` and a `waived_by` record (JSON, NDJSON) and in a
+collapsed section of the HTML. They were deleted before. SARIF still omits them (GitHub ignores
+suppressions); `--sarif_include_waived` adds them as suppressed results.
 
 **Exit codes.** `1` is now only a policy failure. Scanner failures return `2` (reports are still written for the
 scanners that succeeded) and configuration errors return `3`. Pipelines checking `!= 0` are unaffected. Add

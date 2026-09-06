@@ -339,6 +339,7 @@ def run_scan(options: ScanOptions) -> ScanRun:
             waiver_summary=run.waiver_summary,
             scan_run=run,
             report_name=options.report_name,
+            sarif_include_waived=options.sarif_include_waived,
         )
         if path:
             run.report_paths.append(path)

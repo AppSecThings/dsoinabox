@@ -324,6 +324,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--sarif_include_waived",
+        action="store_true",
+        default=False,
+        help="include waived findings in SARIF as suppressed results. off by default because GitHub code "
+             "scanning ignores SARIF suppressions and would open an alert for every waived finding.",
+    )
+
+    parser.add_argument(
         "--benchmark",
         action="store_true",
         default=False,
@@ -541,6 +549,7 @@ def scan_main(argv: list[str]) -> int:
         base_report_directory=args.report_directory,
         baseline=args.baseline or None,
         fail_on=args.fail_on or "all",
+        sarif_include_waived=bool(args.sarif_include_waived),
         benchmark=bool(args.benchmark),
         tool_args=tool_args,
         scan_timeout=int(args.scan_timeout) if args.scan_timeout else None,

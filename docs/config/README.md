@@ -29,6 +29,7 @@ Precedence, lowest to highest: `.dsoinabox.yaml`, `DSOINABOX_*` environment vari
 | `waiver_grace_days` | `DSOINABOX_WAIVER_GRACE_DAYS` | int | |
 | `baseline` | `DSOINABOX_BASELINE` | path | benchmark file |
 | `fail_on` | `DSOINABOX_FAIL_ON` | all, new | |
+| `sarif_include_waived` | `DSOINABOX_SARIF_INCLUDE_WAIVED` | bool | waived findings as SARIF suppressions |
 | `output` | `DSOINABOX_OUTPUT` | list or comma string | |
 | `tool_output` | `DSOINABOX_TOOL_OUTPUT` | bool | |
 | `benchmark` | `DSOINABOX_BENCHMARK` | bool | |

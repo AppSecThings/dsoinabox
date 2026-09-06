@@ -71,8 +71,10 @@ give teams a warning window. `benchmark_expires_at` expires every benchmark entr
 ## What waived findings look like
 
 Waived findings are never deleted. In JSON and NDJSON they carry `waived: true` and a `waived_by` record
-(kind, type, reason, ticket, expiry, the matching entry). In SARIF they become `suppressions`. In the HTML
-report they move out of the per-tool tables into a collapsed "Waived findings" list. The gate, the console
+(kind, type, reason, ticket, expiry, the matching entry). In the HTML report they move out of the per-tool
+tables into a collapsed "Waived findings" list. SARIF leaves them out by default, because GitHub code
+scanning ignores `suppressions` and would open an alert for each one; `--sarif_include_waived` emits them
+as suppressed results for consumers that honour the field. The gate, the console
 table and `--benchmark` consider only active findings.
 
 Entries that matched nothing in a run are counted as unused (`unused=2`) and listed in the JSON report

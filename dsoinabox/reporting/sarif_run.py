@@ -1,10 +1,15 @@
 """SARIF 2.1.0 output built from a normalized ``ScanRun``.
 
 One ``run`` per scanner. Compared with the legacy raw-dict formatter this adds
-real tool versions, ``invocations`` (including failures), ``suppressions`` with
-the waiver reason, ``security-severity`` on rules, repo-relative URIs anchored
-at ``%SRCROOT%``, ``automationDetails`` so several uploads do not collide, and a
-stable ``partialFingerprints`` set for alert de-duplication.
+real tool versions, ``invocations`` (including failures), ``security-severity``
+on rules, repo-relative URIs anchored at ``%SRCROOT%``, ``automationDetails`` so
+several uploads do not collide, and a stable ``partialFingerprints`` set for
+alert de-duplication.
+
+Waived findings are omitted by default. GitHub code scanning ignores SARIF
+``suppressions`` (verified: suppressed results still open alerts), so emitting
+them would turn every accepted risk into an alert. ``include_waived=True``
+emits them with ``suppressions`` for consumers that honour the field.
 """
 
 from __future__ import annotations
@@ -142,7 +147,7 @@ def _invocation(scan: ScanResult, run: ScanRun) -> dict[str, Any]:
     return inv
 
 
-def _sarif_run(scan: ScanResult, run: ScanRun) -> dict[str, Any]:
+def _sarif_run(scan: ScanResult, run: ScanRun, *, include_waived: bool = False) -> dict[str, Any]:
     info = TOOL_INFO.get(scan.tool, {"name": scan.tool})
     driver: dict[str, Any] = {"name": info["name"]}
     if scan.tool_version:
@@ -153,7 +158,11 @@ def _sarif_run(scan: ScanResult, run: ScanRun) -> dict[str, Any]:
     rules: list[dict[str, Any]] = []
     index: dict[str, int] = {}
     results: list[dict[str, Any]] = []
+    waived_count = 0
     for finding in scan.findings:
+        if finding.waived and not include_waived:
+            waived_count += 1
+            continue
         if finding.rule_id not in index:
             index[finding.rule_id] = len(rules)
             rules.append(_rule(finding))
@@ -172,6 +181,7 @@ def _sarif_run(scan: ScanResult, run: ScanRun) -> dict[str, Any]:
             "project_id": run.project_id,
             "status": scan.status,
             "duration_s": round(scan.duration_s, 3),
+            "waived_omitted": waived_count,
         },
     }
     if run.git_info and run.git_info.get("origin_url"):
@@ -187,6 +197,6 @@ def _sarif_run(scan: ScanResult, run: ScanRun) -> dict[str, Any]:
     return sarif_run
 
 
-def convert_run_to_sarif(run: ScanRun) -> dict[str, Any]:
-    runs = [_sarif_run(scan, run) for scan in run.results if scan.category != "sbom"]
+def convert_run_to_sarif(run: ScanRun, *, include_waived: bool = False) -> dict[str, Any]:
+    runs = [_sarif_run(scan, run, include_waived=include_waived) for scan in run.results if scan.category != "sbom"]
     return {"$schema": SARIF_SCHEMA, "version": "2.1.0", "runs": runs}
