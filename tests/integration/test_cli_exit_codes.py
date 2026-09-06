@@ -150,6 +150,10 @@ class TestCLIExitCodes:
         monkeypatch.setattr(dsoinabox.utils.runner, "run_cmd", failing_runner)
         monkeypatch.setattr(dsoinabox.scanners.base, "run_cmd", failing_runner)
         monkeypatch.setattr(dsoinabox.utils.git, "run_cmd", failing_runner)
+        # binaries are not installed on CI runners; the point of this test is the scanner *failing*, not missing
+        import dsoinabox.utils.environment
+
+        monkeypatch.setattr(dsoinabox.utils.environment, "check_tool_available", lambda tool_name: True)
         monkeypatch.setattr(
             dsoinabox.utils.project_id,
             "run_git_cmd",
