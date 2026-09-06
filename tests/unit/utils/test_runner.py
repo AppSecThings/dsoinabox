@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import pytest
-import subprocess
-import signal
 import os
+import subprocess
+
+import pytest
 
 from dsoinabox.utils.runner import run_cmd
 

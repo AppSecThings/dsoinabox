@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml
 
@@ -20,10 +20,20 @@ MERGEABLE_KEYS = (
     "project_id",
     "tools",
     "failure_threshold",
+    "report_threshold",
     "fail_on_secrets",
+    "verify_secrets",
+    "grype_db",
     "show_findings",
+    "scan_timeout",
+    "fail_fast",
+    "tool_timeouts",
     "waiver_file",
+    "waiver_grace_days",
+    "baseline",
+    "fail_on",
     "output",
+    "report_name",
     "tool_output",
     "benchmark",
     *TOOL_ARG_KEYS,
@@ -35,10 +45,20 @@ ENV_KEY_MAP = {
     "project_id": "DSOINABOX_PROJECT_ID",
     "tools": "DSOINABOX_TOOLS",
     "failure_threshold": "DSOINABOX_FAILURE_THRESHOLD",
+    "report_threshold": "DSOINABOX_REPORT_THRESHOLD",
+    "scan_timeout": "DSOINABOX_SCAN_TIMEOUT",
+    "fail_fast": "DSOINABOX_FAIL_FAST",
     "fail_on_secrets": "DSOINABOX_FAIL_ON_SECRETS",
+    "verify_secrets": "DSOINABOX_VERIFY_SECRETS",
+    "grype_db": "DSOINABOX_GRYPE_DB",
+    "tool_timeouts": "DSOINABOX_TOOL_TIMEOUTS",
     "show_findings": "DSOINABOX_SHOW_FINDINGS",
     "waiver_file": "DSOINABOX_WAIVER_FILE",
+    "waiver_grace_days": "DSOINABOX_WAIVER_GRACE_DAYS",
+    "baseline": "DSOINABOX_BASELINE",
+    "fail_on": "DSOINABOX_FAIL_ON",
     "output": "DSOINABOX_OUTPUT",
+    "report_name": "DSOINABOX_REPORT_NAME",
     "tool_output": "DSOINABOX_TOOL_OUTPUT",
     "benchmark": "DSOINABOX_BENCHMARK",
     "trufflehog_args": "DSOINABOX_TRUFFLEHOG_ARGS",
@@ -49,7 +69,9 @@ ENV_KEY_MAP = {
     "config_file": CONFIG_ENV_VAR,
 }
 
-BOOL_KEYS = {"fail_on_secrets", "show_findings", "tool_output", "benchmark"}
+BOOL_KEYS = {"tool_output", "benchmark", "fail_fast", "verify_secrets"}
+INT_KEYS = {"waiver_grace_days", "scan_timeout"}
+SHOW_FINDINGS_CHOICES = ("false", "true", "full")
 STRING_LIST_KEYS = {"tools", "output"}
 NESTED_TOOL_ARG_KEYS = ("tool_args", "extra_tool_args")
 
@@ -57,13 +79,24 @@ DEFAULT_CONFIG_TEMPLATE = """# Repository-level defaults for dsoinabox.
 # Precedence: .dsoinabox.yaml -> DSOINABOX_* env vars -> CLI flags.
 
 tools: all
-failure_threshold: none
-fail_on_secrets: false
+failure_threshold: none     # exit 1 when unwaived findings at/above this severity exist
+# report_threshold: none    # hide findings below this severity from reports (gate is unaffected)
+fail_on_secrets: false      # false | true | verified (only secrets TruffleHog verified as live)
+# verify_secrets: false     # let TruffleHog verify candidates against providers (network calls)
+# grype_db: auto            # auto | offline (never download the vulnerability DB)
 waiver_file: .dsoinabox_waivers.yaml
+# waiver_grace_days: 0      # keep expired waivers active for N extra days (flagged as expiring)
+# baseline: benchmark.yaml  # classify findings as new/known against this benchmark file
+# fail_on: all              # all | new (only findings not in the baseline fail the gate)
+# report_name: dsoinabox_unified_report   # base file name; <report_directory>/latest/ always points at the newest run
 output: html
-show_findings: true
+show_findings: false        # false | true (compact table) | full (details)
 tool_output: false
 benchmark: false
+# scan_timeout: 1800        # seconds per scanner; a timeout is a scanner failure (exit 2)
+# tool_timeouts:            # per-tool overrides in seconds
+#   trufflehog: 600
+# fail_fast: false          # stop remaining scanners after the first failure
 
 # Optional per-tool extra args (uncomment and customize):
 # trufflehog_args: "--filter-unverified"
@@ -72,6 +105,32 @@ benchmark: false
 # grype_args: "--scope all-layers"
 # checkov_args: "--framework terraform"
 """
+
+
+def parse_fail_on_secrets(value: bool | str | None) -> tuple[bool, Literal["any", "verified"]]:
+    """--fail_on_secrets accepts false/true/any/verified. Returns (enabled, mode)."""
+    if value is None or value is False:
+        return False, "any"
+    if value is True:
+        return True, "any"
+    text = str(value).strip().lower()
+    if text == "verified":
+        return True, "verified"
+    if text == "any":
+        return True, "any"
+    return str_to_bool(text), "any"
+
+
+def normalize_show_findings(value: bool | str | None) -> str:
+    """--show_findings accepts false/true/full (plus the usual yes/no/1/0 spellings)."""
+    if value is None:
+        return "true"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    text = str(value).strip().lower()
+    if text == "full":
+        return "full"
+    return "true" if str_to_bool(text) else "false"
 
 
 def str_to_bool(v: bool | str | None) -> bool:
@@ -108,6 +167,15 @@ def read_env_overrides() -> dict[str, Any]:
             continue
         if key in BOOL_KEYS:
             overrides[key] = str_to_bool(raw_value)
+        elif key == "show_findings":
+            overrides[key] = normalize_show_findings(raw_value)
+        elif key == "fail_on_secrets":
+            enabled, mode = parse_fail_on_secrets(raw_value)
+            overrides[key] = mode if enabled else False
+        elif key == "tool_timeouts":
+            overrides[key] = {kv.split("=", 1)[0].strip().lower(): int(kv.split("=", 1)[1]) for kv in raw_value.split(",") if "=" in kv}
+        elif key in INT_KEYS:
+            overrides[key] = int(raw_value)
         else:
             overrides[key] = raw_value
     return overrides
@@ -117,6 +185,21 @@ def _normalize_value(key: str, value: Any) -> Any:
     """normalize a supported config value to runtime shape."""
     if key in BOOL_KEYS:
         return str_to_bool(value)
+
+    if key == "show_findings":
+        return normalize_show_findings(value)
+
+    if key == "fail_on_secrets":
+        enabled, mode = parse_fail_on_secrets(value)
+        return mode if enabled else False
+
+    if key == "tool_timeouts":
+        if not isinstance(value, dict):
+            raise ValueError("tool_timeouts must be a mapping of tool name to seconds")
+        return {str(k).strip().lower(): int(v) for k, v in value.items()}
+
+    if key in INT_KEYS:
+        return int(value)
 
     if key in STRING_LIST_KEYS and isinstance(value, list):
         return ",".join(str(item).strip() for item in value if str(item).strip())

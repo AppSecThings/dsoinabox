@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import pytest
 from datetime import datetime, timezone
+from typing import Any, Dict
+
 from freezegun import freeze_time
-from typing import Dict, Any, List
 
 import dsoinabox.waivers.matcher as waiver_matcher
-from dsoinabox.waivers.matcher import check_waiver, apply_waivers_to_findings
+from dsoinabox.waivers.matcher import apply_waivers_to_findings, check_waiver
 
 
 def _is_waiver_expired(waiver: Dict[str, Any], current_time: datetime) -> bool:

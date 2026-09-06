@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-import pytest
-import os
-import tempfile
 import subprocess
-from pathlib import Path
+
+import pytest
 
 from dsoinabox.utils.project_id import (
+    derive_project_hmac_key,
+    derive_project_id,
+    get_initial_commit_hash,
     is_git,
     normalize_git_remote,
-    get_initial_commit_hash,
-    derive_project_id,
-    derive_project_hmac_key,
 )
 
 

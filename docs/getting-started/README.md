@@ -2,82 +2,45 @@
 
 ## Installation
 
-Install with pip:
-
 ```bash
 pip install dsoinabox
 ```
 
-Recommended: run via Docker image so scanner dependencies are preinstalled.
+Recommended: run the Docker image so the scanners come preinstalled and pinned. The image is published for
+`linux/amd64` and `linux/arm64`, so Apple Silicon runs it natively.
 
-## Docker Usage
+## Docker
 
 ```bash
 docker run --rm \
   -v /path/to/your/code:/scan_target \
   -v /path/to/reports:/reports \
   appsecthings/dsoinabox:latest \
-  --show_findings false \
   -t all \
-  -o sarif,html,ndjson \
-  --tool_output
+  -o html,sarif,json \
+  --failure_threshold high
 ```
 
-This command:
+- Mounts code at `/scan_target` and writes reports under `/reports/dsoinabox_<timestamp>/` (and
+  `/reports/latest/`).
+- Prints a summary block and exits 0 (pass), 1 (policy failed), 2 (a scanner failed) or 3 (usage error).
+- Add `--show_findings true` for a table of active findings, `--tool_output` to keep raw scanner output.
 
-- Mounts code at `/scan_target`
-- Writes reports under `/reports`
-- Runs all scanners with normalized output
-- Keeps raw per-tool output with `--tool_output`
+## Direct (non-Docker)
 
-## Apple Silicon (M1/M2/M3)
-
-The published image is `amd64`. On Apple Silicon use:
+Requires `trufflehog`, `opengrep`, `syft`, `grype` and `checkov` on `PATH`.
 
 ```bash
-docker run --rm --platform linux/amd64 \
-  -v /path/to/your/code:/scan_target \
-  -v /path/to/reports:/reports \
-  appsecthings/dsoinabox:latest \
-  --show_findings false \
-  -t all \
-  -o html
+dsoinabox --source . --report_directory ./reports -o html
+dsoinabox tools versions
 ```
 
-## Direct (Non-Docker) Usage
+Non-git directories need `--project_id`.
 
-You can run directly if all scanners are already installed and in your `PATH`:
+## Next steps
 
-```bash
-# Run against current directory
-dsoinabox --source . --report_directory ./reports
-
-# Explicit paths
-dsoinabox --source /path/to/code --report_directory /path/to/reports
-```
-
-When run directly:
-
-- `--source` defaults to `.`
-- `--report_directory` defaults to `reports`
-- Tool availability is validated from your local `PATH`
-
-## Local Tool Prerequisites (Non-Docker)
-
-Required scanners:
-
-- `trufflehog`
-- `opengrep`
-- `syft`
-- `grype`
-- `checkov`
-
-References:
-
-- Grype: <https://github.com/anchore/grype>
-- Syft: <https://github.com/anchore/syft>
-- OpenGrep: <https://github.com/opengrep/opengrep>
-- TruffleHog: <https://github.com/trufflesecurity/trufflehog>
-- Checkov: <https://github.com/bridgecrewio/checkov>
-
-For Linux/macOS install snippets and platform caveats, use each tool's official install docs.
+- Set repository defaults: `dsoinabox config init`, then edit `.dsoinabox.yaml` ([Runtime Config](../config/README.md)).
+- Waive false positives and accepted risk in `.dsoinabox_waivers.yaml` ([Waivers](../waivers/README.md)).
+- Adopt on a legacy codebase with a baseline: `dsoinabox baseline update --from reports/latest/<name>.json`,
+  then `--baseline benchmark.yaml --fail_on new`.
+- Wire it into CI ([CI examples](../ci/README.md)).

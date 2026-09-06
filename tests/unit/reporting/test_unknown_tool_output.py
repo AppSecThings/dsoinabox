@@ -2,19 +2,13 @@
 
 from __future__ import annotations
 
-import pytest
 import json
-import tempfile
-import os
-from pathlib import Path
 import warnings
 
+import pytest
+
 from dsoinabox.reporting.parser import (
-    BaseParser,
     OpengrepParser,
-    GrypeParser,
-    TrufflehogParser,
-    CheckovParser,
 )
 
 

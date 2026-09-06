@@ -1,0 +1,16 @@
+schema_version: "1.0"
+
+meta:
+  created_at: "2025-11-16T17:23:59.253Z"
+
+finding_waivers:
+  - fingerprint: "th:1:CTX:URI:3e2281d7:19f44162e97d3154:R:d4515b57"
+    type: "false_positive"
+  - fingerprint: "og:1:CTX:python.flask.security.xss.audit.direct-use-of-jinja2.direct-use-of-jinja2:5b991fe2:59287f8027e85171:R:d4515b57"
+    type: "risk_acceptance"
+  - fingerprint: "og:1:CTX:python.flask.security.xss.audit.direct-use-of-jinja2.direct-use-of-jinja2:5b991fe2:c6578400f12b2fec:R:d4515b57"
+    type: "risk_acceptance"
+  - fingerprint: "ck:1:CTX:CKV_SECRET_2:6cd92125:0dff98b7a7326985:R:d4515b57"
+    type: "false_positive"
+
+

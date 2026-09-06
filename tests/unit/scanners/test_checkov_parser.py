@@ -1,8 +1,8 @@
 """Unit tests for Checkov (IaC) parser/normalizer."""
 
 import json
+
 import pytest
-from pathlib import Path
 
 from dsoinabox.reporting.checkov import fingerprint_findings
 
@@ -21,7 +21,7 @@ class TestCheckovParserNormalization:
     def test_fingerprint_findings_adds_fingerprints(self, checkov_fixture, tmp_path):
         """Test that fingerprint_findings adds fingerprints to all results."""
         source_path = str(tmp_path)
-        result = fingerprint_findings(checkov_fixture, source_path)
+        result = fingerprint_findings(checkov_fixture, source_path, project_id="test-project")
         
         assert "runs" in result
         assert len(result["runs"]) > 0
@@ -39,7 +39,7 @@ class TestCheckovParserNormalization:
     def test_fingerprint_format(self, checkov_fixture, tmp_path):
         """Test that fingerprints follow the expected format."""
         source_path = str(tmp_path)
-        result = fingerprint_findings(checkov_fixture, source_path)
+        result = fingerprint_findings(checkov_fixture, source_path, project_id="test-project")
         
         runs = result["runs"]
         for run in runs:
@@ -58,7 +58,7 @@ class TestCheckovParserNormalization:
     def test_normalized_schema_fields(self, checkov_fixture, tmp_path):
         """Test that results have all normalized schema fields."""
         source_path = str(tmp_path)
-        result = fingerprint_findings(checkov_fixture, source_path)
+        result = fingerprint_findings(checkov_fixture, source_path, project_id="test-project")
         
         runs = result["runs"]
         for run in runs:
@@ -82,7 +82,7 @@ class TestCheckovParserNormalization:
     def test_required_fields_present(self, checkov_fixture, tmp_path, field):
         """Test that required fields are present in results."""
         source_path = str(tmp_path)
-        result = fingerprint_findings(checkov_fixture, source_path)
+        result = fingerprint_findings(checkov_fixture, source_path, project_id="test-project")
         
         runs = result["runs"]
         for run in runs:
@@ -98,7 +98,7 @@ class TestCheckovParserNormalization:
         from dsoinabox.reporting.checkov import _extract_severity
         
         source_path = str(tmp_path)
-        result = fingerprint_findings(checkov_fixture, source_path)
+        result = fingerprint_findings(checkov_fixture, source_path, project_id="test-project")
         
         runs = result["runs"]
         for run in runs:
@@ -113,7 +113,7 @@ class TestCheckovParserNormalization:
     def test_file_path_extraction(self, checkov_fixture, tmp_path):
         """Test that file paths are extracted correctly."""
         source_path = str(tmp_path)
-        result = fingerprint_findings(checkov_fixture, source_path)
+        result = fingerprint_findings(checkov_fixture, source_path, project_id="test-project")
         
         runs = result["runs"]
         for run in runs:
@@ -149,7 +149,7 @@ class TestCheckovParserEdgeCases:
         }
         
         source_path = str(tmp_path)
-        result = fingerprint_findings(empty_data, source_path)
+        result = fingerprint_findings(empty_data, source_path, project_id="test-project")
         
         assert "runs" in result
         assert len(result["runs"]) > 0
@@ -180,7 +180,7 @@ class TestCheckovParserEdgeCases:
         }
         
         source_path = str(tmp_path)
-        result = fingerprint_findings(data_with_missing_locations, source_path)
+        result = fingerprint_findings(data_with_missing_locations, source_path, project_id="test-project")
         
         assert len(result["runs"]) > 0
         assert len(result["runs"][0]["results"]) == 1
@@ -224,7 +224,7 @@ class TestCheckovParserEdgeCases:
         }
         
         source_path = str(tmp_path)
-        result = fingerprint_findings(data_with_unknown_level, source_path)
+        result = fingerprint_findings(data_with_unknown_level, source_path, project_id="test-project")
         
         assert len(result["runs"]) > 0
         assert len(result["runs"][0]["results"]) == 1
@@ -275,7 +275,7 @@ class TestCheckovParserEdgeCases:
         }
         
         source_path = str(tmp_path)
-        result = fingerprint_findings(data_with_rule_index, source_path)
+        result = fingerprint_findings(data_with_rule_index, source_path, project_id="test-project")
         
         assert len(result["runs"]) > 0
         assert len(result["runs"][0]["results"]) == 1
@@ -319,7 +319,7 @@ class TestCheckovParserEdgeCases:
         }
         
         source_path = str(tmp_path)
-        result = fingerprint_findings(data_with_missing_message, source_path)
+        result = fingerprint_findings(data_with_missing_message, source_path, project_id="test-project")
         
         assert len(result["runs"]) > 0
         assert len(result["runs"][0]["results"]) == 1
@@ -338,7 +338,7 @@ class TestCheckovParserRobustness:
         data_with_extra["another_unexpected"] = {"nested": "data"}
         
         source_path = str(tmp_path)
-        result = fingerprint_findings(data_with_extra, source_path)
+        result = fingerprint_findings(data_with_extra, source_path, project_id="test-project")
         
         # Should still process normally
         assert "runs" in result
@@ -352,7 +352,7 @@ class TestCheckovParserRobustness:
             data_with_extra["runs"][0]["results"][0]["nested_unexpected"] = {"key": "value"}
         
         source_path = str(tmp_path)
-        result = fingerprint_findings(data_with_extra, source_path)
+        result = fingerprint_findings(data_with_extra, source_path, project_id="test-project")
         
         # Should still process normally
         assert len(result["runs"]) > 0
@@ -403,7 +403,7 @@ class TestCheckovParserRobustness:
         }
         
         source_path = str(tmp_path)
-        result = fingerprint_findings(data_with_drift, source_path)
+        result = fingerprint_findings(data_with_drift, source_path, project_id="test-project")
         
         # Should process successfully
         assert len(result["runs"]) > 0
@@ -452,7 +452,7 @@ class TestCheckovParserRobustness:
         }
         
         source_path = str(tmp_path)
-        result = fingerprint_findings(data_with_nulls, source_path)
+        result = fingerprint_findings(data_with_nulls, source_path, project_id="test-project")
         
         # Should handle nulls gracefully
         assert len(result["runs"]) > 0
@@ -496,7 +496,7 @@ class TestCheckovParserRobustness:
         }
         
         source_path = str(tmp_path)
-        result = fingerprint_findings(data_with_missing_region, source_path)
+        result = fingerprint_findings(data_with_missing_region, source_path, project_id="test-project")
         
         # Should handle missing region fields gracefully
         assert len(result["runs"]) > 0

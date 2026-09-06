@@ -1,0 +1,86 @@
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+.ENV/
+.env/
+
+# Testing
+tests/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+nosetests.xml
+coverage.xml
+*.cover
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD (not needed in runtime image)
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# Documentation (not needed at runtime)
+README.md
+docs/
+
+# Local configuration files
+.dsoinabox_waivers.yaml
+*.log
+
+# Docker files (not needed in image)
+Dockerfile
+.dockerignore
+docker-compose*.yml
+docker-compose*.yaml
+
+# Planning and local output
+UPDATE_PLAN.md
+reports/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+

@@ -1,6 +1,7 @@
 """smoke test to verify fixtures and fake_runner work correctly"""
 
 import json
+
 from dsoinabox.utils import runner
 
 

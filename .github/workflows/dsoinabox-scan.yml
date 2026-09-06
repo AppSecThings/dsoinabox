@@ -31,20 +31,21 @@ jobs:
         with:
           failure_threshold: high
 
-      - name: Find SARIF report
+      - name: Locate SARIF report
         id: find_sarif
         if: always()
         shell: bash
         run: |
           set -euo pipefail
-          sarif_file="$(find reports -type f -name '*.sarif' -print -quit || true)"
-          if [ -n "${sarif_file}" ]; then
+          # every run refreshes reports/latest/, so no directory search is needed
+          sarif_file="reports/latest/dsoinabox.sarif"
+          if [ -f "${sarif_file}" ]; then
             echo "found=true" >> "$GITHUB_OUTPUT"
             echo "sarif_file=${sarif_file}" >> "$GITHUB_OUTPUT"
             echo "Found SARIF file: ${sarif_file}"
           else
             echo "found=false" >> "$GITHUB_OUTPUT"
-            echo "No SARIF file found under reports/"
+            echo "No SARIF file at ${sarif_file}"
           fi
 
       - name: Upload SARIF to GitHub Security

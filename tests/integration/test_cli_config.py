@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 
 import pytest
 import yaml
@@ -154,14 +153,14 @@ def test_repo_config_nested_tool_args_are_applied(tmp_project, monkeypatch):
             return (0, output, "") if text else (0, output.encode("utf-8"), b"")
         return (0, "{}", "") if text else (0, b"{}", b"")
 
-    import dsoinabox.utils.runner
+    import dsoinabox.cli
+    import dsoinabox.reporting.opengrep
+    import dsoinabox.reporting.trufflehog
     import dsoinabox.scanners.base
+    import dsoinabox.utils.environment
     import dsoinabox.utils.git
     import dsoinabox.utils.project_id
-    import dsoinabox.reporting.trufflehog
-    import dsoinabox.reporting.opengrep
-    import dsoinabox.utils.environment
-    import dsoinabox.cli
+    import dsoinabox.utils.runner
 
     monkeypatch.setattr(dsoinabox.utils.runner, "run_cmd", _runner)
     monkeypatch.setattr(dsoinabox.scanners.base, "run_cmd", _runner)
@@ -188,7 +187,6 @@ def test_repo_config_nested_tool_args_are_applied(tmp_project, monkeypatch):
         ),
     )
     monkeypatch.setattr(dsoinabox.utils.environment, "check_tool_available", lambda tool_name: True)
-    monkeypatch.setattr(dsoinabox.cli, "check_tool_available", lambda tool_name: True)
 
     exit_code = main(
         [
@@ -201,8 +199,9 @@ def test_repo_config_nested_tool_args_are_applied(tmp_project, monkeypatch):
         ]
     )
     assert exit_code == 0
-    opengrep_commands = [cmd for cmd in seen_commands if cmd and cmd[0] == "opengrep"]
-    assert opengrep_commands, "expected opengrep command to be executed"
+    # the version probe (`opengrep --version`) runs first; look at the scan invocation
+    opengrep_commands = [cmd for cmd in seen_commands if cmd and cmd[0] == "opengrep" and "scan" in cmd]
+    assert opengrep_commands, "expected opengrep scan command to be executed"
     assert "--severity" in opengrep_commands[0]
     assert "high" in opengrep_commands[0]
 

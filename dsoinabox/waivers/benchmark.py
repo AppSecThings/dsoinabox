@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from typing import Any, Dict, List, Optional
+
 import yaml
-import os
-from typing import Dict, Any, List, Optional
+
+from .schema import CURRENT_SCHEMA_VERSION
 
 
 def _extract_primary_fingerprint(finding: Dict[str, Any], tool_name: str) -> Optional[str]:
@@ -50,7 +52,7 @@ def generate_benchmark_yaml(
     grype_data: Optional[Dict[str, Any]],
     checkov_data: Optional[Dict[str, Any]],
     output_path: str,
-    schema_version: str = "1.0"
+    schema_version: str = CURRENT_SCHEMA_VERSION,
 ) -> None:
     """
     Generate benchmark.yaml file with all findings from all tools.

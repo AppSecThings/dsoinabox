@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-import pytest
-import time
 import json
-import tempfile
-import os
-from pathlib import Path
+import time
+
+import pytest
 
 from dsoinabox.reporting.report_builder import report_builder
-from dsoinabox.reporting.parser import OpengrepParser, GrypeParser, CheckovParser
 
 
 class TestLargeReportPerformance:
@@ -182,7 +179,6 @@ class TestLargeReportPerformance:
         This test verifies that memory usage doesn't grow unbounded with large datasets.
         Note: Exact memory measurement is platform-dependent, so we use a reasonable bound.
         """
-        import sys
         import tracemalloc
         
         # Generate 5k opengrep findings

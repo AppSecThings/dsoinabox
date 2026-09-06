@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import pytest
 import yaml
-import tempfile
-from pathlib import Path
 
-from dsoinabox.waivers.loader import load_waiver_file, _load_schema_v1_0
+from dsoinabox.waivers.loader import load_waiver_file
 
 
 class TestWaiverLoaderEdgeCases:
@@ -101,8 +99,8 @@ class TestWaiverLoaderEdgeCases:
             yaml.dump(waiver_data, f)
         
         result = load_waiver_file(str(waiver_file))
-        assert result["schema_version"] == "1.0"
-        assert len(result["finding_waivers"]) == 1
+        assert result.schema_version == "1.0"
+        assert len(result.finding_waivers) == 1
     
     def test_waiver_loader_empty_file_returns_empty_waivers(self, tmp_path):
         """Test that empty waiver file returns empty structure."""
@@ -116,10 +114,10 @@ class TestWaiverLoaderEdgeCases:
             yaml.dump(waiver_data, f)
         
         result = load_waiver_file(str(waiver_file))
-        assert result["schema_version"] == "1.0"
-        assert result["finding_waivers"] == []
-        assert result.get("meta", {}) == {}
-        assert result.get("path_exclusions", []) == []
+        assert result.schema_version == "1.0"
+        assert result.finding_waivers == []
+        assert result.meta == {}
+        assert result.path_exclusions == []
     
     def test_waiver_loader_missing_finding_waivers_key(self, tmp_path):
         """Test that missing finding_waivers key defaults to empty list."""
@@ -133,7 +131,7 @@ class TestWaiverLoaderEdgeCases:
             yaml.dump(waiver_data, f)
         
         result = load_waiver_file(str(waiver_file))
-        assert result["finding_waivers"] == []
+        assert result.finding_waivers == []
     
     def test_waiver_loader_invalid_finding_waiver_not_dict(self, tmp_path):
         """Test that finding_waiver that's not a dict raises ValueError."""
@@ -196,9 +194,9 @@ class TestWaiverLoaderEdgeCases:
         
         # Should load successfully (duplicates allowed)
         result = load_waiver_file(str(waiver_file))
-        assert len(result["finding_waivers"]) == 2
-        assert result["finding_waivers"][0]["fingerprint"] == "og:1:RULE:test:abc"
-        assert result["finding_waivers"][1]["fingerprint"] == "og:1:RULE:test:abc"
+        assert len(result.finding_waivers) == 2
+        assert result.finding_waivers[0].fingerprint == "og:1:RULE:test:abc"
+        assert result.finding_waivers[1].fingerprint == "og:1:RULE:test:abc"
     
     def test_waiver_loader_validates_all_waiver_types(self, tmp_path):
         """Test that all valid waiver types are accepted."""
@@ -225,10 +223,10 @@ class TestWaiverLoaderEdgeCases:
             yaml.dump(waiver_data, f)
         
         result = load_waiver_file(str(waiver_file))
-        assert len(result["finding_waivers"]) == 3
-        assert result["finding_waivers"][0]["type"] == "false_positive"
-        assert result["finding_waivers"][1]["type"] == "risk_acceptance"
-        assert result["finding_waivers"][2]["type"] == "policy_waiver"
+        assert len(result.finding_waivers) == 3
+        assert result.finding_waivers[0].type == "false_positive"
+        assert result.finding_waivers[1].type == "risk_acceptance"
+        assert result.finding_waivers[2].type == "policy_waiver"
     
     def test_waiver_loader_preserves_optional_fields(self, tmp_path):
         """Test that optional fields in waivers are preserved."""
@@ -261,8 +259,8 @@ class TestWaiverLoaderEdgeCases:
             yaml.dump(waiver_data, f)
         
         result = load_waiver_file(str(waiver_file))
-        assert result["meta"]["owner"] == "Security Team"
-        assert len(result["path_exclusions"]) == 1
-        assert result["finding_waivers"][0]["reason"] == "Test reason"
-        assert result["finding_waivers"][0]["expires_at"] == "2026-01-01"
+        assert result.meta["owner"] == "Security Team"
+        assert len(result.path_exclusions) == 1
+        assert result.finding_waivers[0].reason == "Test reason"
+        assert result.finding_waivers[0].expires_at.date().isoformat() == "2026-01-01"
 

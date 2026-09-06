@@ -184,7 +184,7 @@
                     {% endif %}
                     {% endif %}
 
-                    <tr class="row-expandable" data-report-row data-severity="{{ sev | e }}" {% if fingerprint_list|length > 0 %}data-fingerprints='{{ fingerprint_list|map(attribute=1)|list|tojson }}'{% endif %}>
+                    <tr class="row-expandable" data-baseline="{{ finding.baseline_status | default('') }}" data-report-row data-severity="{{ sev | e }}" {% if fingerprint_list|length > 0 %}data-fingerprints='{{ fingerprint_list|map(attribute=1)|list|tojson }}'{% endif %}>
                     <td>{{ path | e }}</td>
                     <td>{{ line | e }}</td>
                     <td>{{ rid | e }}</td>

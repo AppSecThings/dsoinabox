@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import pytest
-from datetime import datetime, timezone
 from freezegun import freeze_time
 
-from dsoinabox.waivers.matcher import check_waiver, apply_waivers_to_findings
+from dsoinabox.waivers.matcher import apply_waivers_to_findings, check_waiver
 
 
 class TestWaiverPrecedence:

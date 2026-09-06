@@ -1,9 +1,5 @@
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
-
-try:
-    from importlib.metadata import PackageNotFoundError, version
-except ImportError:  # pragma: no cover
-    from importlib_metadata import PackageNotFoundError, version
 
 
 def _read_local_version() -> str:

@@ -16,6 +16,7 @@ pipeline {
             appsecthings/dsoinabox:latest \
             -t all \
             -o jenkins_html,sarif,json \
+            --report_name dsoinabox \
             --failure_threshold high
         '''
       }
@@ -32,4 +33,5 @@ pipeline {
 
 - Mount repo: `-v "$WORKSPACE:/scan_target"`
 - Persist artifacts: `archiveArtifacts artifacts: 'reports/**'`
-- Fail build on threshold: `--failure_threshold high` returns non-zero exit code
+- Gate: `--failure_threshold high` exits 1; a scanner failure exits 2; both are non-zero
+- Newest reports are always under `reports/latest/` (`dsoinabox.sarif`, `dsoinabox.html`, ...)

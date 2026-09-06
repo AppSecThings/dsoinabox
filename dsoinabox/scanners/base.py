@@ -42,11 +42,33 @@ class BaseScanner:
         *,
         env: dict[str, str] | None = None,
         text: bool = True,
+        timeout: int | None = None,
     ) -> SimpleNamespace:
         """run the cli tool with the provided args."""
         command = [self.cli_name] + self._normalize_args(args)
-        returncode, stdout, stderr = run_cmd(command, env=env, text=text)
+        returncode, stdout, stderr = run_cmd(command, env=env, text=text, timeout=timeout)
         return SimpleNamespace(returncode=returncode, stdout=stdout, stderr=stderr)
+
+    def get_version(self) -> str:
+        """return the installed tool version as a single line, or raise ScannerError."""
+        result = self._run_command("--version", timeout=60)
+        if result.returncode != 0:
+            raise ScannerError(f"{self.cli_name} version check failed: {result.stderr}")
+        text = result.stdout if isinstance(result.stdout, str) else result.stdout.decode("utf-8", "replace")
+        first = next((line.strip() for line in text.splitlines() if line.strip()), "")
+        if first.startswith(("{", "[")) or len(first) > 120:
+            return ""
+        return self._strip_version_prefix(first)
+
+    def _strip_version_prefix(self, line: str) -> str:
+        """'trufflehog 3.97.4' -> '3.97.4'; 'Opengrep version: 1.29.0' -> '1.29.0'; 'v1.2.3' -> '1.2.3'."""
+        import re
+
+        text = line.strip()
+        text = re.sub(rf"^{re.escape(self.cli_name)}\b[\s:]*", "", text, flags=re.IGNORECASE)
+        text = re.sub(r"^version[\s:]*", "", text, flags=re.IGNORECASE)
+        text = re.sub(r"^v(?=\d)", "", text)
+        return text.strip()
 
     def show_version(self) -> None:
         """print the installed tool version to stdout."""

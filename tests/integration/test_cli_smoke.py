@@ -3,6 +3,7 @@
 import json
 import os
 import subprocess
+
 import pytest
 
 from dsoinabox.cli import main
@@ -207,14 +208,14 @@ def test_cli_does_not_run_git_config_global(tmp_project, monkeypatch):
     def tracked_git_runner(args, *, repo_path=None, cwd=None, text=True, check=False):
         return tracked_runner(["git"] + list(args), cwd=cwd, text=text, check=check)
 
-    import dsoinabox.utils.runner
+    import dsoinabox.cli
+    import dsoinabox.reporting.opengrep
+    import dsoinabox.reporting.trufflehog
     import dsoinabox.scanners.base
+    import dsoinabox.utils.environment
     import dsoinabox.utils.git
     import dsoinabox.utils.project_id
-    import dsoinabox.reporting.trufflehog
-    import dsoinabox.reporting.opengrep
-    import dsoinabox.utils.environment
-    import dsoinabox.cli
+    import dsoinabox.utils.runner
 
     monkeypatch.setattr(dsoinabox.utils.runner, "run_cmd", tracked_runner)
     monkeypatch.setattr(dsoinabox.scanners.base, "run_cmd", tracked_runner)
@@ -223,7 +224,6 @@ def test_cli_does_not_run_git_config_global(tmp_project, monkeypatch):
     monkeypatch.setattr(dsoinabox.reporting.trufflehog, "run_git_cmd", tracked_git_runner)
     monkeypatch.setattr(dsoinabox.reporting.opengrep, "run_git_cmd", tracked_git_runner)
     monkeypatch.setattr(dsoinabox.utils.environment, "check_tool_available", lambda tool_name: True)
-    monkeypatch.setattr(dsoinabox.cli, "check_tool_available", lambda tool_name: True)
 
     exit_code = main([
         "--source", str(source_dir),
@@ -258,8 +258,8 @@ def test_cli_git_repo_metadata_still_resolves(tmp_project, monkeypatch):
     import dsoinabox.utils.environment
 
     monkeypatch.setattr(dsoinabox.utils.environment, "check_tool_available", lambda tool_name: True)
-    monkeypatch.setattr(dsoinabox.cli, "check_tool_available", lambda tool_name: True)
-    monkeypatch.setattr(dsoinabox.cli, "syft_dir_scan", lambda source, extra_args, out_dir: {"artifacts": []})
+    import dsoinabox.scanners.sbom.syft
+    monkeypatch.setattr(dsoinabox.scanners.sbom.syft, "run_scan", lambda source, extra_args, out_dir, **kw: {"artifacts": []})
 
     exit_code = main([
         "--source", str(source_dir),

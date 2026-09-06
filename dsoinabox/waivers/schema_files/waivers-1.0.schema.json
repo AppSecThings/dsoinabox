@@ -1,0 +1,312 @@
+{
+  "$defs": {
+    "BenchmarkEntry": {
+      "additionalProperties": true,
+      "description": "Baseline entry. ``type`` is always ``benchmark`` regardless of input.",
+      "properties": {
+        "created_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created At"
+        },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created By"
+        },
+        "expires_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expires At"
+        },
+        "fingerprint": {
+          "minLength": 1,
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "ticket": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ticket"
+        },
+        "type": {
+          "default": "benchmark",
+          "description": "Always 'benchmark'. Any other value is accepted and overridden on load.",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fingerprint"
+      ],
+      "title": "BenchmarkEntry",
+      "type": "object"
+    },
+    "FindingWaiverV1_0": {
+      "additionalProperties": true,
+      "properties": {
+        "created_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created At"
+        },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created By"
+        },
+        "expires_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expires At"
+        },
+        "fingerprint": {
+          "minLength": 1,
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "meta_ticket": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Meta Ticket"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "ticket": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ticket"
+        },
+        "type": {
+          "$ref": "#/$defs/WaiverType"
+        }
+      },
+      "required": [
+        "fingerprint",
+        "type"
+      ],
+      "title": "FindingWaiverV1_0",
+      "type": "object"
+    },
+    "PathExclusion": {
+      "additionalProperties": true,
+      "description": "Repo-root-relative gitignore-style pattern applied at output time.",
+      "properties": {
+        "created_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created At"
+        },
+        "created_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created By"
+        },
+        "expires_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expires At"
+        },
+        "pattern": {
+          "minLength": 1,
+          "title": "Pattern",
+          "type": "string"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "tools": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tools"
+        }
+      },
+      "required": [
+        "pattern"
+      ],
+      "title": "PathExclusion",
+      "type": "object"
+    },
+    "WaiverType": {
+      "enum": [
+        "false_positive",
+        "risk_acceptance",
+        "policy_waiver",
+        "benchmark"
+      ],
+      "title": "WaiverType",
+      "type": "string"
+    }
+  },
+  "$id": "https://github.com/AppSecThings/dsoinabox/schema/waivers-1.0.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "description": "Schema 1.0: the original waiver file format (dsoinabox 0.1.x).",
+  "properties": {
+    "benchmark": {
+      "items": {
+        "$ref": "#/$defs/BenchmarkEntry"
+      },
+      "title": "Benchmark",
+      "type": "array"
+    },
+    "finding_waivers": {
+      "items": {
+        "$ref": "#/$defs/FindingWaiverV1_0"
+      },
+      "title": "Finding Waivers",
+      "type": "array"
+    },
+    "meta": {
+      "additionalProperties": true,
+      "title": "Meta",
+      "type": "object"
+    },
+    "path_exclusions": {
+      "items": {
+        "$ref": "#/$defs/PathExclusion"
+      },
+      "title": "Path Exclusions",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "title": "dsoinabox waiver file (schema 1.0)",
+  "type": "object"
+}

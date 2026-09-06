@@ -1,0 +1,1 @@
+Fixture repository for `.github/workflows/smoke.yml` and manual end-to-end runs. Every file plants one class of finding on purpose: `config.yaml` (secrets), `src/app.py` (SAST), `requirements.txt` (SCA), `infra/*.tf` (IaC). Nothing here is a live credential.

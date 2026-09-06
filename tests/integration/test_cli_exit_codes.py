@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import pytest
-import os
 import json
+import os
+
+import pytest
 import yaml
-from pathlib import Path
-from unittest.mock import patch
 
 from dsoinabox.cli import main
 
@@ -74,12 +73,12 @@ class TestCLIExitCodes:
         
         # patch at source module and all places where it's imported
         # necessary because python creates local references on import
-        import dsoinabox.utils.runner
+        import dsoinabox.reporting.opengrep
+        import dsoinabox.reporting.trufflehog
         import dsoinabox.scanners.base
         import dsoinabox.utils.git
         import dsoinabox.utils.project_id
-        import dsoinabox.reporting.trufflehog
-        import dsoinabox.reporting.opengrep
+        import dsoinabox.utils.runner
         
         monkeypatch.setattr(dsoinabox.utils.runner, "run_cmd", empty_runner)
         monkeypatch.setattr(dsoinabox.scanners.base, "run_cmd", empty_runner)
@@ -117,8 +116,8 @@ class TestCLIExitCodes:
         
         assert exit_code == 0, "Should pass when no findings above threshold"
     
-    def test_cli_exit_code_tool_failure_returns_1(self, tmp_project, monkeypatch):
-        """test that cli exits 1 when tool subprocess fails"""
+    def test_cli_exit_code_tool_failure_returns_2(self, tmp_project, monkeypatch):
+        """test that cli exits 2 (scanner failure) when tool subprocess fails, after writing reports"""
         source_dir = tmp_project / "source"
         source_dir.mkdir()
         (source_dir / "test.py").write_text("print('hello')\n")
@@ -141,12 +140,12 @@ class TestCLIExitCodes:
                 return (0, b"{}", b"")
         
         # patch at source module and all places where it's imported
-        import dsoinabox.utils.runner
+        import dsoinabox.reporting.opengrep
+        import dsoinabox.reporting.trufflehog
         import dsoinabox.scanners.base
         import dsoinabox.utils.git
         import dsoinabox.utils.project_id
-        import dsoinabox.reporting.trufflehog
-        import dsoinabox.reporting.opengrep
+        import dsoinabox.utils.runner
         
         monkeypatch.setattr(dsoinabox.utils.runner, "run_cmd", failing_runner)
         monkeypatch.setattr(dsoinabox.scanners.base, "run_cmd", failing_runner)
@@ -181,9 +180,14 @@ class TestCLIExitCodes:
             "--project_id", "test-project",
         ])
         
-        assert exit_code == 1, "Should exit 1 when tool fails"
+        assert exit_code == 2, "Should exit 2 when a scanner fails"
+        json_files = list((tmp_project / "reports").rglob("dsoinabox_unified_report_*.json"))
+        assert json_files, "reports are still written when a scanner fails"
+        meta = json.loads(json_files[0].read_text())["metadata"]
+        assert meta["policy"]["scanner_failures"]
+        assert all(s["status"] == "failed" for s in meta["scanners"])
     
-    def test_cli_exit_code_missing_source_returns_1(self, tmp_project, fake_runner):
+    def test_cli_exit_code_missing_source_returns_3(self, tmp_project, fake_runner):
         """test that cli exits 1 when source directory doesn't exist"""
         nonexistent_source = tmp_project / "nonexistent"
         
@@ -194,9 +198,9 @@ class TestCLIExitCodes:
             "--show_findings", "False",
         ])
         
-        assert exit_code == 1, "Should exit 1 when source directory doesn't exist"
+        assert exit_code == 3, "Should exit 3 (usage) when source directory doesn't exist"
     
-    def test_cli_exit_code_invalid_waiver_returns_1(self, tmp_project, fake_runner):
+    def test_cli_exit_code_invalid_waiver_returns_3(self, tmp_project, fake_runner):
         """test that cli exits 1 when waiver file is invalid"""
         source_dir = tmp_project / "source"
         source_dir.mkdir()
@@ -226,9 +230,9 @@ class TestCLIExitCodes:
             "--project_id", "test-project",
         ])
         
-        assert exit_code == 1, "Should exit 1 when waiver file is invalid"
+        assert exit_code == 3, "Should exit 3 (usage) when waiver file is invalid"
     
-    def test_cli_exit_code_nonexistent_waiver_file_returns_1(self, tmp_project, fake_runner):
+    def test_cli_exit_code_nonexistent_waiver_file_returns_3(self, tmp_project, fake_runner):
         """test that cli exits 1 when specified waiver file doesn't exist"""
         source_dir = tmp_project / "source"
         source_dir.mkdir()
@@ -243,7 +247,7 @@ class TestCLIExitCodes:
             "--project_id", "test-project",
         ])
         
-        assert exit_code == 1, "Should exit 1 when specified waiver file doesn't exist"
+        assert exit_code == 3, "Should exit 3 (usage) when specified waiver file doesn't exist"
     
     def test_cli_exit_code_default_waiver_file_missing_ok(self, tmp_project, fake_runner):
         """test that cli exits 0 when default waiver file is missing (not specified)"""
@@ -362,12 +366,12 @@ class TestCLIExitCodes:
                 return (0, b"{}", b"")
         
         # patch at source module and all places where it's imported
-        import dsoinabox.utils.runner
+        import dsoinabox.reporting.opengrep
+        import dsoinabox.reporting.trufflehog
         import dsoinabox.scanners.base
         import dsoinabox.utils.git
         import dsoinabox.utils.project_id
-        import dsoinabox.reporting.trufflehog
-        import dsoinabox.reporting.opengrep
+        import dsoinabox.utils.runner
         
         monkeypatch.setattr(dsoinabox.utils.runner, "run_cmd", empty_trufflehog_runner)
         monkeypatch.setattr(dsoinabox.scanners.base, "run_cmd", empty_trufflehog_runner)
@@ -395,10 +399,9 @@ class TestCLIExitCodes:
         )
         
         # mock check_tool_available to always return True for tests
-        import dsoinabox.utils.environment
         import dsoinabox.cli
+        import dsoinabox.utils.environment
         monkeypatch.setattr(dsoinabox.utils.environment, "check_tool_available", lambda tool_name: True)
-        monkeypatch.setattr(dsoinabox.cli, "check_tool_available", lambda tool_name: True)
         
         exit_code = main([
             "--source", str(source_dir),
@@ -411,15 +414,15 @@ class TestCLIExitCodes:
         
         assert exit_code == 0, "Should pass when no secrets found even with --fail_on_secrets"
 
-    def test_cli_threshold_filtering_applies_before_report_and_exit_gate(self, tmp_project, fake_runner, monkeypatch):
-        """test opengrep/grype below-threshold findings are filtered before report and exit gate"""
+    def test_cli_failure_threshold_gates_but_does_not_trim_reports(self, tmp_project, fake_runner, monkeypatch):
+        """below-threshold findings never fail the gate; they stay in reports unless --report_threshold hides them"""
         source_dir = tmp_project / "source"
         source_dir.mkdir()
         (source_dir / "test.py").write_text("print('hello')\n")
 
         import dsoinabox.cli
 
-        def opengrep_low_only(_source, _extra_args, _output_dir):
+        def opengrep_low_only(_source, _extra_args, _output_dir, **_kw):
             return {
                 "results": [
                     {
@@ -432,7 +435,7 @@ class TestCLIExitCodes:
                 ]
             }
 
-        def grype_low_only(_source, _extra_args, _output_dir):
+        def grype_low_only(_source, _extra_args, _output_dir, **_kw):
             return {
                 "matches": [
                     {
@@ -452,8 +455,10 @@ class TestCLIExitCodes:
                 "source": {"type": "directory", "target": str(source_dir)},
             }
 
-        monkeypatch.setattr(dsoinabox.cli, "opengrep_run_scan", opengrep_low_only)
-        monkeypatch.setattr(dsoinabox.cli, "grype_run_scan", grype_low_only)
+        import dsoinabox.scanners.sast.opengrep
+        import dsoinabox.scanners.sca.grype
+        monkeypatch.setattr(dsoinabox.scanners.sast.opengrep, "run_scan", opengrep_low_only)
+        monkeypatch.setattr(dsoinabox.scanners.sca.grype, "run_scan", grype_low_only)
 
         exit_code = main([
             "--source", str(source_dir),
@@ -473,5 +478,25 @@ class TestCLIExitCodes:
         with open(json_files[0], "r") as f:
             report = json.load(f)
 
-        assert report["opengrep_data"]["results"] == []
-        assert report["grype_data"]["matches"] == []
+        # the gate ignores them, the report keeps them
+        assert len(report["opengrep_data"]["results"]) == 1
+        assert len(report["grype_data"]["matches"]) == 1
+        assert report["metadata"]["hidden_by_report_threshold"] == 0
+        assert report["metadata"]["policy"]["exit_code"] == 0
+
+        # --report_threshold hides them from the report and says so
+        exit_code = main([
+            "--source", str(source_dir),
+            "--output", "json",
+            "--report_directory", str(tmp_project / "reports2"),
+            "--tools", "opengrep,grype",
+            "--failure_threshold", "high",
+            "--report_threshold", "high",
+            "--show_findings", "False",
+            "--project_id", "test-project",
+        ])
+        assert exit_code == 0
+        trimmed = json.loads(next((tmp_project / "reports2").rglob("dsoinabox_unified_report_*.json")).read_text())
+        assert trimmed["opengrep_data"]["results"] == []
+        assert trimmed["grype_data"]["matches"] == []
+        assert trimmed["metadata"]["hidden_by_report_threshold"] == 2

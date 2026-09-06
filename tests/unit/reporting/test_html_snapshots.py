@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-import pytest
 import os
 import re
 from pathlib import Path
+
+import pytest
 from syrupy import SnapshotAssertion
 
 from dsoinabox.reporting.report_builder import report_builder

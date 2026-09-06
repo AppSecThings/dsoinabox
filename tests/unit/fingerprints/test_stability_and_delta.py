@@ -3,22 +3,23 @@
 from __future__ import annotations
 
 import pytest
-import hashlib
-import hmac
-from hypothesis import given, strategies as st
-from typing import Dict, Any
+from hypothesis import given
+from hypothesis import strategies as st
 
 from dsoinabox.reporting.opengrep import (
-    path_norm_sha,
-    file_sha,
-    context_hash,
-    fingerprint_opengrep,
     _normalize_structural,
+    context_hash,
+    file_sha,
+    path_norm_sha,
+)
+from dsoinabox.reporting.trufflehog import (
+    context_hash as th_context_hash,
+)
+from dsoinabox.reporting.trufflehog import (
+    file_sha as th_file_sha,
 )
 from dsoinabox.reporting.trufflehog import (
     path_norm_sha as th_path_norm_sha,
-    file_sha as th_file_sha,
-    context_hash as th_context_hash,
 )
 
 
