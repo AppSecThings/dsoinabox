@@ -1,19 +1,15 @@
-import os
 import json
+import os
 import textwrap
 from abc import ABC, abstractmethod
 
-from cyclonedx.model.bom import Bom
-from cyclonedx.output import make_outputter
-from cyclonedx.schema import OutputFormat, SchemaVersion
-
-from ..utils.deterministic import normalize_path
-
-from .trufflehog import fingerprint_findings as trufflehog_fingerprint_findings
-from .opengrep import fingerprint_findings as opengrep_fingerprint_findings
-from .grype import fingerprint_findings as grype_fingerprint_findings
-from .checkov import fingerprint_findings as checkov_fingerprint_findings
-from .checkov import _extract_severity
+from ..fingerprints.checkov import _extract_severity
+from ..fingerprints.checkov import fingerprint_findings as checkov_fingerprint_findings
+from ..fingerprints.grype import fingerprint_findings as grype_fingerprint_findings
+from ..fingerprints.opengrep import fingerprint_findings as opengrep_fingerprint_findings
+from ..fingerprints.trufflehog import fingerprint_findings as trufflehog_fingerprint_findings
+from ..waivers.apply import active_findings
+from .fields import relativize_path
 
 #threshold mapping: cleaner than if/elif chain
 #old format for semgrep/opengrep severity thresholds:
@@ -131,7 +127,7 @@ class OpengrepParser(BaseParser):
             through small edits or whitespace changes but loses specificity
             if the finding moves significantly.
             """))
-        for finding in self.data["results"]:
+        for finding in active_findings(self.data["results"]):
     
             print(textwrap.dedent(f"""
                 ######### Finding Details ##########
@@ -150,93 +146,6 @@ class OpengrepParser(BaseParser):
             print()
 
 
-
-class SyftParser:
-    def __init__(self, report_directory: str, report_filename: str):
-        self.report_path = os.path.join(report_directory, report_filename)
-        self.bom = self.load_bom()
-
-    def report_exists(self):
-        return os.path.exists(self.report_path)
-
-    def load_bom(self):
-        if not self.report_exists():
-            return None
-        with open(self.report_path) as f:
-            syft_report = json.load(f)
-            return Bom.from_json(data=syft_report)
-    
-    def load_report(self):
-        if not self.report_exists():
-            return None
-        with open(self.report_path) as f:
-            return json.load(f)
-
-    def print_deps(self): 
-        bom = self.bom
-
-        #index components by bom-ref for easy lookup
-        comp_index = {c.bom_ref.value: c for c in bom.components}
-
-        #index dependencies by parent ref
-        dep_index = {d.ref: d for d in (bom.dependencies or [])}
-
-        #helper to name a ref nicely
-        def name_of(ref: str) -> str:
-            c = comp_index.get(ref)
-            return f"{c.name} {c.version}" if c else ref
-
-        #choose roots:
-        #1) if metadata.component exists, start there;
-        #2) else, components that are parents but never listed as children
-        roots = []
-        meta_ref = getattr(getattr(bom, "metadata", None), "component", None)
-        if meta_ref and getattr(meta_ref, "bom_ref", None):
-            roots = [meta_ref.bom_ref.value]
-
-        if not roots:
-            parents = set(dep_index.keys())
-            children = set()
-            for d in dep_index.values():
-                children.update(d.dependencies)
-            candidate_roots = sorted(parents - children) or sorted(parents)
-            roots = candidate_roots
-
-        #depth-first traversal with ascii tree branches and cycle detection
-        def walk(ref: str, prefix: str = "", is_last: bool = True, seen=None):
-            if seen is None:
-                seen = set()
-
-            branch = "└─ " if is_last else "├─ "
-            line = prefix + branch + name_of(ref)
-            if ref in seen:
-                print(line + "  (cycle)")
-                return
-            print(line)
-
-            seen = seen | {ref}
-            dep = dep_index.get(ref)
-            if not dep or not dep.dependencies:
-                return
-
-            #sort children by display name for stable output
-            children = sorted(dep.dependencies, key=name_of)
-            for i, child_ref in enumerate(children):
-                last = (i == len(children) - 1)
-                child_prefix = prefix + ("   " if is_last else "│  ")
-                walk(child_ref, child_prefix, last, seen)
-
-        #print each root as its own tree
-        for i, r in enumerate(roots):
-            #top-level root line without a leading branch
-            print(name_of(r))
-            dep = dep_index.get(r)
-            if dep and dep.dependencies:
-                children = sorted(dep.dependencies, key=name_of)
-                for j, child in enumerate(children):
-                    walk(child, "", j == len(children) - 1)
-            if i != len(roots) - 1:
-                print()  #blank line between multiple roots
 
 class GrypeParser(BaseParser):
     def __init__(self, report_directory: str, report_filename: str, data: dict = None):
@@ -281,7 +190,7 @@ class GrypeParser(BaseParser):
             - EXACT: Location-bound identifier derived from the package name, version, and namespace
             - CTX: Contextual identifier derived from the package name, version, and namespace
             """))
-        for finding in self.data.get("matches", []):
+        for finding in active_findings(self.data.get("matches", [])):
             print(textwrap.dedent(f"""
                 Severity: {finding.get('vulnerability', {}).get('severity', '')}
                 Package: {finding.get('artifact', {}).get('name', '')}
@@ -318,8 +227,7 @@ class TrufflehogParser(BaseParser):
             repo_root = git_data.get("repository_local_path") or "."
             file_rel = git_data.get("file")
             if file_rel:
-                path = os.path.normpath(os.path.join(repo_root, file_rel)).replace("\\", "/")
-                return normalize_path(path)
+                return relativize_path(file_rel, repo_root)
 
         #--- case 2: filesystem scan ---
         if "Filesystem" in data:
@@ -327,8 +235,7 @@ class TrufflehogParser(BaseParser):
             base = fs_data.get("base_path") or "."
             path = fs_data.get("file") or fs_data.get("file_path") or fs_data.get("path")
             if path:
-                full_path = os.path.normpath(os.path.join(base, path)).replace("\\", "/")
-                return normalize_path(full_path)
+                return relativize_path(path, base)
 
         raise ValueError("Unable to determine file path from Trufflehog finding")
     
@@ -369,7 +276,7 @@ class TrufflehogParser(BaseParser):
             through small edits or whitespace changes but loses specificity
             if the finding moves significantly.
             """))
-        for finding in self.data:
+        for finding in active_findings(self.data):
             file_path = self.get_trufflehog_file_path(finding)
             print(textwrap.dedent(f"""
                 Path: {file_path}:{finding.get('line', '')}
@@ -441,7 +348,7 @@ class CheckovParser(BaseParser):
             normalized relative file path, and a hash of the code snippet.
             This fingerprint remains valid through small edits or whitespace changes.
             """))
-        results = self._get_results_from_sarif()
+        results = active_findings(self._get_results_from_sarif())
         for result in results:
             # Extract information from SARIF result
             rule_id = result.get("ruleId", "unknown")

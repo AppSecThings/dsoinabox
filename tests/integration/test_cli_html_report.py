@@ -1,7 +1,7 @@
 """CLI HTML report generation tests."""
 
+
 import pytest
-from pathlib import Path
 
 from dsoinabox.cli import main
 

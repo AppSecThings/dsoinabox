@@ -1,8 +1,8 @@
 """Unit tests for Grype (SCA) parser/normalizer."""
 
 import json
+
 import pytest
-from pathlib import Path
 
 from dsoinabox.reporting.grype import fingerprint_findings
 
@@ -20,7 +20,7 @@ class TestGrypeParserNormalization:
     
     def test_fingerprint_findings_adds_fingerprints(self, grype_fixture):
         """Test that fingerprint_findings adds fingerprints to all matches."""
-        result = fingerprint_findings(grype_fixture)
+        result = fingerprint_findings(grype_fixture, project_id="test-project")
         
         assert "matches" in result
         assert len(result["matches"]) > 0
@@ -34,7 +34,7 @@ class TestGrypeParserNormalization:
     
     def test_fingerprint_format(self, grype_fixture):
         """Test that fingerprints follow the expected format."""
-        result = fingerprint_findings(grype_fixture)
+        result = fingerprint_findings(grype_fixture, project_id="test-project")
         
         for match in result["matches"]:
             fps = match["fingerprints"]
@@ -50,7 +50,7 @@ class TestGrypeParserNormalization:
     
     def test_normalized_schema_fields(self, grype_fixture):
         """Test that matches have all normalized schema fields."""
-        result = fingerprint_findings(grype_fixture)
+        result = fingerprint_findings(grype_fixture, project_id="test-project")
         
         for match in result["matches"]:
             # Required fields from original schema
@@ -76,14 +76,14 @@ class TestGrypeParserNormalization:
     ])
     def test_required_fields_present(self, grype_fixture, field):
         """Test that required fields are present in matches."""
-        result = fingerprint_findings(grype_fixture)
+        result = fingerprint_findings(grype_fixture, project_id="test-project")
         
         for match in result["matches"]:
             assert field in match
     
     def test_severity_values(self, grype_fixture):
         """Test that severity values are present and valid."""
-        result = fingerprint_findings(grype_fixture)
+        result = fingerprint_findings(grype_fixture, project_id="test-project")
         
         valid_severities = {"LOW", "MEDIUM", "HIGH", "CRITICAL", "NEGLIGIBLE", "UNKNOWN"}
         
@@ -94,7 +94,7 @@ class TestGrypeParserNormalization:
     
     def test_vulnerability_id_format(self, grype_fixture):
         """Test that vulnerability IDs are present and formatted correctly."""
-        result = fingerprint_findings(grype_fixture)
+        result = fingerprint_findings(grype_fixture, project_id="test-project")
         
         for match in result["matches"]:
             vuln_id = match.get("vulnerability", {}).get("id", "")
@@ -119,7 +119,7 @@ class TestGrypeParserEdgeCases:
             }
         }
         
-        result = fingerprint_findings(empty_data)
+        result = fingerprint_findings(empty_data, project_id="test-project")
         
         assert "matches" in result
         assert len(result["matches"]) == 0
@@ -140,7 +140,7 @@ class TestGrypeParserEdgeCases:
         }
         
         # Should handle gracefully
-        result = fingerprint_findings(data_with_missing_vuln)
+        result = fingerprint_findings(data_with_missing_vuln, project_id="test-project")
         
         assert len(result["matches"]) == 1
         match = result["matches"][0]
@@ -162,7 +162,7 @@ class TestGrypeParserEdgeCases:
         }
         
         # Should handle gracefully
-        result = fingerprint_findings(data_with_missing_artifact)
+        result = fingerprint_findings(data_with_missing_artifact, project_id="test-project")
         
         assert len(result["matches"]) == 1
         match = result["matches"][0]
@@ -189,7 +189,7 @@ class TestGrypeParserEdgeCases:
             ]
         }
         
-        result = fingerprint_findings(data_with_unknown_severity)
+        result = fingerprint_findings(data_with_unknown_severity, project_id="test-project")
         
         assert len(result["matches"]) == 1
         match = result["matches"][0]
@@ -217,7 +217,7 @@ class TestGrypeParserEdgeCases:
             ]
         }
         
-        result = fingerprint_findings(data_with_missing_locations)
+        result = fingerprint_findings(data_with_missing_locations, project_id="test-project")
         
         assert len(result["matches"]) == 1
         match = result["matches"][0]
@@ -243,7 +243,7 @@ class TestGrypeParserEdgeCases:
             ]
         }
         
-        result = fingerprint_findings(data_with_empty_locations)
+        result = fingerprint_findings(data_with_empty_locations, project_id="test-project")
         
         assert len(result["matches"]) == 1
         match = result["matches"][0]
@@ -260,7 +260,7 @@ class TestGrypeParserRobustness:
         data_with_extra["unexpected_field"] = "should be ignored"
         data_with_extra["another_unexpected"] = {"nested": "data"}
         
-        result = fingerprint_findings(data_with_extra)
+        result = fingerprint_findings(data_with_extra, project_id="test-project")
         
         # Should still process normally
         assert "matches" in result
@@ -273,7 +273,7 @@ class TestGrypeParserRobustness:
             data_with_extra["matches"][0]["unexpected_field"] = "should be preserved"
             data_with_extra["matches"][0]["nested_unexpected"] = {"key": "value"}
         
-        result = fingerprint_findings(data_with_extra)
+        result = fingerprint_findings(data_with_extra, project_id="test-project")
         
         # Should still process normally
         assert len(result["matches"]) > 0
@@ -292,7 +292,7 @@ class TestGrypeParserRobustness:
             data_with_drift["matches"][0]["vulnerability"]["new_field_v2"] = "new value"
             data_with_drift["matches"][0]["vulnerability"]["metadata_v3"] = {"new": "structure"}
         
-        result = fingerprint_findings(data_with_drift)
+        result = fingerprint_findings(data_with_drift, project_id="test-project")
         
         # Should process successfully
         assert len(result["matches"]) > 0
@@ -310,7 +310,7 @@ class TestGrypeParserRobustness:
             data_with_drift["matches"][0]["artifact"]["new_field_v2"] = "new value"
             data_with_drift["matches"][0]["artifact"]["metadata_v3"] = {"new": "structure"}
         
-        result = fingerprint_findings(data_with_drift)
+        result = fingerprint_findings(data_with_drift, project_id="test-project")
         
         # Should process successfully
         assert len(result["matches"]) > 0
@@ -342,7 +342,7 @@ class TestGrypeParserRobustness:
             ]
         }
         
-        result = fingerprint_findings(data_with_nulls)
+        result = fingerprint_findings(data_with_nulls, project_id="test-project")
         
         # Should handle nulls gracefully
         assert len(result["matches"]) == 1
@@ -371,7 +371,7 @@ class TestGrypeParserRobustness:
             ]
         }
         
-        result = fingerprint_findings(data_without_fix)
+        result = fingerprint_findings(data_without_fix, project_id="test-project")
         
         # Should handle missing fix versions gracefully
         assert len(result["matches"]) == 1

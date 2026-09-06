@@ -1,0 +1,18 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Tracks the scanner versions pinned as ARGs in the Dockerfile. Dependabot (.github/dependabot.yml) keeps covering GitHub Actions.",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["custom.regex"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["^Dockerfile$"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\s+ARG [A-Z_]+_VERSION=(?<currentValue>[^\\s]+)"
+      ]
+    }
+  ],
+  "packageRules": [
+    { "matchDatasources": ["github-releases", "pypi"], "minimumReleaseAge": "7 days" }
+  ]
+}

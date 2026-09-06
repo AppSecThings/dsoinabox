@@ -1,10 +1,9 @@
 """CLI flag tests for failure thresholds, tool filters, and waivers."""
 
 import json
+
 import pytest
-import tempfile
 import yaml
-from pathlib import Path
 
 from dsoinabox.cli import main
 

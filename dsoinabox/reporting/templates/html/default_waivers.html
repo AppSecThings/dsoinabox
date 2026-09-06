@@ -1,0 +1,75 @@
+{# Waivers: what the waiver file did on this run. Rendered by report_builder from waived_by / expired_waivers annotations. #}
+{% if waiver_summary or waived_findings or expired_waiver_findings %}
+<section class="section" id="waivers-section" aria-labelledby="waivers-title">
+  <div class="section__head">
+    <h2 id="waivers-title">Waivers</h2>
+    <div>
+      {% if waiver_summary %}
+        <span class="chip chip--ok">Waived: {{ waiver_summary.waived }}</span>
+        {% for wtype, count in (waiver_summary.waived_by_type or {}).items()|sort %}
+          <span class="chip">{{ wtype | replace('_', ' ') | e }}: {{ count }}</span>
+        {% endfor %}
+        {% if waiver_summary.expired_matches %}<span class="chip chip--bad">Expired waivers matched: {{ waiver_summary.expired_matches }}</span>{% endif %}
+        {% if waiver_summary.expiring_matches %}<span class="chip chip--neutral">Expiring (grace): {{ waiver_summary.expiring_matches }}</span>{% endif %}
+        {% if waiver_summary.unused_count %}<span class="chip">Unused entries: {{ waiver_summary.unused_count }}</span>{% endif %}
+        {% if waiver_summary.deprecated_schema %}<span class="chip chip--bad" title="run dsoinabox waivers migrate">Deprecated schema {{ waiver_summary.schema_version }}</span>{% endif %}
+      {% endif %}
+    </div>
+  </div>
+  <div class="section__body">
+    {% if waiver_summary and waiver_summary.file %}
+      <p class="meta" style="margin:0 0 8px 0;">Waiver file: <strong>{{ waiver_summary.file | e }}</strong> (schema {{ waiver_summary.schema_version }})</p>
+    {% endif %}
+
+    {% if expired_waiver_findings %}
+      <h3 style="margin:8px 0;">Expired waivers ({{ expired_waiver_findings|length }})</h3>
+      <p class="meta" style="margin:0 0 8px 0;">These findings matched a waiver whose <code>expires_at</code> has passed. They count as active findings again. Re-validate and extend the waiver, or fix the finding.</p>
+      <div class="table-wrap" role="region" aria-label="Expired waivers (scrollable)">
+        <table>
+          <thead><tr><th>Tool</th><th>Severity</th><th>Rule / ID</th><th>Path</th><th>Waiver</th><th>Expired</th><th>Reason</th></tr></thead>
+          <tbody>
+          {% for row in expired_waiver_findings %}
+            <tr>
+              <td>{{ row.tool | e }}</td>
+              <td><span class="chip chip--bad">{{ row.severity | e }}</span></td>
+              <td><code>{{ row.rule_id | e }}</code></td>
+              <td>{{ row.path | e }}{% if row.line %}:{{ row.line }}{% endif %}</td>
+              <td><code style="word-break:break-all;">{{ (row.waiver.fingerprint or row.waiver.pattern) | e }}</code><br/><span class="meta">{{ row.waiver.type | e }} · {{ row.waiver.ref | e }}</span></td>
+              <td>{{ row.waiver.expires_at | e }}</td>
+              <td>{{ row.waiver.reason | default('') | e }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+
+    {% if waived_findings %}
+      <details style="margin-top:12px;">
+        <summary style="cursor:pointer;font-weight:600;">Waived findings ({{ waived_findings|length }})</summary>
+        <div class="table-wrap" role="region" aria-label="Waived findings (scrollable)" style="margin-top:8px;">
+          <table>
+            <thead><tr><th>Tool</th><th>Severity</th><th>Rule / ID</th><th>Path</th><th>Type</th><th>Reason</th><th>Expires</th><th>Matched by</th></tr></thead>
+            <tbody>
+            {% for row in waived_findings %}
+              <tr>
+                <td>{{ row.tool | e }}</td>
+                <td>{{ row.severity | e }}</td>
+                <td><code>{{ row.rule_id | e }}</code></td>
+                <td>{{ row.path | e }}{% if row.line %}:{{ row.line }}{% endif %}</td>
+                <td>{{ row.waiver.type | replace('_', ' ') | e }}{% if row.waiver.expiring %} <span class="chip chip--neutral">expiring</span>{% endif %}</td>
+                <td>{{ row.waiver.reason | default('') | e }}{% if row.waiver.ticket %} <span class="meta">({{ row.waiver.ticket | e }})</span>{% endif %}</td>
+                <td>{{ row.waiver.expires_at | default('never') | e }}</td>
+                <td><code style="word-break:break-all;">{{ (row.waiver.fingerprint or row.waiver.pattern) | e }}</code><br/><span class="meta">{{ row.waiver.kind | replace('_', ' ') | e }} · {{ row.waiver.ref | e }}</span></td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    {% elif waiver_summary %}
+      <p class="meta" style="margin:0;">No findings were waived on this run.</p>
+    {% endif %}
+  </div>
+</section>
+{% endif %}

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+
 from ..base import BaseScanner, ScannerError
 
 
@@ -17,6 +18,7 @@ class CheckovScanner(BaseScanner):
         source_path: str,
         extra_tool_args: str | list[str] | tuple[str, ...] | None = "",
         report_directory: str = "reports",
+        timeout: int | None = None,
     ) -> dict:
         """run the checkov cli scan."""
         os.makedirs(report_directory, exist_ok=True)
@@ -41,7 +43,7 @@ class CheckovScanner(BaseScanner):
             checkov_output_dir_abs,
         ]
         args.extend(self._parse_extra_tool_args(extra_tool_args))
-        result = self._run_command(args)
+        result = self._run_command(args, timeout=timeout)
         
         if result.returncode == 0:
             #checkov creates files in the output directory as "results_sarif.sarif"

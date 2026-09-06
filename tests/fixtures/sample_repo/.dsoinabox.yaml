@@ -1,0 +1,4 @@
+tools: all
+failure_threshold: none
+show_findings: true
+output: html,sarif,json

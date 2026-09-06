@@ -21,6 +21,7 @@ dsoinabox:
         appsecthings/dsoinabox:latest \
         -t all \
         -o sarif,html,json \
+        --report_name dsoinabox \
         --failure_threshold high
   artifacts:
     when: always
@@ -31,4 +32,5 @@ dsoinabox:
 
 - Mount repo: `-v "$CI_PROJECT_DIR:/scan_target"`
 - Persist artifacts: `artifacts.paths: reports/`
-- Fail build on threshold: `--failure_threshold high` returns non-zero exit code
+- Gate: `--failure_threshold high` exits 1; a scanner failure exits 2; both are non-zero
+- Newest reports are always under `reports/latest/` (`dsoinabox.sarif`, `dsoinabox.html`, ...)

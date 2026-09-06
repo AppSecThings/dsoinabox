@@ -58,7 +58,7 @@
                 {% set commit = git_data.commit if git_data.commit is defined else '' %}
 
             {# Secret findings are normalized to High in the unified SARIF formatter. #}
-            <tr class="row-expandable" data-report-row data-severity="high" {% if fingerprint_list|length > 0 %}data-fingerprints='{{ fingerprint_list|map(attribute=1)|list|tojson }}'{% endif %}>
+            <tr class="row-expandable" data-baseline="{{ finding.baseline_status | default('') }}" data-report-row data-severity="high" {% if fingerprint_list|length > 0 %}data-fingerprints='{{ fingerprint_list|map(attribute=1)|list|tojson }}'{% endif %}>
                 <td>
                 {{ file_path | e }}
                 </td>

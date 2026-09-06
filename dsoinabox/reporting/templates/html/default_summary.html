@@ -1,0 +1,78 @@
+{# Executive summary: what the run found, what failed, what the policy decided. Rendered from scan_run. #}
+{% if run_summary %}
+<section class="section" id="summary-section" aria-labelledby="summary-title">
+  <div class="section__head">
+    <h2 id="summary-title">Summary</h2>
+    <div>
+      {% if run_summary.policy.exit_code == 0 %}
+        <span class="chip chip--ok">Policy: PASS</span>
+      {% else %}
+        <span class="chip chip--bad">Policy: FAIL (exit {{ run_summary.policy.exit_code }})</span>
+      {% endif %}
+      <span class="chip">dsoinabox {{ run_summary.dsoinabox_version | e }}</span>
+    </div>
+  </div>
+  <div class="section__body">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;">
+      <div>
+        <h3 style="margin:4px 0 8px 0;font-size:14px;">Active findings by severity</h3>
+        <p class="meta" style="margin:0 0 8px 0;">After waivers. {% if run_summary.hidden_by_report_threshold %}{{ run_summary.hidden_by_report_threshold }} finding(s) below report_threshold are not shown in this report.{% endif %}</p>
+        <div>
+          {% set sc = run_summary.severity_counts %}
+          <span class="chip chip--bad">Critical: {{ sc.critical }}</span>
+          <span class="chip chip--bad">High: {{ sc.high }}</span>
+          <span class="chip chip--neutral">Medium: {{ sc.medium }}</span>
+          <span class="chip chip--ok">Low: {{ sc.low }}</span>
+          <span class="chip">Info: {{ sc.info }}</span>
+          {% if sc.unknown %}<span class="chip">Unknown: {{ sc.unknown }}</span>{% endif %}
+        </div>
+        {% if run_summary.baseline %}
+          <p class="meta" style="margin:10px 0 4px 0;">Baseline: <strong>{{ run_summary.baseline.file | e }}</strong></p>
+          <span class="chip {% if run_summary.baseline.new %}chip--bad{% else %}chip--ok{% endif %}">New: {{ run_summary.baseline.new }}</span>
+          <span class="chip">Known: {{ run_summary.baseline.known }}</span>
+        {% endif %}
+      </div>
+      <div>
+        <h3 style="margin:4px 0 8px 0;font-size:14px;">Policy</h3>
+        <ul class="kvs" aria-label="Policy inputs and outcome">
+          <li><span class="key">failure_threshold</span><span class="val">{{ run_summary.policy.failure_threshold or 'none' }}</span></li>
+          <li><span class="key">fail_on_secrets</span><span class="val">{{ run_summary.policy.fail_on_secrets }}</span></li>
+          {% if run_summary.policy.fail_on != 'all' %}<li><span class="key">fail_on</span><span class="val">{{ run_summary.policy.fail_on }}</span></li>{% endif %}
+          {% if run_summary.policy.report_threshold %}<li><span class="key">report_threshold</span><span class="val">{{ run_summary.policy.report_threshold }}</span></li>{% endif %}
+          {% if run_summary.policy.failing_by_tool %}
+            <li><span class="key">over threshold</span><span class="val">{% for t, n in run_summary.policy.failing_by_tool.items() %}{{ t }}={{ n }}{% if not loop.last %}, {% endif %}{% endfor %}</span></li>
+          {% endif %}
+          {% if run_summary.policy.secrets_found %}<li><span class="key">secrets found</span><span class="val">{{ run_summary.policy.secrets_found }}</span></li>{% endif %}
+          {% if run_summary.waivers %}
+            <li><span class="key">waived</span><span class="val">{{ run_summary.waivers.waived }}{% if run_summary.waivers.expired_matches %} · expired matches: {{ run_summary.waivers.expired_matches }}{% endif %}{% if run_summary.waivers.unused_count %} · unused entries: {{ run_summary.waivers.unused_count }}{% endif %}</span></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+    <h3 style="margin:16px 0 8px 0;font-size:14px;">Scanners</h3>
+    <div class="table-wrap" role="region" aria-label="Scanner status (scrollable)">
+      <table>
+        <thead><tr><th>Tool</th><th>Version</th><th>Status</th><th>Duration</th><th>Findings</th><th>Active</th><th>Waived</th></tr></thead>
+        <tbody>
+        {% for s in run_summary.scanners %}
+          <tr>
+            <td>{{ s.tool | e }}</td>
+            <td>{{ s.tool_version | e }}</td>
+            <td>
+              {% if s.status == 'ok' %}<span class="chip chip--ok">ok</span>
+              {% elif s.status == 'skipped' %}<span class="chip chip--neutral">skipped</span>
+              {% else %}<span class="chip chip--bad">FAILED</span>{% endif %}
+              {% if s.error %}<div class="meta" style="margin-top:4px;white-space:pre-wrap;">{{ s.error | e }}</div>{% endif %}
+            </td>
+            <td>{{ '%.1f' | format(s.duration_s) }}s</td>
+            <td>{{ s.findings }}</td>
+            <td>{{ s.active }}</td>
+            <td>{{ s.waived }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endif %}

@@ -83,7 +83,7 @@
                 {% set risk = vuln.risk if vuln.risk is defined else '' %}
                 {% set fingerprints = m.fingerprints if m.fingerprints is defined else {} %}
 
-                <tr>
+                <tr data-baseline="{{ m.baseline_status | default('') }}">
                     <td>{{ art.name | default('') | e }}</td>
                   <td>{{ art.version | default('') | e }}</td>
                   <td>{{ art.type | default('') | e }}</td>

@@ -2,15 +2,9 @@
 
 from __future__ import annotations
 
-import os
-import shutil
-import tempfile
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
-import pytest
-
-from dsoinabox.utils.environment import is_running_in_docker, check_tool_available, get_tool_path
+from dsoinabox.utils.environment import check_tool_available, get_tool_path, is_running_in_docker
 
 
 class TestDockerDetection:

@@ -1,0 +1,11 @@
+schema_version: "1.1"
+meta:
+  schema_url: "https://github.com/AppSecThings/dsoinabox/schema/waivers-1.1.schema.json"
+benchmark_expires_at: "2099-06-30"
+finding_waivers:
+  - fingerprint: "og:1:RULE:test:abc"
+    type: "false_positive"
+    tools: ["sast"]
+    ticket: "SEC-1"
+benchmark:
+  - fingerprint: "gy:1:PKG:CVE-1:abc"

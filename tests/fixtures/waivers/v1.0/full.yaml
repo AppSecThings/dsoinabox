@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../../../dsoinabox/waivers/schema_files/waivers-1.0.schema.json
+schema_version: "1.0"
+
+meta:
+  owner: "Security Engineering"
+  created_by: "alice@example.com"
+  created_at: "2025-11-08T14:20:00Z"
+  notes: "Fixture: every 1.0 field populated"
+  ticket: "SEC-1420"
+
+path_exclusions:
+  - pattern: "third_party/**"
+    reason: "Vendored code"          # keep: comments must survive migration
+    expires_at: "2099-01-31T00:00:00Z"
+  - pattern: "docs/**/*.md"
+    tools: ["trufflehog", "opengrep"]
+
+finding_waivers:
+  - fingerprint: "og:1:CTX:html.security.audit.missing-integrity:0c065896:a9ef9d591c62c38b:R:a3d1696c"
+    type: "false_positive"
+    reason: "Static context proved safe"
+    expires_at: "2099-05-01T00:00:00Z"
+    created_by: "alice@example.com"
+    created_at: "2025-11-01"
+    meta_ticket: "SEC-1420"
+  - fingerprint: "gy:1:PKG:CVE-2024-12345:abcdef0123456789abcdef0123456789abcdef01:R:a3d1696c"
+    type: "risk_acceptance"
+    reason: "Mitigated by network policy; pending upstream patch"
+    expires_at: "2020-02-01T00:00:00Z"   # already expired
+    ticket: "SEC-1501"
+  - fingerprint: "th:1:SECRET:AWS:0123456789abcdef0123456789abcdef01234567:R:a3d1696c"
+    type: "policy_waiver"
+
+benchmark:
+  - fingerprint: "ck:1:RULE:CKV_AWS_20:0000000000000000000000000000000000000000:R:a3d1696c"
+    type: "risk_acceptance"   # overridden to benchmark on load
+    reason: "Baseline"

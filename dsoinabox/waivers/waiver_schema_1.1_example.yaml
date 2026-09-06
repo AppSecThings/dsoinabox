@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=./schema_files/waivers-1.1.schema.json
+# dsoinabox waiver file, schema 1.1. Every section and field is optional unless marked required.
+# Older files (schema 1.0) keep working; run `dsoinabox waivers migrate <file>` to upgrade them.
+schema_version: "1.1"   # quote it; unquoted 1.10 would parse as 1.1
+
+meta:                   # free-form, informational only
+  owner: "Security Engineering"
+  created_by: "alice@example.com"
+  created_at: "2026-09-05T14:20:00Z"
+  last_reviewed_at: "2026-09-05"
+  notes: "Initial waiver set"
+  ticket: "SEC-1420"
+  schema_url: "https://github.com/AppSecThings/dsoinabox/schema/waivers-1.1.schema.json"
+
+# Dates accept ISO 8601 ("2026-01-31T00:00:00Z") or YYYY-MM-DD ("2026-01-31"). Both are UTC.
+
+# Repo-root-relative gitignore-style globs, applied to finding paths at report time.
+# A finding is excluded when every path it points at matches (SCA findings can have several).
+path_exclusions:
+  - pattern: "third_party/**"
+    reason: "Vendored code"
+    expires_at: "2027-01-31"
+  - pattern: "docs/**/*.md"
+    tools: ["trufflehog", "opengrep"]   # tool names or categories: sast, sbom, sca, secret, iac; default all
+
+# Finding-level waivers keyed by fingerprint (exact match against any tier: rule/secret/pkg, exact, ctx).
+finding_waivers:
+  - fingerprint: "og:1:CTX:html.security.audit.missing-integrity:0c065896:a9ef9d591c62c38b:R:a3d1696c"   # required
+    type: "false_positive"        # required: false_positive | risk_acceptance | policy_waiver
+    reason: "Static context proved safe"
+    expires_at: "2027-05-01"      # strongly recommended; expired waivers stop suppressing and are reported
+    created_by: "alice@example.com"
+    created_at: "2026-09-01"
+    ticket: "SEC-1420"            # 1.1: single canonical field (1.0 files may have meta_ticket)
+    tools: ["sast"]               # 1.1: optional scope
+
+  - fingerprint: "gy:1:PKG:CVE-2024-12345:abcdef0123456789abcdef0123456789abcdef01:R:a3d1696c"
+    type: "risk_acceptance"
+    reason: "Mitigated by network policy; pending upstream patch"
+    expires_at: "2027-02-01"
+    ticket: "SEC-1501"
+
+# Baseline entries (also produced by --benchmark and `dsoinabox baseline update`).
+# They suppress like waivers and are reported as type "benchmark".
+benchmark_expires_at: "2027-06-30"   # 1.1: the whole baseline must be revalidated by this date
+benchmark:
+  - fingerprint: "ck:1:RULE:CKV_AWS_20:0000000000000000000000000000000000000000:R:a3d1696c"
+    reason: "Known before adoption"

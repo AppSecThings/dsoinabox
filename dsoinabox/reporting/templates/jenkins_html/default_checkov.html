@@ -210,7 +210,7 @@
                     
                             {% endif %}
 
-                    <tr>
+                    <tr data-baseline="{{ finding.baseline_status | default('') }}">
                     <td>{{ path | e }}</td>
                     <td>{{ line | e }}</td>
                     <td>{{ rid | e }}</td>

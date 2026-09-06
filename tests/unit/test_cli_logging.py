@@ -40,19 +40,10 @@ def test_parser_rejects_verbose_and_quiet_together():
 
 
 def test_tool_versions_exits_before_scan_setup(monkeypatch, capsys):
-    version_functions = (
-        "syft_show_version",
-        "grype_show_version",
-        "trufflehog_show_version",
-        "opengrep_show_version",
-        "checkov_show_version",
-    )
-    for function_name in version_functions:
-        monkeypatch.setattr(
-            cli,
-            function_name,
-            lambda name=function_name: print(name.removesuffix("_show_version")),
-        )
+    import dsoinabox.commands.tools as tools_cmd
+
+    for tool_name, module in tools_cmd.TOOL_MODULES.items():
+        monkeypatch.setattr(module, "show_version", lambda name=tool_name: print(name))
 
     def fail_scan_setup():
         pytest.fail("tool version output should bypass scan setup")
@@ -63,9 +54,9 @@ def test_tool_versions_exits_before_scan_setup(monkeypatch, capsys):
     assert main(["--tool_versions"]) == 0
     assert capsys.readouterr().out.splitlines() == [
         f"dsoinabox {cli.__version__}",
-        "syft",
-        "grype",
         "trufflehog",
         "opengrep",
+        "syft",
+        "grype",
         "checkov",
     ]

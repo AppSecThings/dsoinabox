@@ -1,95 +1,124 @@
 # Waivers
 
-Waivers suppress known findings in a controlled way (false positives, risk acceptance, policy exceptions) without disabling scanners.
+One waiver file, `.dsoinabox_waivers.yaml` in the repository root, covers every scanner: false positives,
+accepted risk, policy exceptions, path exclusions and baselines. Nothing is disabled at the scanner;
+everything is applied when findings are processed, so the raw tool output stays complete.
 
-## Default File Location
+Waiver files are versioned. Any file written for an earlier dsoinabox keeps working; see
+[compatibility.md](compatibility.md) for the policy and [`waiver_schema_1.1_example.yaml`](../../dsoinabox/waivers/waiver_schema_1.1_example.yaml)
+for every field.
 
-By default, `dsoinabox` looks for:
-
-- `.dsoinabox_waivers.yaml` in the source directory
-
-Override options:
-
-- CLI: `--waiver_file <path>`
-- Runtime config: `waiver_file: <path>`
-
-## Schema
-
-Waiver files are YAML with schema version `1.0`.
-
-Common sections:
-
-- `schema_version`
-- `meta`
-- `path_exclusions`
-- `finding_waivers`
-- `benchmark`
-
-Supported `finding_waivers[].type` values:
-
-- `false_positive`
-- `risk_acceptance`
-- `policy_waiver`
-
-## Waiver File Example
+## File layout (schema 1.1)
 
 ```yaml
-schema_version: "1.0"
+schema_version: "1.1"
 
-meta:
+meta:                                    # informational
   owner: "Security Engineering"
-  created_by: "alice@example.com"
-  created_at: "2025-11-08T14:20:00Z"
   notes: "Initial waiver set"
 
-path_exclusions:
+path_exclusions:                         # gitignore-style globs, repo-root relative
   - pattern: "third_party/**"
     reason: "Vendored code"
-    expires_at: "2026-01-31T00:00:00Z"
-    tools: ["trufflehog", "opengrep"]
+    expires_at: "2027-01-31"
+    tools: ["sast", "secret"]            # optional: tool names or categories, default all
 
-finding_waivers:
-  - fingerprint: "og:1:CTX:html.security.audit.missing-integrity.missing-integrity:0c065896:a9ef9d591c62c38b:R:a3d1696c"
-    type: "false_positive"
-    reason: "Static context proved safe"
-    expires_at: "2026-05-01T00:00:00Z"
+finding_waivers:                         # exact fingerprint match, any tier
+  - fingerprint: "og:1:RULE:python.flask.security.xss...:8e50b606...:R:05e2617e"
+    type: "false_positive"               # false_positive | risk_acceptance | policy_waiver
+    reason: "Offline template rendering, no request input"
+    expires_at: "2026-12-31"             # strongly recommended
     created_by: "alice@example.com"
-    created_at: "2025-11-01"
-    meta_ticket: "SEC-1420"
+    created_at: "2026-06-06"
+    ticket: "SEC-1420"
+    tools: ["opengrep"]                  # optional scope
+
+benchmark_expires_at: "2027-06-30"       # optional: the whole baseline must be revalidated by then
+benchmark:                               # baseline entries; suppress like waivers, reported as type "benchmark"
+  - fingerprint: "gy:1:PKG:CVE-2024-12345:abcdef...:R:05e2617e"
 ```
 
-## Benchmark Section
+Dates accept `YYYY-MM-DD` or ISO 8601 (`2026-01-31T00:00:00Z`), both UTC. Quote `schema_version`.
 
-A waiver file can include `benchmark` entries with the same shape as `finding_waivers`.
+## What each mechanism does
 
-Behavior:
+**Finding waivers** match when any of a finding's fingerprints equals the entry's `fingerprint`. Fingerprints
+come in tiers (`RULE`/`SECRET`/`PKG`, `EXACT`, `CTX`); pick the tier that matches how broad the waiver should
+be. The HTML report offers each tier in a dropdown and can export a ready-to-commit YAML snippet, and
+`dsoinabox waivers add` does the same from the terminal.
 
-- Entries in `benchmark` are treated as `type: "benchmark"` during load
-- Benchmark entries participate in waiver matching the same way as finding waivers
+**Path exclusions** use gitignore semantics (`pathspec`), including `**` and negation. A finding is excluded
+when every path it points at matches; SCA findings can reference several manifests. Exclusions are applied
+to results, never to the scanner invocation, so `tools_output/` still contains everything.
 
-Example:
+**Benchmark entries** are a baseline: findings that were known when the tool was adopted. They suppress
+exactly like finding waivers and show up as type `benchmark`. Generate them with `--benchmark` or
+`dsoinabox baseline update`.
 
-```yaml
-schema_version: "1.0"
+**`type`** does not change matching. It is carried into the report, the SARIF suppression justification and
+the run summary (`waived: 3 (false_positive=2, risk_acceptance=1)`) so exceptions can be audited.
 
-finding_waivers:
-  - fingerprint: "og:1:RULE:test:abc"
-    type: "false_positive"
-    reason: "Known false positive"
+**`tools`** scopes an entry to tool names (`trufflehog`, `opengrep`, `syft`, `grype`, `checkov`) or
+categories (`secret`, `sast`, `sbom`, `sca`, `iac`).
 
-benchmark:
-  - fingerprint: "og:1:RULE:baseline:xyz"
-    type: "risk_acceptance"  # overridden to "benchmark"
-    reason: "Baseline finding"
+## Expiry
+
+An entry whose `expires_at` has passed stops suppressing. The finding is reported as active again, the
+Waivers section of the HTML report lists it under "Expired waivers", and the summary counts it
+(`expired=1`). `--waiver_grace_days N` keeps expired entries active for N more days, flagged as expiring, to
+give teams a warning window. `benchmark_expires_at` expires every benchmark entry at once.
+
+## What waived findings look like
+
+Waived findings are never deleted. In JSON and NDJSON they carry `waived: true` and a `waived_by` record
+(kind, type, reason, ticket, expiry, the matching entry). In the HTML report they move out of the per-tool
+tables into a collapsed "Waived findings" list. SARIF leaves them out by default, because GitHub code
+scanning ignores `suppressions` and would open an alert for each one; `--sarif_include_waived` emits them
+as suppressed results for consumers that honour the field. The gate, the console
+table and `--benchmark` consider only active findings.
+
+Entries that matched nothing in a run are counted as unused (`unused=2`) and listed in the JSON report
+under `metadata.waivers.unused`; `waivers prune --report` removes them.
+
+## Maintaining the file
+
+```bash
+dsoinabox waivers validate .dsoinabox_waivers.yaml --strict      # CI / pre-commit: fails on expired, duplicate, malformed entries
+dsoinabox waivers migrate .dsoinabox_waivers.yaml --dry-run      # show what upgrading to the current schema changes
+dsoinabox waivers migrate .dsoinabox_waivers.yaml --in-place     # upgrade, keeping comments; writes a .bak
+dsoinabox waivers prune .dsoinabox_waivers.yaml --in-place --report reports/latest/dsoinabox.json
+dsoinabox waivers add --fingerprint "og:1:RULE:..." --type false_positive --reason "..." --expires 90d --ticket SEC-1
 ```
 
-## Matching and Error Behavior
+All writers use a round-trip YAML parser, so comments, ordering and quoting in a hand-maintained file survive.
 
-- Fingerprints must match findings exactly.
-- Missing default waiver file is non-fatal.
-- Missing custom waiver file (explicitly provided) is an error.
+## Baselines
 
-## References
+A baseline separates "what this change introduced" from "what was already there".
 
-- `examples/.dsoinabox_waivers.yaml`: practical sample
-- `../../dsoinabox/waivers/waiver_schema_1.0_example.yaml`: schema reference
+```bash
+dsoinabox scan -o json --report_name run                    # scan
+dsoinabox baseline update --from reports/latest/run.json    # write benchmark.yaml from the active findings
+dsoinabox scan --baseline benchmark.yaml --fail_on new --failure_threshold high
+```
+
+With `--baseline`, every finding is classified `new` or `known` (summary, JSON `baseline_status`, SARIF
+properties, a NEW badge in the HTML report). `--fail_on new` makes the gate ignore known findings, so a
+legacy codebase can adopt the tool without waiving hundreds of findings while still blocking regressions.
+`baseline update --prune` drops entries that no longer match; `--expires` forces a revalidation date.
+
+## Error behaviour
+
+- A missing default waiver file is fine. A missing `--waiver_file` you asked for is a usage error (exit 3).
+- An invalid file (bad type, malformed date, unknown tool scope, unsupported schema version) is a usage error
+  with a message naming the entry.
+- Unknown keys are reported as warnings and ignored.
+
+## Fingerprint format
+
+`<tool>:<fingerprint_version>:<TIER>:<data...>[:R:<repo8>]`, for example
+`og:1:RULE:python.lang.security.audit.dangerous-system-call:…:R:3895f288`. Tool prefixes are `th`
+(TruffleHog), `og` (OpenGrep), `gy` (Grype), `ck` (Checkov). Fingerprints are HMAC-keyed per project so they
+never expose the underlying secret or code, and the same finding gets the same fingerprint on every machine
+that scans the same repository. See [compatibility.md](compatibility.md) for what happens when an
+algorithm changes.

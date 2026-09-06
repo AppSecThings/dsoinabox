@@ -1,21 +1,15 @@
 # Docs
 
-Detailed guides and references live here so the root README stays concise.
+- `getting-started/`: install, Docker usage, first steps
+- `cli/`: every subcommand and flag, policy gate, exit codes
+- `config/`: `.dsoinabox.yaml` keys, precedence, examples
+- `waivers/`: the unified exception model (waivers, path exclusions, expiry, baselines) and the
+  [compatibility contract](waivers/compatibility.md) for waiver files and fingerprints
+- `output/`: report formats, directory layout, JSON and SARIF details, console summary
+- `ci/`: GitHub Actions, GitLab CI, Jenkins, Azure DevOps snippets
+- `examples/`: copy-paste commands for common workflows
+- `architecture/`: pipeline, normalized model, [adding a scanner](architecture/adding-a-scanner.md)
+- [`upgrading.md`](upgrading.md): what changed in 1.0.0 and how to keep old behaviour
+- `demo/`: README images
 
-## Sections
-
-- `getting-started/`: install, Docker usage, Apple Silicon note, and non-Docker prerequisites
-- `cli/`: command-line options, policy/gating behavior, and exit codes
-- `config/`: `.dsoinabox.yaml` behavior, precedence, and examples
-- `waivers/`: waiver schema, matching behavior, and examples
-- `output/`: output format behavior and generated report layout
-- `ci/`: platform-native CI snippets for GitHub Actions, GitLab CI, Jenkins, and Azure DevOps
-- `examples/`: copy/paste command examples for common workflows
-- `architecture/`: scanner orchestration and project ID behavior
-- `demo/`: screenshot and visual demo assets used by the root README
-
-## Conventions
-
-- Keep root README focused on value proposition + quick start.
-- Put long-form explanations and references in these topic docs.
-- Keep each topic self-contained with a `README.md`.
+Conventions: the root README stays short; long-form material lives here, one self-contained topic per directory.

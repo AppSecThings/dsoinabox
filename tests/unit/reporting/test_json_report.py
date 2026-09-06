@@ -3,10 +3,11 @@
 import json
 import os
 import re
-import pytest
 from pathlib import Path
+from typing import Any, Dict
+
+import pytest
 from syrupy import SnapshotAssertion
-from typing import Dict, Any
 
 from dsoinabox.reporting.report_builder import report_builder
 from dsoinabox.utils.deterministic import normalize_path

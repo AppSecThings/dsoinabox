@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional, Set
 from collections import defaultdict
+from typing import Any, Dict, List, Optional
 
 
 def _map_severity_to_sarif_level(severity: str) -> str:
@@ -223,7 +223,7 @@ def _create_sarif_rule(rule_id: str, tool_name: str, findings: List[Dict[str, An
             if isinstance(message, dict):
                 description = message.get("text", "")
     
-    rule = {
+    rule: Dict[str, Any] = {
         "id": rule_id,
         "name": rule_id
     }
@@ -252,7 +252,7 @@ def _create_sarif_result(
     fingerprints = _extract_fingerprints_from_finding(finding)
     is_waived = _is_waived(finding)
     
-    result = {
+    result: Dict[str, Any] = {
         "ruleId": rule_id,
         "level": level,
         "message": {
@@ -262,7 +262,7 @@ def _create_sarif_result(
     
     #add location if file path is available
     if file_path:
-        location = {
+        location: Dict[str, Any] = {
             "physicalLocation": {
                 "artifactLocation": {
                     "uri": file_path
@@ -271,7 +271,7 @@ def _create_sarif_result(
         }
         
         if start_line and start_line > 0:
-            region = {"startLine": start_line}
+            region: Dict[str, Any] = {"startLine": start_line}
             if end_line and end_line > start_line:
                 region["endLine"] = end_line
             location["physicalLocation"]["region"] = region
@@ -300,7 +300,7 @@ def _create_sarif_result(
         }]
     
     #add properties for additional metadata
-    properties = {}
+    properties: Dict[str, Any] = {}
     if fingerprints:
         properties["fingerprints"] = fingerprints
     if is_waived:
@@ -316,7 +316,7 @@ def _create_sarif_run(
     tool_name: str,
     findings: List[Dict[str, Any]],
     existing_rules: Optional[List[Dict[str, Any]]] = None
-) -> Dict[str, Any]:
+) -> Optional[Dict[str, Any]]:
     """create a sarif run for a specific tool
     
     existing_rules: optional list of existing sarif rules (e.g., from checkov)
@@ -348,7 +348,7 @@ def _create_sarif_run(
         results.append(result)
     
     #create tool driver
-    tool_driver = {
+    tool_driver: Dict[str, Any] = {
         "name": tool_name,
         "version": "1.0.0"  #default version, could be extracted from metadata
     }

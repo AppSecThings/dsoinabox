@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import pytest
 import os
 from datetime import datetime, timezone
 
-from dsoinabox.utils.deterministic import normalize_path, utcnow, set_utcnow_override
+import pytest
+
+from dsoinabox.utils.deterministic import normalize_path, set_utcnow_override, utcnow
 
 
 class TestNormalizePath:

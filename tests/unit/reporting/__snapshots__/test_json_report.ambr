@@ -77,6 +77,7 @@
       ]),
     }),
     'metadata': dict({
+      'dsoinabox_version': '0.0.0-test',
       'git_repo_info': dict({
         'branch': 'main',
         'commit': 'abc123def456',
@@ -84,6 +85,7 @@
         'remote_url': 'https://github.com/example/repo.git',
       }),
       'scan_timestamp': '<TIMESTAMP>',
+      'waivers': None,
     }),
     'opengrep_data': dict({
       'results': list([
@@ -162,6 +164,7 @@
 # name: TestNDJSONReportGeneration.test_ndjson_report_snapshot
   list([
     dict({
+      'dsoinabox_version': '0.0.0-test',
       'git_repo_info': dict({
         'branch': 'main',
         'commit': 'abc123def456',
@@ -170,6 +173,7 @@
       }),
       'scan_timestamp': '<TIMESTAMP>',
       'type': 'metadata',
+      'waivers': None,
     }),
     dict({
       'finding': dict({
