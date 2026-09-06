@@ -101,8 +101,8 @@ finding_waivers:
 ```
 
 Waivers are applied to results, never to the scanners: path exclusions use gitignore globs, expired entries
-stop suppressing and are reported, waived findings stay visible (collapsed in HTML, `suppressions` in
-SARIF), and the run summary counts what each waiver did. `dsoinabox waivers validate|migrate|prune|add`
+stop suppressing and are reported, waived findings stay visible in HTML and JSON (and out of SARIF, so
+GitHub never sees an alert for an accepted risk), and the run summary counts what each waiver did. `dsoinabox waivers validate|migrate|prune|add`
 maintain the file; `--baseline benchmark.yaml --fail_on new` gates only regressions on a legacy codebase.
 See [docs/waivers](docs/waivers/README.md) and the [compatibility contract](docs/waivers/compatibility.md).
 

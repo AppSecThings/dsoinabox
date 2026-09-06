@@ -290,6 +290,8 @@ class ScanOptions(BaseModel):
     """Base file name for reports; default is dsoinabox_unified_report_<timestamp>."""
     baseline: str | None = None
     """Path to a benchmark/baseline file; findings are classified new/known against it."""
+    sarif_include_waived: bool = False
+    """Emit waived findings in SARIF with suppressions (GitHub ignores suppressions, so off by default)."""
     fail_on: Literal["all", "new"] = "all"
     """With a baseline, 'new' gates only findings not in the baseline."""
     base_report_directory: str | None = None

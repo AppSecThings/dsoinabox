@@ -62,6 +62,8 @@ The gate decides the exit code. It never removes findings from reports.
   fine; a missing explicit file is a usage error.
 - `--waiver_grace_days N` (default 0): keep expired waivers active for N extra days, flagged as expiring.
 - `--benchmark`: write `benchmark.yaml` with the fingerprints of all active findings.
+- `--sarif_include_waived`: emit waived findings in SARIF as suppressed results (off by default; GitHub
+  code scanning ignores suppressions).
 
 See [Waivers](../waivers/README.md).
 

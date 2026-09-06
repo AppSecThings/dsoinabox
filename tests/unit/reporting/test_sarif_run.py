@@ -87,13 +87,22 @@ def test_results_rules_locations_and_fingerprints():
     assert og["versionControlProvenance"][0] == {"repositoryUri": "https://github.com/x/y", "revisionId": "abc123", "branch": "main"}
 
 
-def test_waived_finding_is_suppressed_with_justification():
+def test_waived_findings_are_omitted_by_default():
     sarif = convert_run_to_sarif(_run())
+    og = next(r for r in sarif["runs"] if r["tool"]["driver"]["name"] == "OpenGrep")
+    assert len(og["results"]) == 1 and "suppressions" not in og["results"][0]
+    assert og["properties"]["waived_omitted"] == 1
+
+
+def test_include_waived_emits_suppressions_with_justification():
+    jsonschema = pytest.importorskip("jsonschema")
+    sarif = convert_run_to_sarif(_run(), include_waived=True)
+    jsonschema.validate(sarif, json.loads(SCHEMA.read_text()))
     og = next(r for r in sarif["runs"] if r["tool"]["driver"]["name"] == "OpenGrep")
     waived = og["results"][1]
     assert waived["suppressions"] == [{"kind": "external", "status": "accepted", "justification": "sanitized upstream"}]
     assert waived["properties"]["waived"] is True and waived["properties"]["waived_by"]["type"] == "false_positive"
-    assert "suppressions" not in og["results"][0]
+    assert og["properties"]["waived_omitted"] == 0
 
 
 def test_secret_snippet_is_never_emitted():

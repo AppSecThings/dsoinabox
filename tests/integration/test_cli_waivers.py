@@ -74,8 +74,9 @@ def test_waived_findings_are_kept_flagged_and_do_not_gate(tmp_project, source_di
     html = next(latest.glob("dsoinabox_unified_report_*.html")).read_text()
     assert "Waived findings (1)" in html and "risk acceptance" in html
     sarif = json.loads(next(latest.glob("dsoinabox_unified_report_*.sarif")).read_text())
-    suppressed = [r for run in sarif["runs"] for r in run["results"] if r.get("suppressions")]
-    assert len(suppressed) == 1
+    og_run = next(r for r in sarif["runs"] if r["tool"]["driver"]["name"] == "OpenGrep")
+    assert len(og_run["results"]) == total_before - 1, "waived findings are left out of SARIF by default"
+    assert og_run["properties"]["waived_omitted"] == 1
 
 
 @pytest.mark.integration

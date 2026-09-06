@@ -92,6 +92,7 @@ def report_builder(
     waiver_summary: dict | None = None,
     scan_run: Any = None,
     report_name: str | None = None,
+    sarif_include_waived: bool = False,
 ) -> str | None:
     # Generate timestamp if not provided
     if timestamp is None:
@@ -215,7 +216,11 @@ def report_builder(
         }
         
         #convert to sarif format (normalized run when available, legacy raw payloads otherwise)
-        sarif_log = convert_run_to_sarif(scan_run) if scan_run is not None else convert_unified_json_to_sarif(unified_data)
+        sarif_log = (
+            convert_run_to_sarif(scan_run, include_waived=sarif_include_waived)
+            if scan_run is not None
+            else convert_unified_json_to_sarif(unified_data)
+        )
         
         #write sarif file
         with open(output_path, "w") as out_file:
