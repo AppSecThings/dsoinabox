@@ -1,4 +1,4 @@
-schema_version: "1.0"
+schema_version: "1.1"
 
 meta:
   owner: "AppSecThings"
@@ -6,6 +6,10 @@ meta:
   created_at: "2026-06-06"
   last_reviewed_at: "2026-06-06"
   notes: "Waivers for report-generation false positives in dsoinabox Scan"
+
+path_exclusions:
+  - pattern: "tests/fixtures/sample_repo/**"
+    reason: "Deliberately vulnerable fixture for the live smoke test; every finding there is planted"
 
 finding_waivers:
   - fingerprint: "og:1:RULE:python.flask.security.xss.audit.direct-use-of-jinja2.direct-use-of-jinja2:8e50b606eaebd3837513efa9ada34c9893cf88c0:R:05e2617e"
@@ -15,9 +19,19 @@ finding_waivers:
     created_by: "codex"
     created_at: "2026-06-06"
 
-  - fingerprint: "og:1:RULE:python.flask.security.xss.audit.direct-use-of-jinja2.direct-use-of-jinja2:06995503617e79b26cb302c5b4dca1cca23c3714:R:05e2617e"
+  - fingerprint: "og:1:RULE:python.flask.security.xss.audit.direct-use-of-jinja2.direct-use-of-jinja2:3bacf62cef012961fd262fc6261fb651c08a3399:R:05e2617e"
     type: "false_positive"
     reason: "Offline report generation renders project-owned templates with scanner output, not Flask request input"
     expires_at: "2026-12-31T00:00:00Z"
     created_by: "codex"
     created_at: "2026-06-06"
+  - fingerprint: "th:1:SECRET:Postgres:9c16a15f516d14cbe67b4161cd3eeea7141a5edf:R:05e2617e"
+    type: false_positive
+    reason: Synthetic credentials in unit test data (fingerprint golden cases, remote URL normalization)
+    created_by: claude
+    created_at: "2026-09-06T13:52:02Z"
+  - fingerprint: "th:1:SECRET:URI:75d8396218113c38a1d417109a4378fa1a97bf13:R:05e2617e"
+    type: false_positive
+    reason: Synthetic credentials in unit test data (fingerprint golden cases, remote URL normalization)
+    created_by: claude
+    created_at: "2026-09-06T13:52:02Z"

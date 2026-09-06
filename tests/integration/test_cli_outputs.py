@@ -125,3 +125,23 @@ def test_sbom_output_without_syft_is_skipped_with_warning(tmp_project, fake_runn
 def test_invalid_output_format_is_usage_error(tmp_project, fake_runner):
     src = _src(tmp_project)
     assert main(["--source", str(src), "-o", "pdf", "--report_directory", str(tmp_project / "r"), "--project_id", "p"]) == 3
+
+
+def test_docker_mount_copy_keeps_latest_pointer(tmp_project):
+    from dsoinabox.cli import copy_reports_to_mount
+    from dsoinabox.model import ScanRun
+    from datetime import datetime, timezone
+
+    run_dir = tmp_project / "app_reports" / "dsoinabox_2026_09_06T00_00_00"
+    run_dir.mkdir(parents=True)
+    (run_dir / "dsoinabox.sarif").write_text("{}")
+    mount = tmp_project / "mount"
+    mount.mkdir()
+    run = ScanRun(started_at=datetime(2026, 9, 6, tzinfo=timezone.utc), dsoinabox_version="t", timestamp="2026_09_06T00_00_00",
+                  project_id="p", source="/s", report_directory=str(run_dir), report_paths=[str(run_dir / "dsoinabox.sarif")])
+    copied = copy_reports_to_mount(run, str(mount))
+    assert (mount / "dsoinabox_2026_09_06T00_00_00" / "dsoinabox.sarif").exists()
+    assert (mount / "latest" / "dsoinabox.sarif").exists()
+    assert os.path.realpath(mount / "latest") == os.path.realpath(copied)
+    assert run.report_paths == [str(mount / "dsoinabox_2026_09_06T00_00_00" / "dsoinabox.sarif")]
+    assert run.latest_directory == str(mount / "latest")

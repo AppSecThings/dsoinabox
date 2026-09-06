@@ -395,6 +395,24 @@ def main(argv: list[str] | None = None) -> int:
     return scan_main(argv)
 
 
+def copy_reports_to_mount(run, mount: str) -> str:
+    """Copy a run's report directory into ``mount`` and refresh ``mount/latest``. Returns the copied path."""
+    from .run import _update_latest_pointer
+
+    target = os.path.join(mount, os.path.basename(run.report_directory))
+    if os.path.exists(target):
+        shutil.rmtree(target)
+    shutil.copytree(run.report_directory, target)
+    pointer_options = ScanOptions(
+        source=run.source, report_directory=target, timestamp=run.timestamp, base_report_directory=mount
+    )
+    latest = _update_latest_pointer(pointer_options)
+    run.report_paths = [p.replace(run.report_directory, target, 1) for p in run.report_paths]
+    if latest:
+        run.latest_directory = latest
+    return target
+
+
 def _legacy_flag_notice(flag: str, replacement: str) -> None:
     logger.warning(f"{flag} is deprecated and will be removed in a future release; use `dsoinabox {replacement}`")
 
@@ -536,10 +554,11 @@ def scan_main(argv: list[str]) -> int:
         logger.error(str(exc))
         return EXIT_USAGE
 
-    # Docker: copy the timestamped directory to the /reports mount when present
+    # Docker: copy the timestamped directory to the /reports mount when present, and keep
+    # /reports/latest pointing at it so CI can read a stable path on the host side too.
     if in_docker and os.path.exists("/reports"):
         logger.info("Copying reports to /reports mount")
-        shutil.copytree(run.report_directory, os.path.join("/reports", os.path.basename(run.report_directory)))
+        copy_reports_to_mount(run, "/reports")
 
     show = normalize_show_findings(args.show_findings)
     if show != "false":
