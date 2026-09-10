@@ -30,6 +30,7 @@ Then add:
 - a fixture `tests/fixtures/scanner_outputs/<tool>.json` (the `fake_runner` fixture serves it by command name);
 - `TOOL_INFO` in `reporting/sarif_run.py` for the tool name and URL;
 - a planted finding in `tests/fixtures/sample_repo/` for the live smoke test;
-- the Dockerfile install step with a pinned version and a Renovate comment.
+- the Dockerfile install step with a pinned version and an `# upstream:` marker comment naming its release source
+  (e.g. `# upstream: github-releases anchore/syft`).
 
 `tests/unit/scanners/test_registry.py` fails until the partials, fixture and normalizer exist.

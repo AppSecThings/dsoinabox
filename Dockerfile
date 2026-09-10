@@ -1,18 +1,21 @@
 # syntax=docker/dockerfile:1
 
+# Base images are pinned by digest for reproducible builds. The build stages use
+# the same Debian release as the python runtime image.
+
 ############################
 # Stage: tools (fetch CLIs)
 ############################
-FROM debian:bookworm-slim AS tools
+FROM debian:trixie-slim@sha256:d7e12182ce18b85b93007c1dedf31f2d29e01ccf3182cc4017c709b6259bc132 AS tools
 
 # Scanner versions are pinned so two builds of the same commit produce the same
 # image. Override at build time, e.g. --build-arg SYFT_VERSION=v1.52.0.
-# Renovate (renovate.json) proposes bumps for these ARGs.
-# renovate: datasource=github-releases depName=anchore/syft
+# The weekly update routine bumps these ARGs from their `# upstream:` sources.
+# upstream: github-releases anchore/syft
 ARG SYFT_VERSION=v1.51.1
-# renovate: datasource=github-releases depName=anchore/grype
+# upstream: github-releases anchore/grype
 ARG GRYPE_VERSION=v0.118.0
-# renovate: datasource=github-releases depName=opengrep/opengrep
+# upstream: github-releases opengrep/opengrep
 ARG OPENGREP_VERSION=v1.29.0
 ARG TARGETARCH
 
@@ -53,9 +56,9 @@ RUN set -eux; \
 ############################
 # Stage: trufflehog (install script)
 ############################
-FROM debian:bookworm-slim AS trufflehog-install
+FROM debian:trixie-slim@sha256:d7e12182ce18b85b93007c1dedf31f2d29e01ccf3182cc4017c709b6259bc132 AS trufflehog-install
 
-# renovate: datasource=github-releases depName=trufflesecurity/trufflehog
+# upstream: github-releases trufflesecurity/trufflehog
 ARG TRUFFLEHOG_VERSION=v3.97.4
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl tar bash && \
     rm -rf /var/lib/apt/lists/*
@@ -70,9 +73,9 @@ RUN set -eux; \
 ############################
 # Stage: runtime
 ############################
-FROM python:3.12-slim AS runtime
+FROM python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea AS runtime
 
-# renovate: datasource=pypi depName=checkov
+# upstream: pypi checkov
 ARG CHECKOV_VERSION=3.3.16
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
