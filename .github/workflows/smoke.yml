@@ -32,7 +32,11 @@ jobs:
         run: |
           docker run --rm dsoinabox:smoke --version
           docker run --rm dsoinabox:smoke tools versions
-          docker run --rm dsoinabox:smoke ls /app | grep -v -E '^(tests|docs)$' >/dev/null
+          # tests/ and docs/ must stay out of the image (.dockerignore)
+          app_contents="$(docker run --rm --entrypoint ls dsoinabox:smoke /app)"
+          if grep -qxE 'tests|docs' <<<"$app_contents"; then
+            echo "tests/ or docs/ leaked into /app:"; echo "$app_contents"; exit 1
+          fi
 
       - name: Scan the sample repository
         run: |
