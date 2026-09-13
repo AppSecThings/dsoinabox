@@ -24,6 +24,7 @@ MERGEABLE_KEYS = (
     "fail_on_secrets",
     "verify_secrets",
     "grype_db",
+    "opengrep_rules",
     "show_findings",
     "scan_timeout",
     "fail_fast",
@@ -52,6 +53,7 @@ ENV_KEY_MAP = {
     "fail_on_secrets": "DSOINABOX_FAIL_ON_SECRETS",
     "verify_secrets": "DSOINABOX_VERIFY_SECRETS",
     "grype_db": "DSOINABOX_GRYPE_DB",
+    "opengrep_rules": "DSOINABOX_OPENGREP_RULES",
     "tool_timeouts": "DSOINABOX_TOOL_TIMEOUTS",
     "show_findings": "DSOINABOX_SHOW_FINDINGS",
     "waiver_file": "DSOINABOX_WAIVER_FILE",
@@ -86,6 +88,7 @@ failure_threshold: none     # exit 1 when unwaived findings at/above this severi
 fail_on_secrets: false      # false | true | verified (only secrets TruffleHog verified as live)
 # verify_secrets: false     # let TruffleHog verify candidates against providers (network calls)
 # grype_db: auto            # auto | offline (never download the vulnerability DB)
+# opengrep_rules: ./rules   # local rules dir/file; default auto fetches from semgrep.dev
 waiver_file: .dsoinabox_waivers.yaml
 # waiver_grace_days: 0      # keep expired waivers active for N extra days (flagged as expiring)
 # baseline: benchmark.yaml  # classify findings as new/known against this benchmark file
@@ -135,6 +138,16 @@ def normalize_show_findings(value: bool | str | None) -> str:
     return "true" if str_to_bool(text) else "false"
 
 
+def normalize_opengrep_rules(value: Any) -> list[str]:
+    """Normalize OpenGrep rule sources from YAML lists or comma-separated strings."""
+    if value is None:
+        return ["auto"]
+    values = value if isinstance(value, (list, tuple)) else str(value).split(",")
+    rules = [str(item).strip() for item in values if str(item).strip()]
+    rules = ["auto" if item.lower() == "auto" else item for item in rules]
+    return rules or ["auto"]
+
+
 def str_to_bool(v: bool | str | None) -> bool:
     """convert common bool string values."""
     if isinstance(v, bool):
@@ -176,6 +189,8 @@ def read_env_overrides() -> dict[str, Any]:
             overrides[key] = mode if enabled else False
         elif key == "tool_timeouts":
             overrides[key] = {kv.split("=", 1)[0].strip().lower(): int(kv.split("=", 1)[1]) for kv in raw_value.split(",") if "=" in kv}
+        elif key == "opengrep_rules":
+            overrides[key] = normalize_opengrep_rules(raw_value)
         elif key in INT_KEYS:
             overrides[key] = int(raw_value)
         else:
@@ -199,6 +214,9 @@ def _normalize_value(key: str, value: Any) -> Any:
         if not isinstance(value, dict):
             raise ValueError("tool_timeouts must be a mapping of tool name to seconds")
         return {str(k).strip().lower(): int(v) for k, v in value.items()}
+
+    if key == "opengrep_rules":
+        return normalize_opengrep_rules(value)
 
     if key in INT_KEYS:
         return int(value)

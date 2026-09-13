@@ -280,6 +280,8 @@ class ScanOptions(BaseModel):
     """Let TruffleHog verify candidates against their providers (network calls)."""
     grype_db: Literal["auto", "offline"] = "auto"
     """offline disables Grype's DB auto-update and fails clearly when no DB is cached."""
+    opengrep_rules: list[str] = Field(default_factory=lambda: ["auto"])
+    """OpenGrep rule sources; auto retains the default semgrep.dev-backed behavior."""
     waiver_file: str | None = ".dsoinabox_waivers.yaml"
     waiver_file_is_default: bool = True
     waiver_grace_days: int = 0

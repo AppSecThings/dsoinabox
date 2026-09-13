@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import time
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
+from pathlib import Path
 from typing import Any
 
 from . import __version__
@@ -60,6 +61,30 @@ def _load_waivers(options: ScanOptions) -> WaiverSet | None:
         f"{len(ws.benchmark)} benchmark entries, {len(ws.path_exclusions)} path exclusions"
     )
     return ws
+
+
+def _resolve_opengrep_rules(options: ScanOptions, specs: list[ScannerSpec]) -> list[str]:
+    """Validate selected OpenGrep rules and resolve local entries against the scan source."""
+    if not any(spec.name == "opengrep" for spec in specs):
+        return list(options.opengrep_rules)
+
+    entries = list(options.opengrep_rules) or ["auto"]
+    auto_entries = [entry for entry in entries if entry.lower() == "auto"]
+    if auto_entries:
+        if len(entries) != 1:
+            raise UsageError("--opengrep_rules cannot combine 'auto' with local rules paths.")
+        return ["auto"]
+
+    resolved: list[str] = []
+    for entry in entries:
+        path = Path(entry)
+        if not path.is_absolute():
+            path = Path(options.source) / path
+        path = path.resolve()
+        if not path.exists():
+            raise UsageError(f"opengrep_rules path does not exist: {entry} (resolved to {path}).")
+        resolved.append(str(path))
+    return resolved
 
 
 def _tool_versions(specs: list[ScannerSpec]) -> dict[str, str]:
@@ -201,6 +226,8 @@ def run_scan(options: ScanOptions) -> ScanRun:
     if not specs:
         raise UsageError("No tools selected.")
 
+    opengrep_rules = _resolve_opengrep_rules(options, specs)
+
     is_git_repo = is_git(options.source)
     logger.info(f"Source is {'a' if is_git_repo else 'not a'} git repository: {options.source}")
 
@@ -243,6 +270,7 @@ def run_scan(options: ScanOptions) -> ScanRun:
             timeout=options.tool_timeouts.get(spec.name, options.scan_timeout),
             verify_secrets=options.verify_secrets,
             grype_db=options.grype_db,
+            opengrep_rules=opengrep_rules,
         )
 
     results, usage = _schedule(specs, ctx_for, engine, fail_fast=options.fail_fast, max_workers=options.max_workers)
@@ -257,6 +285,9 @@ def run_scan(options: ScanOptions) -> ScanRun:
                     r.tool_version = f"{r.tool_version} (db {status})".strip()
             except Exception as exc:  # best effort only
                 logger.debug(f"grype db status unavailable: {exc}")
+        if r.tool == "opengrep" and opengrep_rules != ["auto"]:
+            rules_label = ",".join(options.opengrep_rules)
+            r.tool_version = f"{r.tool_version} (rules {rules_label})".strip()
 
     run = ScanRun(
         started_at=started_at,
