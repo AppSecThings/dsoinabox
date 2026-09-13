@@ -192,6 +192,35 @@ docker run --rm \
 The image is published for `linux/amd64` and `linux/arm64`; Apple Silicon runs it natively.
 Direct installs (`pip install dsoinabox`) need the five scanners on `PATH`.
 
+### Offline OpenGrep rules
+
+OpenGrep uses `--config auto` by default, which contacts semgrep.dev to download rules. For a
+deny-egress or offline run, mount a local rules file or directory read-only and set the rules source:
+
+```bash
+docker run --rm \
+  -v "$(pwd):/scan_target:ro" \
+  -v "$(pwd)/reports:/reports" \
+  -v "$(pwd)/rules:/rules:ro" \
+  -e DSOINABOX_OPENGREP_RULES=/rules \
+  appsecthings/dsoinabox:latest \
+  -t opengrep \
+  -o html,sarif
+```
+
+The same setting is `--opengrep_rules` (also `--opengrep-rules`) or the `opengrep_rules` config
+key. YAML accepts a string or list; the environment variable and CLI flag accept comma-separated
+entries. Each local entry becomes an OpenGrep `--config`; relative paths resolve against `--source`.
+`auto` cannot be mixed with local paths, and a missing local path is a usage error (exit 3) before
+scanning starts. If `auto` cannot download rules, the run returns scanner-failure exit 2 and a
+message pointing to these local-rule settings.
+
+Custom rules add ` (rules <configured-source>)` to OpenGrep's tool-version metadata in summaries
+and reports. The default `auto` output remains unchanged. OpenGrep uses a self-extracted executable
+cache: hardened container filesystems must retain a cache path that supports execution. This image
+prewarms the cache for `appuser`; custom images, cache mounts, and read-only hardening must preserve
+an executable cache path.
+
 ## Typical CI Gate
 
 ```bash
@@ -217,4 +246,4 @@ docker run --rm \
 - [Getting started](docs/getting-started/README.md), [CLI and exit codes](docs/cli/README.md), [runtime config](docs/config/README.md)
 - [Waivers and baselines](docs/waivers/README.md), [waiver and fingerprint compatibility](docs/waivers/compatibility.md)
 - [Output formats and layout](docs/output/README.md), [CI examples](docs/ci/README.md), [architecture](docs/architecture/README.md)
-- [Upgrading to 1.0](docs/upgrading.md)
+- [Upgrading](docs/upgrading.md)
