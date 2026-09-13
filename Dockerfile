@@ -121,6 +121,11 @@ RUN chown -R appuser:appuser /app
 
 USER appuser
 
+# OpenGrep self-extracts its runtime on first use. Warm the cache as the final
+# runtime user so deny-egress/read-only deployments do not depend on root's cache.
+RUN opengrep --version \
+    || (echo "ERROR: opengrep cache warm-up failed for appuser; its cache filesystem must permit execution"; exit 1)
+
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
   CMD python -m dsoinabox --help >/dev/null || exit 1
 

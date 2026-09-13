@@ -20,6 +20,7 @@ from .utils.config import (
     DEFAULT_CONFIG_FILE,
     MERGEABLE_KEYS,
     load_config_file,
+    normalize_opengrep_rules,
     normalize_show_findings,
     parse_fail_on_secrets,
     read_env_overrides,
@@ -144,6 +145,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--opengrep_args",
         action="store",
         help="extra args to pass to opengrep",
+    )
+
+    parser.add_argument(
+        "--opengrep_rules",
+        action="store",
+        default="auto",
+        help="OpenGrep rule source(s): auto (default) or comma-separated local files/directories relative to --source.",
     )
 
     # syft
@@ -540,6 +548,7 @@ def scan_main(argv: list[str]) -> int:
         fail_on_secrets_mode=fail_on_secrets_mode,
         verify_secrets=bool(args.verify_secrets) or fail_on_secrets_mode == "verified",
         grype_db=args.grype_db or "auto",
+        opengrep_rules=normalize_opengrep_rules(args.opengrep_rules),
         waiver_file=args.waiver_file or None,
         waiver_file_is_default=(args.waiver_file == default_waiver_file),
         waiver_grace_days=int(args.waiver_grace_days or 0),

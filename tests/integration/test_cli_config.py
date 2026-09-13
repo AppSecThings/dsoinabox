@@ -207,6 +207,46 @@ def test_repo_config_nested_tool_args_are_applied(tmp_project, monkeypatch):
 
 
 @pytest.mark.integration
+@pytest.mark.parametrize(
+    ("rules", "expected_version"),
+    [
+        ("auto", "0.0.0-fake"),
+        ("rules/local.yml", "0.0.0-fake (rules rules/local.yml)"),
+    ],
+)
+def test_opengrep_rules_version_metadata_in_json_report(tmp_project, fake_runner, rules, expected_version):
+    source_dir = tmp_project / "source"
+    source_dir.mkdir()
+    (source_dir / "app.py").write_text("print('ok')\n")
+    if rules != "auto":
+        rules_file = source_dir / rules
+        rules_file.parent.mkdir()
+        rules_file.write_text("rules: []\n")
+
+    exit_code = main(
+        [
+            "--source",
+            str(source_dir),
+            "--report_directory",
+            str(tmp_project / "reports"),
+            "--project_id",
+            "test-project",
+            "--tools",
+            "opengrep",
+            "--opengrep_rules",
+            rules,
+            "--output",
+            "json",
+        ]
+    )
+
+    assert exit_code == 0
+    report = _load_unified_json_report(tmp_project / "reports")
+    opengrep_metadata = next(item for item in report["metadata"]["scanners"] if item["tool"] == "opengrep")
+    assert opengrep_metadata["tool_version"] == expected_version
+
+
+@pytest.mark.integration
 def test_init_config_writes_default_file(tmp_project):
     source_dir = tmp_project / "source"
     source_dir.mkdir()

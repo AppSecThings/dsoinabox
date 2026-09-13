@@ -24,6 +24,7 @@ Precedence, lowest to highest: `.dsoinabox.yaml`, `DSOINABOX_*` environment vari
 | `fail_on_secrets` | `DSOINABOX_FAIL_ON_SECRETS` | false, true, verified | |
 | `verify_secrets` | `DSOINABOX_VERIFY_SECRETS` | bool | |
 | `grype_db` | `DSOINABOX_GRYPE_DB` | auto, offline | |
+| `opengrep_rules` | `DSOINABOX_OPENGREP_RULES` | YAML string/list; env comma string | default `auto`; paths relative to source |
 | `show_findings` | `DSOINABOX_SHOW_FINDINGS` | false, true, full | |
 | `waiver_file` | `DSOINABOX_WAIVER_FILE` | path | relative to source |
 | `waiver_grace_days` | `DSOINABOX_WAIVER_GRACE_DAYS` | int | |
@@ -45,6 +46,9 @@ tools: all
 failure_threshold: high
 report_threshold: low        # hide info findings from reports, gate is still high
 fail_on_secrets: verified
+opengrep_rules:
+  - rules/security.yml
+  - rules/team
 waiver_file: .dsoinabox_waivers.yaml
 waiver_grace_days: 7
 baseline: benchmark.yaml
@@ -60,3 +64,19 @@ tool_args:
 ```
 
 `examples/.dsoinabox.yaml` is the starter file `config init` writes.
+
+## Offline OpenGrep rules
+
+The default `opengrep_rules: auto` contacts semgrep.dev. For an offline or deny-egress run, configure
+one or more local rule files/directories. YAML accepts either a string or list; the CLI
+`--opengrep_rules` / `--opengrep-rules` and `DSOINABOX_OPENGREP_RULES` use comma-separated entries.
+Each entry becomes an OpenGrep `--config`, and relative paths resolve against `--source`. Do not combine
+`auto` with local paths. Missing local paths fail before scans with usage exit 3; an `auto` download
+failure is scanner exit 2 with local-rule guidance.
+
+Custom rules append ` (rules <configured-source>)` to OpenGrep tool-version metadata in summaries
+and reports. `auto` has no suffix, preserving existing output. In containers, mount rules read-only,
+for example `-v ./rules:/rules:ro -e DSOINABOX_OPENGREP_RULES=/rules`. OpenGrep also requires its
+self-extracted runtime cache to live on a filesystem that permits execution. The project image
+prewarms the `appuser` cache; custom installs, cache mounts, and read-only hardening must preserve an
+executable cache path.

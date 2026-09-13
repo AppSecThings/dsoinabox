@@ -1,5 +1,23 @@
 # Upgrading
 
+## 1.0.0 to 1.1.0
+
+This is a minor release because local/offline OpenGrep rule sources are an additive CLI, config,
+environment, and report-metadata feature. No configuration migration is required: the default remains
+`auto`, existing OpenGrep commands, exit codes, report bytes, and version metadata remain unchanged.
+
+For an offline or deny-egress environment, provide local rules instead of `auto`:
+
+```yaml
+# .dsoinabox.yaml; relative to --source
+opengrep_rules: ./rules
+```
+
+Equivalent overrides are `DSOINABOX_OPENGREP_RULES=./rules` and
+`--opengrep_rules ./rules` (`--opengrep-rules` is also accepted). Multiple YAML entries may be a list;
+environment and CLI entries are comma-separated. Runs using custom rules append
+` (rules <configured-source>)` to OpenGrep's tool-version metadata in summaries and reports.
+
 ## 0.1.x to 1.0.0
 
 Everything that reads files or exit codes keeps working; a few defaults changed on purpose. Each change lists

@@ -7,6 +7,7 @@ failure_threshold: none     # exit 1 when unwaived findings at/above this severi
 fail_on_secrets: false      # false | true | verified (only secrets TruffleHog verified as live)
 # verify_secrets: false     # let TruffleHog verify candidates against providers (network calls)
 # grype_db: auto            # auto | offline (never download the vulnerability DB)
+# opengrep_rules: ./rules   # local rules dir/file; default auto fetches from semgrep.dev
 waiver_file: .dsoinabox_waivers.yaml
 # waiver_grace_days: 0      # keep expired waivers active for N extra days (flagged as expiring)
 # baseline: benchmark.yaml  # classify findings as new/known against this benchmark file
