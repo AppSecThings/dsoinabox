@@ -75,6 +75,12 @@ See [Waivers](../waivers/README.md).
   so every secret shows as unverified unless enabled.
 - `--grype_db auto|offline`: `offline` never downloads the vulnerability database and fails clearly when
   none is cached.
+- `--opengrep_rules auto|PATH[,PATH...]` (also `--opengrep-rules`; default `auto`): choose OpenGrep
+  rules. `auto` contacts semgrep.dev and cannot be mixed with local paths. Each local file or directory
+  becomes an OpenGrep `--config`; relative paths resolve against `--source`. A missing local path is a
+  usage error (exit 3) before any scanner runs. In deny-egress environments, set local rules with this
+  flag, `DSOINABOX_OPENGREP_RULES`, or the `opengrep_rules` config key. If `auto` cannot download,
+  OpenGrep returns a scanner failure (exit 2) with guidance to configure local rules.
 - `--<tool>_args "..."`: extra arguments appended to a scanner's command line
   (`--trufflehog_args`, `--opengrep_args`, `--syft_args`, `--grype_args`, `--checkov_args`).
   Use the `--flag=value` form when the value itself starts with a dash: `--opengrep_args="--severity ERROR"`.
@@ -85,6 +91,9 @@ See [Waivers](../waivers/README.md).
   git remote URL, then the initial commit hash. It seeds the per-project fingerprint key.
 - `--config_file`: default `.dsoinabox.yaml` under `--source`; env `DSOINABOX_CONFIG`.
 - Precedence: config file, then `DSOINABOX_*` environment variables, then flags. See [Runtime Config](../config/README.md).
+
+With custom rules, OpenGrep's tool version is shown as `<version> (rules <configured-source>)` in
+the summary and reports. The default `auto` metadata and existing output remain unchanged.
 
 ## Logging
 

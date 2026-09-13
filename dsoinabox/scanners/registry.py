@@ -27,6 +27,7 @@ class RunContext:
     timeout: int | None = None
     verify_secrets: bool = False
     grype_db: str = "auto"
+    opengrep_rules: list[str] = field(default_factory=lambda: ["auto"])
 
 
 # --- spec ------------------------------------------------------------------
@@ -76,7 +77,13 @@ def _run_trufflehog(ctx: RunContext) -> Any:
 def _run_opengrep(ctx: RunContext) -> Any:
     from .sast import opengrep
 
-    return opengrep.run_scan(ctx.source, ctx.extra_args, ctx.tools_output_dir, timeout=ctx.timeout)
+    return opengrep.run_scan(
+        ctx.source,
+        ctx.extra_args,
+        ctx.tools_output_dir,
+        timeout=ctx.timeout,
+        opengrep_rules=ctx.opengrep_rules,
+    )
 
 
 def _run_syft(ctx: RunContext) -> Any:
