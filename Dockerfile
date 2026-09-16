@@ -16,7 +16,7 @@ ARG SYFT_VERSION=v1.51.1
 # upstream: github-releases anchore/grype
 ARG GRYPE_VERSION=v0.118.0
 # upstream: github-releases opengrep/opengrep
-ARG OPENGREP_VERSION=v1.29.0
+ARG OPENGREP_VERSION=v1.30.0
 ARG TARGETARCH
 
 RUN apt-get update && \
