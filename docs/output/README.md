@@ -39,7 +39,7 @@ In Docker, when `/reports` is mounted, the timestamped directory is copied there
     "dsoinabox_version": "1.0.0",
     "scan_timestamp": "2026_09_05T14_44_34",
     "project_id": "github.com/example/demo",
-    "tool_versions": {"opengrep": "1.29.0", "grype": "0.118.0 (db built 2026-09-01...)"},
+    "tool_versions": {"opengrep": "1.30.0", "grype": "0.118.0 (db built 2026-09-01...)"},
     "scanners": [{"tool": "opengrep", "status": "ok", "duration_s": 12.3, "findings": 4, "active": 3, "waived": 1}],
     "severity_counts": {"critical": 0, "high": 1, "medium": 2, "low": 0, "info": 0, "unknown": 0},
     "policy": {"failure_threshold": "high", "fail_on_secrets": false, "threshold_exceeded": true, "exit_code": 1},
@@ -79,7 +79,7 @@ The run ends with a summary block (always printed, even with `--quiet`):
 
 ```text
 [dsoinabox] dsoinabox 1.0.0  project=github.com/example/demo  source=/scan_target
-[dsoinabox] tools: trufflehog 3.97.4 (4.1s), opengrep 1.29.0 (22.0s), syft 1.51.1 (3.2s), grype 0.118.0 (6.8s), checkov 3.3.16 (9.4s)
+[dsoinabox] tools: trufflehog 3.97.4 (4.1s), opengrep 1.30.0 (22.0s), syft 1.51.1 (3.2s), grype 0.118.0 (6.8s), checkov 3.3.16 (9.4s)
 [dsoinabox] findings: critical=1 high=2 medium=2 low=1 info=0
 [dsoinabox] waived: 1 (false_positive=1)  expired=1  unused=2  (from /scan_target/.dsoinabox_waivers.yaml)
 [dsoinabox] baseline: new=6 known=1  (from /scan_target/benchmark.yaml, 1 entries)
