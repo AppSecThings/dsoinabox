@@ -63,7 +63,7 @@ Output (the block every run ends with):
 
 ```text
 [dsoinabox] dsoinabox 1.0.0  project=github.com/example/app  source=/scan_target
-[dsoinabox] tools: trufflehog 3.97.4 (0.9s), opengrep 1.30.0 (4.5s), syft 1.51.1 (0.8s), grype 0.118.0 (db built 2026-09-05T06:27:00Z) (33.9s), checkov 3.3.16 (1.7s)
+[dsoinabox] tools: trufflehog 3.97.4 (0.9s), opengrep 1.30.0 (4.5s), syft 1.51.1 (0.8s), grype 0.118.0 (db built 2026-09-05T06:27:00Z) (33.9s), checkov 3.3.17 (1.7s)
 [dsoinabox] findings: critical=3 high=3 medium=5 low=0 info=0
 [dsoinabox] waived: 2 (false_positive=1, risk_acceptance=1)  expired=1  unused=0  (from /scan_target/.dsoinabox_waivers.yaml)
 [dsoinabox] reports:
