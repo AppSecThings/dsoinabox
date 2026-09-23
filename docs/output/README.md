@@ -79,7 +79,7 @@ The run ends with a summary block (always printed, even with `--quiet`):
 
 ```text
 [dsoinabox] dsoinabox 1.0.0  project=github.com/example/demo  source=/scan_target
-[dsoinabox] tools: trufflehog 3.97.4 (4.1s), opengrep 1.30.0 (22.0s), syft 1.51.1 (3.2s), grype 0.118.0 (6.8s), checkov 3.3.16 (9.4s)
+[dsoinabox] tools: trufflehog 3.97.4 (4.1s), opengrep 1.30.0 (22.0s), syft 1.51.1 (3.2s), grype 0.118.0 (6.8s), checkov 3.3.17 (9.4s)
 [dsoinabox] findings: critical=1 high=2 medium=2 low=1 info=0
 [dsoinabox] waived: 1 (false_positive=1)  expired=1  unused=2  (from /scan_target/.dsoinabox_waivers.yaml)
 [dsoinabox] baseline: new=6 known=1  (from /scan_target/benchmark.yaml, 1 entries)
