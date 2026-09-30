@@ -12,9 +12,9 @@ FROM debian:trixie-slim@sha256:a99cfc517144bc59b1978475ec53b46ecabec7e43635402ee
 # image. Override at build time, e.g. --build-arg SYFT_VERSION=v1.52.0.
 # The weekly update routine bumps these ARGs from their `# upstream:` sources.
 # upstream: github-releases anchore/syft
-ARG SYFT_VERSION=v1.51.1
+ARG SYFT_VERSION=v1.52.0
 # upstream: github-releases anchore/grype
-ARG GRYPE_VERSION=v0.118.0
+ARG GRYPE_VERSION=v0.119.0
 # upstream: github-releases opengrep/opengrep
 ARG OPENGREP_VERSION=v1.30.0
 ARG TARGETARCH
@@ -59,7 +59,7 @@ RUN set -eux; \
 FROM debian:trixie-slim@sha256:a99cfc517144bc59b1978475ec53b46ecabec7e43635402ee5b77cc54cd1b20a AS trufflehog-install
 
 # upstream: github-releases trufflesecurity/trufflehog
-ARG TRUFFLEHOG_VERSION=v3.97.4
+ARG TRUFFLEHOG_VERSION=v3.97.6
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl tar bash && \
     rm -rf /var/lib/apt/lists/*
 
@@ -76,7 +76,7 @@ RUN set -eux; \
 FROM python:3.12-slim@sha256:2f17fc044b579bab302c2e8054d3a686e2cb9a83de48e70534b94cd8ebbe06a9 AS runtime
 
 # upstream: pypi checkov
-ARG CHECKOV_VERSION=3.3.17
+ARG CHECKOV_VERSION=3.3.19
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
