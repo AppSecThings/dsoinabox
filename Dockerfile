@@ -6,7 +6,7 @@
 ############################
 # Stage: tools (fetch CLIs)
 ############################
-FROM debian:trixie-slim@sha256:a99cfc517144bc59b1978475ec53b46ecabec7e43635402ee5b77cc54cd1b20a AS tools
+FROM debian:trixie-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f AS tools
 
 # Scanner versions are pinned so two builds of the same commit produce the same
 # image. Override at build time, e.g. --build-arg SYFT_VERSION=v1.52.0.
@@ -56,7 +56,7 @@ RUN set -eux; \
 ############################
 # Stage: trufflehog (install script)
 ############################
-FROM debian:trixie-slim@sha256:a99cfc517144bc59b1978475ec53b46ecabec7e43635402ee5b77cc54cd1b20a AS trufflehog-install
+FROM debian:trixie-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f AS trufflehog-install
 
 # upstream: github-releases trufflesecurity/trufflehog
 ARG TRUFFLEHOG_VERSION=v3.97.9
@@ -73,7 +73,7 @@ RUN set -eux; \
 ############################
 # Stage: runtime
 ############################
-FROM python:3.12-slim@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f AS runtime
+FROM python:3.12-slim@sha256:05cda9777409a9c3ffddd94a4c476b79f0769a0b4857f0c7ed9226b6800b0d6f AS runtime
 
 # upstream: pypi checkov
 ARG CHECKOV_VERSION=3.3.21
