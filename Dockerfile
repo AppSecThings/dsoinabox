@@ -9,12 +9,12 @@
 FROM debian:trixie-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f AS tools
 
 # Scanner versions are pinned so two builds of the same commit produce the same
-# image. Override at build time, e.g. --build-arg SYFT_VERSION=v1.52.0.
+# image. Override at build time, e.g. --build-arg SYFT_VERSION=v1.54.1.
 # The weekly update routine bumps these ARGs from their `# upstream:` sources.
 # upstream: github-releases anchore/syft
-ARG SYFT_VERSION=v1.52.0
+ARG SYFT_VERSION=v1.54.1
 # upstream: github-releases anchore/grype
-ARG GRYPE_VERSION=v0.119.0
+ARG GRYPE_VERSION=v0.120.1
 # upstream: github-releases opengrep/opengrep
 ARG OPENGREP_VERSION=v1.30.1
 ARG TARGETARCH
@@ -59,7 +59,7 @@ RUN set -eux; \
 FROM debian:trixie-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f AS trufflehog-install
 
 # upstream: github-releases trufflesecurity/trufflehog
-ARG TRUFFLEHOG_VERSION=v3.97.9
+ARG TRUFFLEHOG_VERSION=v3.99.0
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl tar bash && \
     rm -rf /var/lib/apt/lists/*
 
@@ -76,7 +76,7 @@ RUN set -eux; \
 FROM python:3.12-slim@sha256:05cda9777409a9c3ffddd94a4c476b79f0769a0b4857f0c7ed9226b6800b0d6f AS runtime
 
 # upstream: pypi checkov
-ARG CHECKOV_VERSION=3.3.21
+ARG CHECKOV_VERSION=3.3.26
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
