@@ -81,6 +81,14 @@ volume there (`-v dsoinabox-db:/var/cache/dsoinabox`) to keep the DB; a bind-mou
 be writable by uid 1001, otherwise Grype fails (exit 2) with a message saying so. With a populated
 cache, `grype_db: offline` scans without network access.
 
+An explicit `GRYPE_DB_CACHE_DIR` in the environment wins over `db_cache` (dsoinabox logs that it is
+used); the check frequency still applies. In the image, Grype's default path
+`/home/appuser/.cache/grype/db` links to `/var/cache/dsoinabox/grype`, so DB mounts made for earlier
+images keep working. `DSOINABOX_DB_CACHE=` (empty) turns the image's default cache off.
+
+Grype trusts a DB it finds in the cache, so the cache directory must be writable only by the identity
+that runs scans.
+
 ## Offline OpenGrep rules
 
 The default `opengrep_rules: auto` contacts semgrep.dev. For an offline or deny-egress run, configure

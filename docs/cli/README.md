@@ -79,7 +79,9 @@ See [Waivers](../waivers/README.md).
   Grype's DB lives in `PATH/grype` and is reused without network access until Grype last checked for
   an update 24 hours ago. Relative paths resolve from the current working directory. The image sets it
   to `/var/cache/dsoinabox`; mount a named volume there to persist it. An unwritable directory is a
-  Grype failure (exit 2) that suggests a named volume or a host directory writable by uid 1001.
+  Grype failure (exit 2) that suggests a named volume or a host directory writable by uid 1001. The
+  directory must be writable only by the identity that runs scans, because Grype trusts a DB it finds
+  there. An explicit `GRYPE_DB_CACHE_DIR` in the environment wins over `--db_cache`.
 - `--always_update` (also `--always-update`; env `DSOINABOX_ALWAYS_UPDATE`): make Grype check for a
   newer DB on every run; it downloads only when one exists. Combined with `--grype_db offline` it is a
   usage error (exit 3).

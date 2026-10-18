@@ -242,6 +242,8 @@ then downloads only when a newer DB exists. Add `--always_update` to check on ev
 image set `--db_cache PATH` (also `--db-cache`, `DSOINABOX_DB_CACHE`, `db_cache` key); Grype's DB lives
 in `PATH/grype`. A host directory mounted instead of a named volume must be writable by uid 1001 (the
 image's `appuser`). With a populated cache, `--grype_db offline` scans without network access.
+Grype trusts a DB it finds in the cache, so the cache directory must be writable only by the identity
+that runs scans. An explicit `GRYPE_DB_CACHE_DIR` still wins; see [runtime config](docs/config/README.md#grype-db-cache).
 
 ## Typical CI Gate
 
