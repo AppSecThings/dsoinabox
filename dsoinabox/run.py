@@ -219,6 +219,9 @@ def run_scan(options: ScanOptions) -> ScanRun:
         if fmt not in VALID_OUTPUTS:
             raise UsageError(f"Invalid output format: {fmt}. Supported formats: {', '.join(VALID_OUTPUTS)}")
 
+    if options.always_update and options.grype_db == "offline":
+        raise UsageError("--always_update cannot be combined with --grype_db offline (offline never checks for updates).")
+
     try:
         specs = select_tools(options.tools)
     except ValueError as exc:
@@ -270,6 +273,8 @@ def run_scan(options: ScanOptions) -> ScanRun:
             timeout=options.tool_timeouts.get(spec.name, options.scan_timeout),
             verify_secrets=options.verify_secrets,
             grype_db=options.grype_db,
+            db_cache=options.db_cache,
+            always_update=options.always_update,
             opengrep_rules=opengrep_rules,
         )
 
@@ -280,7 +285,7 @@ def run_scan(options: ScanOptions) -> ScanRun:
             try:
                 from .scanners.sca import grype as grype_mod
 
-                status = grype_mod.db_status()
+                status = grype_mod.db_status(db_cache=options.db_cache, always_update=options.always_update)
                 if status:
                     r.tool_version = f"{r.tool_version} (db {status})".strip()
             except Exception as exc:  # best effort only

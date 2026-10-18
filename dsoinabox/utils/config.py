@@ -24,6 +24,8 @@ MERGEABLE_KEYS = (
     "fail_on_secrets",
     "verify_secrets",
     "grype_db",
+    "db_cache",
+    "always_update",
     "opengrep_rules",
     "show_findings",
     "scan_timeout",
@@ -53,6 +55,8 @@ ENV_KEY_MAP = {
     "fail_on_secrets": "DSOINABOX_FAIL_ON_SECRETS",
     "verify_secrets": "DSOINABOX_VERIFY_SECRETS",
     "grype_db": "DSOINABOX_GRYPE_DB",
+    "db_cache": "DSOINABOX_DB_CACHE",
+    "always_update": "DSOINABOX_ALWAYS_UPDATE",
     "opengrep_rules": "DSOINABOX_OPENGREP_RULES",
     "tool_timeouts": "DSOINABOX_TOOL_TIMEOUTS",
     "show_findings": "DSOINABOX_SHOW_FINDINGS",
@@ -73,7 +77,7 @@ ENV_KEY_MAP = {
     "config_file": CONFIG_ENV_VAR,
 }
 
-BOOL_KEYS = {"tool_output", "benchmark", "fail_fast", "verify_secrets", "sarif_include_waived"}
+BOOL_KEYS = {"tool_output", "benchmark", "fail_fast", "verify_secrets", "sarif_include_waived", "always_update"}
 INT_KEYS = {"waiver_grace_days", "scan_timeout"}
 SHOW_FINDINGS_CHOICES = ("false", "true", "full")
 STRING_LIST_KEYS = {"tools", "output"}
@@ -88,6 +92,8 @@ failure_threshold: none     # exit 1 when unwaived findings at/above this severi
 fail_on_secrets: false      # false | true | verified (only secrets TruffleHog verified as live)
 # verify_secrets: false     # let TruffleHog verify candidates against providers (network calls)
 # grype_db: auto            # auto | offline (never download the vulnerability DB)
+# db_cache: ~/.cache/dsoinabox   # keep the Grype DB between runs; rechecked at most every 24h
+# always_update: false      # check for a newer Grype DB on every run (not with grype_db: offline)
 # opengrep_rules: ./rules   # local rules dir/file; default auto fetches from semgrep.dev
 waiver_file: .dsoinabox_waivers.yaml
 # waiver_grace_days: 0      # keep expired waivers active for N extra days (flagged as expiring)

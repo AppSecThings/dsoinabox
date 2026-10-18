@@ -13,6 +13,7 @@ pipeline {
           docker run --rm \
             -v "$WORKSPACE:/scan_target" \
             -v "$WORKSPACE/reports:/reports" \
+            -v dsoinabox-db:/var/cache/dsoinabox \
             appsecthings/dsoinabox:latest \
             -t all \
             -o jenkins_html,sarif,json \
@@ -33,5 +34,8 @@ pipeline {
 
 - Mount repo: `-v "$WORKSPACE:/scan_target"`
 - Persist artifacts: `archiveArtifacts artifacts: 'reports/**'`
+- Grype DB cache: the named volume `dsoinabox-db` keeps the vulnerability DB on the agent's Docker host,
+  reused without network access for 24 hours after Grype's last update check. On agents that start
+  from a clean Docker host each build it simply behaves like no cache.
 - Gate: `--failure_threshold high` exits 1; a scanner failure exits 2; both are non-zero
 - Newest reports are always under `reports/latest/` (`dsoinabox.sarif`, `dsoinabox.html`, ...)

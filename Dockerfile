@@ -119,6 +119,12 @@ RUN trufflehog --version || (echo "trufflehog not runnable"; exit 1) \
 
 RUN chown -R appuser:appuser /app
 
+# Default tool-DB cache (Grype keeps its DB in <cache>/grype). Without a mount it
+# lives and dies with the container, as before; mount a named volume here
+# (-v dsoinabox-db:/var/cache/dsoinabox) to reuse the DB across runs.
+RUN mkdir -p /var/cache/dsoinabox && chown appuser:appuser /var/cache/dsoinabox
+ENV DSOINABOX_DB_CACHE=/var/cache/dsoinabox
+
 USER appuser
 
 # OpenGrep self-extracts its runtime on first use. Warm the cache as the final
