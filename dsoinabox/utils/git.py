@@ -56,13 +56,26 @@ def run_git_cmd(
     )
 
 
-def is_git_work_tree(path: str) -> bool:
-    """True when ``path`` is inside a git working tree (repo root, subdirectory or linked worktree)."""
+# a repository's own config must not run code: core.fsmonitor names a command git would execute
+NO_FSMONITOR = ["-c", "core.fsmonitor=false"]
+
+
+def git_work_tree_problem(path: str) -> str | None:
+    """None when ``path`` is inside a git working tree (repo root, subdirectory or linked worktree),
+    otherwise git's reason (e.g. not a repository, dubious ownership)."""
     try:
-        returncode, stdout, _stderr = run_git_cmd(["rev-parse", "--is-inside-work-tree"], cwd=path, repo_path=path)
-    except OSError:
-        return False
-    return returncode == 0 and str(stdout).strip() == "true"
+        returncode, stdout, stderr = run_git_cmd([*NO_FSMONITOR, "rev-parse", "--is-inside-work-tree"], cwd=path,
+                                                 repo_path=path)
+    except OSError as exc:
+        return str(exc)
+    if returncode == 0 and str(stdout).strip() == "true":
+        return None
+    return str(stderr).strip() or "not inside a git working tree"
+
+
+def is_git_work_tree(path: str) -> bool:
+    """True when ``path`` is inside a git working tree."""
+    return git_work_tree_problem(path) is None
 
 
 class GitRepoInfo:

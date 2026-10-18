@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import shutil
+import signal
 import subprocess
 import tempfile
 
@@ -291,3 +292,60 @@ def test_trufflehog_filesystem_mode_uses_the_copy(dirty_repo, scanners, isolated
     assert code == 0
     [(tool, arg, cwd)] = scanners
     assert tool == "trufflehog" and cwd is not None and arg.startswith(str(isolated_tmp)) and arg.endswith(source)
+
+
+@pytest.mark.integration
+def test_untracked_subdirectory_source_is_a_usage_error(dirty_repo, scanners, isolated_tmp, tmp_path):
+    # venv/ is untracked: a normal scan would report its findings, a tracked-only scan must not pass silently
+    code = main(["--source", str(dirty_repo / "venv"), "--report_directory", str(tmp_path / "reports"),
+                 "--project_id", "p", "--git_tracked_only"])
+    assert code == EXIT_USAGE
+    assert scanners == []
+    assert os.listdir(isolated_tmp) == []
+
+
+@pytest.mark.integration
+def test_git_reason_is_shown_when_source_is_rejected(scanners, tmp_path, monkeypatch):
+    import dsoinabox.run as run_module
+
+    monkeypatch.setattr(run_module, "git_work_tree_problem",
+                        lambda path: "fatal: detected dubious ownership in repository at '/scan_target'")
+    options = run_module.ScanOptions(source=str(tmp_path), report_directory=str(tmp_path / "r"), timestamp="t",
+                                     project_id="p", git_tracked_only=True)
+    with pytest.raises(run_module.UsageError, match="dubious ownership"):
+        run_module.run_scan(options)
+    assert scanners == []
+
+
+@pytest.mark.integration
+def test_sigterm_during_tracked_scan_removes_the_copy(dirty_repo, scanners, isolated_tmp, tmp_path, monkeypatch):
+    import dsoinabox.scanners.sast.opengrep as opengrep
+
+    before = signal.getsignal(signal.SIGTERM)
+    seen = []
+
+    def terminated(*a, **k):
+        seen.append(signal.getsignal(signal.SIGTERM))
+        os.kill(os.getpid(), signal.SIGTERM)
+        return {"results": []}
+
+    monkeypatch.setattr(opengrep, "run_scan", terminated)
+    with pytest.raises(SystemExit):
+        main(["--source", str(dirty_repo), "-t", "opengrep", "-o", "json", "--report_directory",
+              str(tmp_path / "reports"), "--project_id", "p", "--git_tracked_only"])
+    assert seen and seen[0] is not before
+    assert os.listdir(isolated_tmp) == []
+    assert signal.getsignal(signal.SIGTERM) is before
+
+
+@pytest.mark.integration
+def test_default_scan_leaves_sigterm_handler_alone(dirty_repo, scanners, tmp_path, monkeypatch):
+    import dsoinabox.scanners.sast.opengrep as opengrep
+
+    before = signal.getsignal(signal.SIGTERM)
+    seen = []
+    monkeypatch.setattr(opengrep, "run_scan", lambda *a, **k: seen.append(signal.getsignal(signal.SIGTERM)) or
+                        {"results": []})
+    code, _report_dir, _data = _scan(str(dirty_repo), tmp_path / "reports", "-t", "opengrep")
+    assert code == 0
+    assert seen == [before]

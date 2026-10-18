@@ -11,6 +11,7 @@ in a normal scan; absolute paths only gain the temp-root prefix, which
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import logging
 import os
@@ -20,11 +21,17 @@ import tempfile
 import time
 from typing import Any
 
-from .git import run_git_cmd
+from .git import NO_FSMONITOR, run_git_cmd
 
 logger = logging.getLogger(__name__)
 
 GITLINK_MODE = b"160000"
+# never follow a final-component symlink; never block opening a FIFO swapped in after lstat
+OPEN_FLAGS = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+
+
+class NothingTrackedError(Exception):
+    """No tracked file exists under the source, so a tracked-only scan would scan nothing."""
 
 
 def _mirror(root: str, path: str) -> str:
@@ -34,8 +41,8 @@ def _mirror(root: str, path: str) -> str:
 
 def tracked_paths(source: str) -> list[str]:
     """Paths git tracks under ``source``, relative to it. Submodules (gitlinks) are left out."""
-    _rc, stdout, _err = run_git_cmd(["ls-files", "-z", "--stage"], cwd=source, repo_path=source, text=False,
-                                    check=True)
+    _rc, stdout, _err = run_git_cmd([*NO_FSMONITOR, "ls-files", "-z", "--stage"], cwd=source, repo_path=source,
+                                    text=False, check=True)
     listing = stdout if isinstance(stdout, bytes) else os.fsencode(stdout)
     paths: dict[str, None] = {}  # unmerged files appear once per stage
     for entry in listing.split(b"\0"):
@@ -52,6 +59,10 @@ def copy_tracked_files(source: str, dest: str) -> int:
     Tracked files deleted from the working tree are skipped. Symlinks are
     recreated as symlinks, never followed, and nothing is read through a
     directory that resolves outside ``source``. File modes are preserved.
+
+    A directory swapped for a symlink between the check and the read can still
+    redirect a read; that needs local write access during the scan and is no
+    worse than a normal scan, whose scanners follow symlinks anyway.
     """
     real_source = os.path.realpath(source)
     inside: dict[str, bool] = {}
@@ -74,8 +85,8 @@ def copy_tracked_files(source: str, dest: str) -> int:
         if stat.S_ISLNK(st.st_mode):
             os.symlink(os.readlink(src), dst)
         elif stat.S_ISREG(st.st_mode):
-            shutil.copyfile(src, dst, follow_symlinks=False)
-            shutil.copymode(src, dst, follow_symlinks=False)
+            if not _copy_regular(src, dst, st):
+                continue
         else:
             continue
         try:  # keep ownership where allowed; Syft records it
@@ -84,6 +95,26 @@ def copy_tracked_files(source: str, dest: str) -> int:
             pass
         copied += 1
     return copied
+
+
+def _copy_regular(src: str, dst: str, st: os.stat_result) -> bool:
+    """Copy ``src`` if it is still the regular file ``st`` describes. False when it was swapped."""
+    try:
+        fd = os.open(src, OPEN_FLAGS)
+    except OSError as exc:
+        if exc.errno in (errno.ELOOP, errno.ENOENT, errno.ENOTDIR, errno.ENXIO):
+            logger.debug(f"git_tracked_only: skipping {src} (changed while copying)")
+            return False
+        raise
+    with os.fdopen(fd, "rb") as reader:
+        opened = os.fstat(fd)
+        if not stat.S_ISREG(opened.st_mode) or (opened.st_dev, opened.st_ino) != (st.st_dev, st.st_ino):
+            logger.debug(f"git_tracked_only: skipping {src} (changed while copying)")
+            return False
+        with open(dst, "xb") as writer:
+            shutil.copyfileobj(reader, writer)
+        os.chmod(dst, stat.S_IMODE(opened.st_mode))
+    return True
 
 
 class TrackedCopy:
@@ -102,6 +133,11 @@ class TrackedCopy:
             copy_root = _mirror(root, os.path.abspath(source))
             os.makedirs(copy_root)
             count = copy_tracked_files(source, copy_root)
+            if count == 0:
+                raise NothingTrackedError(
+                    f"nothing under {source} is tracked by git (is it untracked or ignored in its parent "
+                    "repository?), so --git_tracked_only would scan nothing."
+                )
             cwd = _mirror(root, os.getcwd())
             os.makedirs(cwd, exist_ok=True)
         except BaseException:

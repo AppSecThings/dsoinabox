@@ -11,8 +11,9 @@ import tempfile
 
 import pytest
 
-from dsoinabox.utils.git import is_git_work_tree
-from dsoinabox.utils.tracked import TrackedCopy, copy_tracked_files, tracked_paths
+from dsoinabox.utils import tracked as tracked_mod
+from dsoinabox.utils.git import git_work_tree_problem, is_git_work_tree
+from dsoinabox.utils.tracked import NothingTrackedError, TrackedCopy, copy_tracked_files, tracked_paths
 
 
 def git(repo, *args):
@@ -198,3 +199,82 @@ def test_is_git_work_tree(repo, tmp_path):
     assert is_git_work_tree(str(repo / "src"))
     assert not is_git_work_tree(str(plain))
     assert not is_git_work_tree(str(tmp_path / "missing"))
+
+
+def test_untracked_subdirectory_has_nothing_to_copy(repo, tmp_path):
+    (repo / "proj").mkdir()
+    (repo / "proj" / "app.py").write_text("import os\nos.system(x)\n")
+    with pytest.raises(NothingTrackedError, match="nothing under .* is tracked"):
+        TrackedCopy.create(str(repo / "proj"))
+
+
+def test_repository_fsmonitor_command_is_not_run(repo, tmp_path):
+    marker = tmp_path / "fsmonitor-ran"
+    git(repo, "config", "core.fsmonitor", f"touch {marker}; echo")
+    subprocess.run(["git", "status"], cwd=repo, capture_output=True)
+    assert marker.exists(), "precondition: plain git runs the configured fsmonitor command"
+    marker.unlink()
+    assert is_git_work_tree(str(repo))
+    assert "app.py" in tracked_paths(str(repo))
+    assert not marker.exists()
+
+
+def test_work_tree_problem_reports_gits_reason(tmp_path, monkeypatch):
+    import dsoinabox.utils.git as git_utils
+
+    monkeypatch.setattr(git_utils, "run_cmd", lambda cmd, **kw: (128, "", "fatal: detected dubious ownership in "
+                                                                           "repository at '/scan_target'\n"))
+    assert "dubious ownership" in git_work_tree_problem(str(tmp_path))
+
+
+def _swapped_lstat(path_to_fake, mode):
+    real_lstat = os.lstat
+
+    def fake(path, *a, **k):
+        st = real_lstat(path, *a, **k)
+        if str(path) == str(path_to_fake):
+            return os.stat_result((mode | stat.S_IMODE(st.st_mode),) + tuple(st)[1:])
+        return st
+
+    return fake
+
+
+def test_fifo_swapped_in_after_lstat_is_skipped_without_blocking(repo, tmp_path, monkeypatch):
+    target = repo / "app.py"
+    target.unlink()
+    os.mkfifo(target)
+    monkeypatch.setattr(tracked_mod.os, "lstat", _swapped_lstat(target, stat.S_IFREG))
+    dest = tmp_path / "copy"
+    dest.mkdir()
+    copy_tracked_files(str(repo), str(dest))
+    assert not (dest / "app.py").exists()
+    assert (dest / "run.sh").exists()
+
+
+def test_symlink_swapped_in_after_lstat_is_not_followed(repo, tmp_path, monkeypatch):
+    outside = tmp_path / "outside.txt"
+    outside.write_text("not from the repo\n")
+    target = repo / "app.py"
+    target.unlink()
+    os.symlink(outside, target)
+    monkeypatch.setattr(tracked_mod.os, "lstat", _swapped_lstat(target, stat.S_IFREG))
+    dest = tmp_path / "copy"
+    dest.mkdir()
+    copy_tracked_files(str(repo), str(dest))
+    assert not (dest / "app.py").exists()
+
+
+def test_file_replaced_after_lstat_is_skipped(repo, tmp_path, monkeypatch):
+    target = repo / "app.py"
+    real_lstat = os.lstat
+    other = real_lstat(repo / "run.sh")
+
+    def fake(path, *a, **k):
+        return other if str(path) == str(target) else real_lstat(path, *a, **k)
+
+    monkeypatch.setattr(tracked_mod.os, "lstat", fake)
+    dest = tmp_path / "copy"
+    dest.mkdir()
+    copy_tracked_files(str(repo), str(dest))
+    assert not (dest / "app.py").exists()
+    assert (dest / "run.sh").exists()
