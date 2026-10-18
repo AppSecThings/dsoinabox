@@ -83,8 +83,12 @@ See [Waivers](../waivers/README.md).
   baselines and reports match a normal scan of the same content. TruffleHog's git history scan is
   unaffected. Submodule contents and tracked files deleted from the working tree are skipped; symlinks
   are copied as links, never followed; relative symlinks that point outside the repository do not
-  resolve in the copy. Relative paths in `--<tool>_args` resolve inside the copy. A non-git source is a
-  usage error (exit 3). Some scanner-internal values in the raw tool output can differ from a normal scan:
+  resolve in the copy. Relative paths in `--<tool>_args` resolve inside the copy. Scanners run from a
+  working directory that holds only tracked files, so untracked tool config files (for example a
+  CI-generated `.checkov.yaml` or `.grype.yaml`) do not apply; commit them or pass the settings through
+  `--<tool>_args`. A non-git source, or a source with no tracked files under it (such as an untracked
+  or ignored subdirectory), is a usage error (exit 3); git's reason (for example dubious ownership) is
+  shown. Some scanner-internal values in the raw tool output can differ from a normal scan:
   OpenGrep's own `extra.fingerprint` when `--source` is absolute (such as Docker's `/scan_target`), and
   Syft's per-file uid/gid when ownership cannot be preserved. dsoinabox fingerprints, SARIF, waivers and
   baselines are unaffected.
