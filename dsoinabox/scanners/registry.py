@@ -27,6 +27,8 @@ class RunContext:
     timeout: int | None = None
     verify_secrets: bool = False
     grype_db: str = "auto"
+    db_cache: str | None = None
+    always_update: bool = False
     opengrep_rules: list[str] = field(default_factory=lambda: ["auto"])
 
 
@@ -95,7 +97,8 @@ def _run_syft(ctx: RunContext) -> Any:
 def _run_grype(ctx: RunContext) -> Any:
     from .sca import grype
 
-    return grype.run_scan(ctx.source, ctx.extra_args, ctx.tools_output_dir, timeout=ctx.timeout, db_mode=ctx.grype_db)
+    return grype.run_scan(ctx.source, ctx.extra_args, ctx.tools_output_dir, timeout=ctx.timeout, db_mode=ctx.grype_db,
+                          db_cache=ctx.db_cache, always_update=ctx.always_update)
 
 
 def _run_checkov(ctx: RunContext) -> Any:

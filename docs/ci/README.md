@@ -38,3 +38,21 @@ Custom rules add ` (rules <configured-source>)` to OpenGrep version metadata in 
 reports; the default `auto` output remains unchanged. The project image prewarms OpenGrep's self-extracted cache
 for `appuser`. Custom images or hardened mounts must leave that cache on a filesystem that supports
 execution.
+
+## Reuse the Grype DB
+
+Without a cache every job downloads Grype's vulnerability database. The image keeps it under
+`/var/cache/dsoinabox` (`DSOINABOX_DB_CACHE`); persist that directory and Grype reuses the DB without
+touching the network until its last update check is 24 hours old. `--always_update` checks on every
+run instead and still downloads only when a newer DB exists.
+
+- Persistent Docker host (self-hosted agents): mount a named volume, `-v dsoinabox-db:/var/cache/dsoinabox`.
+- Ephemeral runners: restore and save a host directory with the platform's cache and mount it there.
+  Keep the directory outside the checkout: the DB is about 3 GB unpacked and would otherwise be scanned.
+- A host directory must be writable by uid 1001 (the image's `appuser`); otherwise Grype fails (exit 2)
+  with a message saying so.
+- `--grype_db offline` scans against a restored cache without network access.
+
+Per-platform snippets: [GitHub Actions](github-actions.md#cache-the-grype-db),
+[GitLab CI](gitlab-ci.md#cache-the-grype-db), [Jenkins](jenkins.md),
+[Azure DevOps](azure-devops.md#cache-the-grype-db).

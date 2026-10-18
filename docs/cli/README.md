@@ -74,7 +74,15 @@ See [Waivers](../waivers/README.md).
 - `--verify_secrets`: let TruffleHog verify candidates against providers (network calls). Off by default,
   so every secret shows as unverified unless enabled.
 - `--grype_db auto|offline`: `offline` never downloads the vulnerability database and fails clearly when
-  none is cached.
+  none is cached, naming the cache directory in use.
+- `--db_cache PATH` (also `--db-cache`; env `DSOINABOX_DB_CACHE`): keep scanner databases between runs.
+  Grype's DB lives in `PATH/grype` and is reused without network access until Grype last checked for
+  an update 24 hours ago. Relative paths resolve from the current working directory. The image sets it
+  to `/var/cache/dsoinabox`; mount a named volume there to persist it. An unwritable directory is a
+  Grype failure (exit 2) that suggests a named volume or a host directory writable by uid 1001.
+- `--always_update` (also `--always-update`; env `DSOINABOX_ALWAYS_UPDATE`): make Grype check for a
+  newer DB on every run; it downloads only when one exists. Combined with `--grype_db offline` it is a
+  usage error (exit 3).
 - `--opengrep_rules auto|PATH[,PATH...]` (also `--opengrep-rules`; default `auto`): choose OpenGrep
   rules. `auto` contacts semgrep.dev and cannot be mixed with local paths. Each local file or directory
   becomes an OpenGrep `--config`; relative paths resolve against `--source`. A missing local path is a
@@ -107,7 +115,7 @@ the summary and reports. The default `auto` metadata and existing output remain 
 | 0 | scans completed and the policy passed |
 | 1 | policy failed: threshold exceeded or secrets found (reports written) |
 | 2 | one or more scanners failed or timed out (reports written for the rest) |
-| 3 | usage or configuration error: bad flag value, missing source, missing explicit waiver file, invalid waiver file, scanner binary not on PATH |
+| 3 | usage or configuration error: bad flag value, missing source, missing explicit waiver file, invalid waiver file, scanner binary not on PATH, `--always_update` with `--grype_db offline` |
 
 Any non-zero code still means "do not pass". Pipelines that only check `!= 0` need no change.
 

@@ -24,6 +24,8 @@ Precedence, lowest to highest: `.dsoinabox.yaml`, `DSOINABOX_*` environment vari
 | `fail_on_secrets` | `DSOINABOX_FAIL_ON_SECRETS` | false, true, verified | |
 | `verify_secrets` | `DSOINABOX_VERIFY_SECRETS` | bool | |
 | `grype_db` | `DSOINABOX_GRYPE_DB` | auto, offline | |
+| `db_cache` | `DSOINABOX_DB_CACHE` | path | Grype DB kept in `<path>/grype`; relative to the invocation directory; set to `/var/cache/dsoinabox` in the image |
+| `always_update` | `DSOINABOX_ALWAYS_UPDATE` | bool | check for a newer Grype DB every run; not with `grype_db: offline` |
 | `opengrep_rules` | `DSOINABOX_OPENGREP_RULES` | YAML string/list; env comma string | default `auto`; paths relative to source |
 | `show_findings` | `DSOINABOX_SHOW_FINDINGS` | false, true, full | |
 | `waiver_file` | `DSOINABOX_WAIVER_FILE` | path | relative to source |
@@ -64,6 +66,20 @@ tool_args:
 ```
 
 `examples/.dsoinabox.yaml` is the starter file `config init` writes.
+
+## Grype DB cache
+
+`db_cache` keeps Grype's vulnerability database in `<db_cache>/grype` between runs. Grype reuses it
+without touching the network until its last update check is 24 hours old, then downloads only when a
+newer DB exists (Grype's own `GRYPE_DB_MAX_UPDATE_CHECK_FREQUENCY`). Grype still replaces a cached DB
+built more than 5 days ago (its `max-allowed-built-age`) whatever the check age. `always_update: true`
+makes it check on every run; combining it with `grype_db: offline` is a usage error (exit 3). Without
+`db_cache` and `always_update`, Grype uses its own default cache exactly as before.
+
+The image sets `DSOINABOX_DB_CACHE=/var/cache/dsoinabox`, owned by `appuser` (uid 1001). Mount a named
+volume there (`-v dsoinabox-db:/var/cache/dsoinabox`) to keep the DB; a bind-mounted host directory must
+be writable by uid 1001, otherwise Grype fails (exit 2) with a message saying so. With a populated
+cache, `grype_db: offline` scans without network access.
 
 ## Offline OpenGrep rules
 
