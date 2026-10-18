@@ -16,6 +16,11 @@ from dsoinabox.utils.config import load_config_file, read_env_overrides
 OFFLINE_ENV = {"GRYPE_DB_AUTO_UPDATE": "false", "GRYPE_DB_VALIDATE_AGE": "false"}
 
 
+@pytest.fixture(autouse=True)
+def no_user_grype_cache(monkeypatch):
+    monkeypatch.delenv("GRYPE_DB_CACHE_DIR", raising=False)
+
+
 @pytest.fixture
 def capture(monkeypatch):
     calls: list[dict] = []
@@ -63,6 +68,23 @@ class TestGrypeEnv:
         # offline never writes, so a missing or read-only cache is left alone
         assert not cache.exists()
 
+    def test_user_grype_cache_dir_wins(self, capture, monkeypatch, tmp_path, caplog):
+        monkeypatch.setenv("GRYPE_DB_CACHE_DIR", "/mnt/grypedb")
+        cache = tmp_path / "cache"
+        with caplog.at_level("INFO"):
+            grype.run_scan(str(tmp_path), None, str(tmp_path), db_cache=str(cache), always_update=True)
+        grype.db_status(db_cache=str(cache))
+        assert capture[0]["env"] == {"GRYPE_DB_MAX_UPDATE_CHECK_FREQUENCY": "0s"}
+        assert capture[1]["env"] == {"GRYPE_DB_MAX_UPDATE_CHECK_FREQUENCY": "24h"}
+        assert "GRYPE_DB_CACHE_DIR=/mnt/grypedb is set" in caplog.text
+        assert not cache.exists()
+
+    def test_user_grype_cache_dir_named_offline(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("GRYPE_DB_CACHE_DIR", "/mnt/grypedb")
+        monkeypatch.setattr(base, "run_cmd", lambda cmd, **kw: (1, "", "failed to load vulnerability db: database does not exist"))
+        with pytest.raises(base.ScannerError, match="Cache in use: /mnt/grypedb"):
+            grype.run_scan(str(tmp_path), None, str(tmp_path), db_mode="offline", db_cache=str(tmp_path / "c"))
+
     def test_db_status_uses_cache(self, capture, tmp_path):
         assert grype.db_status(db_cache=str(tmp_path)) == "built 2026-09-01T00:00:00Z (schema 6)"
         assert capture[0]["cmd"][:3] == ["grype", "db", "status"]
@@ -95,10 +117,17 @@ class TestGrypeErrors:
             grype.run_scan(str(tmp_path), None, str(tmp_path), db_cache=str(tmp_path / "c"))
         assert capture == []
 
-    def test_permission_denied_from_grype_is_explained(self, monkeypatch, tmp_path):
-        monkeypatch.setattr(base, "run_cmd", lambda cmd, **kw: (1, "", "open /c/grype/6/vulnerability.db: permission denied"))
+    def test_permission_denied_on_cache_is_explained(self, monkeypatch, tmp_path):
+        db = tmp_path / "c" / "grype" / "6" / "vulnerability.db"
+        monkeypatch.setattr(base, "run_cmd", lambda cmd, **kw: (1, "", f"open {db}: permission denied"))
         with pytest.raises(base.ScannerError, match="uid 1001.*permission denied"):
             grype.run_scan(str(tmp_path), None, str(tmp_path), db_cache=str(tmp_path / "c"))
+
+    def test_permission_denied_elsewhere_is_generic(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(base, "run_cmd", lambda cmd, **kw: (1, "", "open /scan_target/secret: permission denied"))
+        with pytest.raises(base.ScannerError) as exc:
+            grype.run_scan(str(tmp_path), None, str(tmp_path), db_cache=str(tmp_path / "c"))
+        assert "not writable" not in str(exc.value) and "/scan_target/secret: permission denied" in str(exc.value)
 
 
 class TestOptionSources:

@@ -1,5 +1,16 @@
 # Upgrading
 
+## 1.1.5 to the next release
+
+The image now has a default Grype DB cache at `/var/cache/dsoinabox` (`DSOINABOX_DB_CACHE`); Grype's DB
+lives in `/var/cache/dsoinabox/grype`. Without a mount nothing changes: each container downloads the DB
+as before. Mount a named volume there (`-v dsoinabox-db:/var/cache/dsoinabox`) to reuse it across runs.
+
+Existing setups keep working: an explicit `GRYPE_DB_CACHE_DIR` still wins over the dsoinabox cache, and
+Grype's default path for `appuser` (`/home/appuser/.cache/grype/db`) links to the same directory, so a DB
+mounted there is found too. To opt out of the default cache entirely, pass `-e DSOINABOX_DB_CACHE=`.
+New options: `--db_cache PATH` and `--always_update` (see [CLI](cli/README.md#scanner-behaviour)).
+
 ## 1.0.0 to 1.1.0
 
 This is a minor release because local/offline OpenGrep rule sources are an additive CLI, config,
