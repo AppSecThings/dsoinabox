@@ -21,8 +21,9 @@ from .scanners.base import ScannerError
 from .scanners.registry import RunContext, ScannerSpec, select_tools
 from .utils import environment
 from .utils.deterministic import utcnow
-from .utils.git import GitRepoInfo, set_git_safe_directory
+from .utils.git import GitRepoInfo, is_git_work_tree, set_git_safe_directory
 from .utils.project_id import derive_project_id, is_git
+from .utils.tracked import TrackedCopy
 from .waivers import generate_benchmark_yaml, load_waiver_file
 from .waivers.apply import WaiverEngine, WaiverUsage, apply_waivers_to_model
 from .waivers.baseline import apply_baseline
@@ -233,6 +234,8 @@ def run_scan(options: ScanOptions) -> ScanRun:
 
     is_git_repo = is_git(options.source)
     logger.info(f"Source is {'a' if is_git_repo else 'not a'} git repository: {options.source}")
+    if options.git_tracked_only and not is_git_work_tree(options.source):
+        raise UsageError(f"--git_tracked_only needs a git repository, but {options.source} is not inside one.")
 
     os.makedirs(options.report_directory, exist_ok=True)
     tools_output_dir = os.path.join(options.report_directory, "tools_output")
@@ -263,6 +266,13 @@ def run_scan(options: ScanOptions) -> ScanRun:
 
     versions = _tool_versions(specs)
 
+    tracked = None
+    if options.git_tracked_only:
+        try:
+            tracked = TrackedCopy.create(options.source)
+        except (OSError, subprocess.CalledProcessError) as exc:
+            raise UsageError(f"--git_tracked_only could not copy the tracked files of {options.source}: {exc}") from None
+
     def ctx_for(spec: ScannerSpec) -> RunContext:
         return RunContext(
             source=options.source,
@@ -276,9 +286,14 @@ def run_scan(options: ScanOptions) -> ScanRun:
             db_cache=options.db_cache,
             always_update=options.always_update,
             opengrep_rules=opengrep_rules,
+            tracked=tracked,
         )
 
-    results, usage = _schedule(specs, ctx_for, engine, fail_fast=options.fail_fast, max_workers=options.max_workers)
+    try:
+        results, usage = _schedule(specs, ctx_for, engine, fail_fast=options.fail_fast, max_workers=options.max_workers)
+    finally:
+        if tracked is not None:
+            tracked.cleanup()
     for r in results:
         r.tool_version = versions.get(r.tool, "")
         if r.tool == "grype" and r.status == "ok":

@@ -56,6 +56,15 @@ def run_git_cmd(
     )
 
 
+def is_git_work_tree(path: str) -> bool:
+    """True when ``path`` is inside a git working tree (repo root, subdirectory or linked worktree)."""
+    try:
+        returncode, stdout, _stderr = run_git_cmd(["rev-parse", "--is-inside-work-tree"], cwd=path, repo_path=path)
+    except OSError:
+        return False
+    return returncode == 0 and str(stdout).strip() == "true"
+
+
 class GitRepoInfo:
     def __init__(self, repo_path: str):
         self.repo_path = _canonicalize_git_path(repo_path)

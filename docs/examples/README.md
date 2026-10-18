@@ -62,6 +62,13 @@ docker run --rm -v $(pwd):/scan_target -v $(pwd)/reports:/reports \
 The second run within 24 hours of Grype's last update check skips the download. Add `--always_update`
 to check for a newer DB every run.
 
+## Dirty working folder: scan only what git tracks
+
+```bash
+... -t all -o html --git_tracked_only
+# untracked/ignored venv/, node_modules/, build/ are skipped; uncommitted edits are scanned
+```
+
 ## Air-gapped runner
 
 ```bash

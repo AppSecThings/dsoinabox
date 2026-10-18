@@ -286,6 +286,8 @@ class ScanOptions(BaseModel):
     """Make Grype check for a newer DB on every run (downloads only when newer)."""
     opengrep_rules: list[str] = Field(default_factory=lambda: ["auto"])
     """OpenGrep rule sources; auto retains the default semgrep.dev-backed behavior."""
+    git_tracked_only: bool = False
+    """Scanners that walk the source see only git-tracked files (working-tree content)."""
     waiver_file: str | None = ".dsoinabox_waivers.yaml"
     waiver_file_is_default: bool = True
     waiver_grace_days: int = 0

@@ -27,6 +27,7 @@ MERGEABLE_KEYS = (
     "db_cache",
     "always_update",
     "opengrep_rules",
+    "git_tracked_only",
     "show_findings",
     "scan_timeout",
     "fail_fast",
@@ -58,6 +59,7 @@ ENV_KEY_MAP = {
     "db_cache": "DSOINABOX_DB_CACHE",
     "always_update": "DSOINABOX_ALWAYS_UPDATE",
     "opengrep_rules": "DSOINABOX_OPENGREP_RULES",
+    "git_tracked_only": "DSOINABOX_GIT_TRACKED_ONLY",
     "tool_timeouts": "DSOINABOX_TOOL_TIMEOUTS",
     "show_findings": "DSOINABOX_SHOW_FINDINGS",
     "waiver_file": "DSOINABOX_WAIVER_FILE",
@@ -77,7 +79,10 @@ ENV_KEY_MAP = {
     "config_file": CONFIG_ENV_VAR,
 }
 
-BOOL_KEYS = {"tool_output", "benchmark", "fail_fast", "verify_secrets", "sarif_include_waived", "always_update"}
+BOOL_KEYS = {
+    "tool_output", "benchmark", "fail_fast", "verify_secrets", "sarif_include_waived", "always_update",
+    "git_tracked_only",
+}
 INT_KEYS = {"waiver_grace_days", "scan_timeout"}
 SHOW_FINDINGS_CHOICES = ("false", "true", "full")
 STRING_LIST_KEYS = {"tools", "output"}
@@ -95,6 +100,7 @@ fail_on_secrets: false      # false | true | verified (only secrets TruffleHog v
 # db_cache: ~/.cache/dsoinabox   # keep the Grype DB between runs; rechecked at most every 24h
 # always_update: false      # check for a newer Grype DB on every run (not with grype_db: offline)
 # opengrep_rules: ./rules   # local rules dir/file; default auto fetches from semgrep.dev
+# git_tracked_only: false   # scan only git-tracked files; skips untracked/ignored dirs (venvs, builds)
 waiver_file: .dsoinabox_waivers.yaml
 # waiver_grace_days: 0      # keep expired waivers active for N extra days (flagged as expiring)
 # baseline: benchmark.yaml  # classify findings as new/known against this benchmark file

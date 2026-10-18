@@ -27,6 +27,7 @@ Precedence, lowest to highest: `.dsoinabox.yaml`, `DSOINABOX_*` environment vari
 | `db_cache` | `DSOINABOX_DB_CACHE` | path | Grype DB kept in `<path>/grype`; relative to the invocation directory; set to `/var/cache/dsoinabox` in the image |
 | `always_update` | `DSOINABOX_ALWAYS_UPDATE` | bool | check for a newer Grype DB every run; not with `grype_db: offline` |
 | `opengrep_rules` | `DSOINABOX_OPENGREP_RULES` | YAML string/list; env comma string | default `auto`; paths relative to source |
+| `git_tracked_only` | `DSOINABOX_GIT_TRACKED_ONLY` | bool | scan only git-tracked files; needs a git source |
 | `show_findings` | `DSOINABOX_SHOW_FINDINGS` | false, true, full | |
 | `waiver_file` | `DSOINABOX_WAIVER_FILE` | path | relative to source |
 | `waiver_grace_days` | `DSOINABOX_WAIVER_GRACE_DAYS` | int | |
