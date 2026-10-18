@@ -50,6 +50,13 @@ dsoinabox waivers add -p "og:1:RULE:python.lang.security.audit.dangerous-system-
 dsoinabox waivers prune .dsoinabox_waivers.yaml --in-place --report reports/latest/run.json
 ```
 
+## Dirty working folder: scan only what git tracks
+
+```bash
+... -t all -o html --git_tracked_only
+# untracked/ignored venv/, node_modules/, build/ are skipped; uncommitted edits are scanned
+```
+
 ## Air-gapped runner
 
 ```bash

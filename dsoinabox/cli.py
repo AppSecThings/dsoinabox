@@ -255,6 +255,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--git_tracked_only",
+        action="store_true",
+        default=False,
+        help="scan only files git tracks (their working-tree content, uncommitted edits included); untracked and "
+             "ignored files such as virtualenvs and build output are skipped. TruffleHog's git history scan is "
+             "unaffected. requires a git repository.",
+    )
+
+    parser.add_argument(
         "--show_findings",
         type=normalize_show_findings,
         default="false",
@@ -549,6 +558,7 @@ def scan_main(argv: list[str]) -> int:
         verify_secrets=bool(args.verify_secrets) or fail_on_secrets_mode == "verified",
         grype_db=args.grype_db or "auto",
         opengrep_rules=normalize_opengrep_rules(args.opengrep_rules),
+        git_tracked_only=bool(args.git_tracked_only),
         waiver_file=args.waiver_file or None,
         waiver_file_is_default=(args.waiver_file == default_waiver_file),
         waiver_grace_days=int(args.waiver_grace_days or 0),

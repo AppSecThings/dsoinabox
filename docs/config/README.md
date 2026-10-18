@@ -25,6 +25,7 @@ Precedence, lowest to highest: `.dsoinabox.yaml`, `DSOINABOX_*` environment vari
 | `verify_secrets` | `DSOINABOX_VERIFY_SECRETS` | bool | |
 | `grype_db` | `DSOINABOX_GRYPE_DB` | auto, offline | |
 | `opengrep_rules` | `DSOINABOX_OPENGREP_RULES` | YAML string/list; env comma string | default `auto`; paths relative to source |
+| `git_tracked_only` | `DSOINABOX_GIT_TRACKED_ONLY` | bool | scan only git-tracked files; needs a git source |
 | `show_findings` | `DSOINABOX_SHOW_FINDINGS` | false, true, full | |
 | `waiver_file` | `DSOINABOX_WAIVER_FILE` | path | relative to source |
 | `waiver_grace_days` | `DSOINABOX_WAIVER_GRACE_DAYS` | int | |

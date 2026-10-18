@@ -11,6 +11,15 @@ Output format reference:
 
 - [Output Formats and Report Layout](../output/README.md)
 
+## Tracked files only
+
+CI checkouts are usually clean. When earlier steps leave files in the workspace (installed
+dependencies, build output, caches), `--git_tracked_only` (or `-e DSOINABOX_GIT_TRACKED_ONLY=true`)
+keeps them out of the scan: OpenGrep, Checkov, Syft and Grype see only git-tracked files, with their
+working-tree content. Syft and Grype then read tracked manifests and lockfiles, not packages installed
+into the workspace. TruffleHog's git history scan is unaffected. The workspace must be a git checkout;
+otherwise the run stops with usage exit 3.
+
 ## Deny-egress OpenGrep
 
 OpenGrep's default rules source is `auto`, which contacts semgrep.dev. CI jobs without egress should

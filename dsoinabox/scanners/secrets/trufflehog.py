@@ -20,6 +20,7 @@ class TrufflehogScanner(BaseScanner):
         timeout: int | None = None,
         git_repo=True,
         verify: bool = False,
+        cwd: str | None = None,
     ) -> list:
         """run the trufflehog cli scan. verification is opt-in because it contacts the credential's provider."""
         target = ["git", f"file://{source_path}"] if git_repo else ["filesystem", source_path]
@@ -27,7 +28,7 @@ class TrufflehogScanner(BaseScanner):
         if not verify:
             args.insert(len(target), "--no-verification")
         args.extend(self._parse_extra_tool_args(extra_tool_args))
-        result = self._run_command(args, timeout=timeout)
+        result = self._run_command(args, timeout=timeout, cwd=cwd)
         if result.returncode == 0:
             records = []
             for line in result.stdout.splitlines():

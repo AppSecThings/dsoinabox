@@ -221,6 +221,20 @@ cache: hardened container filesystems must retain a cache path that supports exe
 prewarms the cache for `appuser`; custom images, cache mounts, and read-only hardening must preserve
 an executable cache path.
 
+### Scan only tracked files
+
+A local folder full of virtualenvs, `node_modules`, build output or caches scans as fast as a clean
+checkout with `--git_tracked_only` (env `DSOINABOX_GIT_TRACKED_ONLY`, config key `git_tracked_only`):
+
+```bash
+dsoinabox -t all -o html --git_tracked_only
+```
+
+Scanners see only the files git tracks, with their working-tree content, so uncommitted edits are
+scanned and untracked or ignored files are not. Fingerprints, waivers and baselines match a normal scan
+of the same content. TruffleHog's git history scan is unaffected. A non-git source is a usage error
+(exit 3). See the [CLI reference](docs/cli/README.md#scanner-behaviour).
+
 ## Typical CI Gate
 
 ```bash

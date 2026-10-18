@@ -75,6 +75,15 @@ See [Waivers](../waivers/README.md).
   so every secret shows as unverified unless enabled.
 - `--grype_db auto|offline`: `offline` never downloads the vulnerability database and fails clearly when
   none is cached.
+- `--git_tracked_only` (also `--git-tracked-only`): scanners that walk the source (OpenGrep, Checkov, Syft,
+  and Grype when it has no Syft SBOM) see only the files git tracks, with their working-tree content.
+  Uncommitted edits are scanned; untracked and ignored files (virtualenvs, `node_modules`, build output,
+  caches) are skipped, so a dirty working folder scans as fast as a clean checkout. dsoinabox copies the
+  tracked files to a temporary directory, scans the copy and maps paths back, so fingerprints, waivers,
+  baselines and reports match a normal scan of the same content. TruffleHog's git history scan is
+  unaffected. Submodule contents and tracked files deleted from the working tree are skipped; symlinks
+  are copied as links, never followed. Relative paths in `--<tool>_args` resolve inside the copy. A
+  non-git source is a usage error (exit 3).
 - `--opengrep_rules auto|PATH[,PATH...]` (also `--opengrep-rules`; default `auto`): choose OpenGrep
   rules. `auto` contacts semgrep.dev and cannot be mixed with local paths. Each local file or directory
   becomes an OpenGrep `--config`; relative paths resolve against `--source`. A missing local path is a
@@ -107,7 +116,7 @@ the summary and reports. The default `auto` metadata and existing output remain 
 | 0 | scans completed and the policy passed |
 | 1 | policy failed: threshold exceeded or secrets found (reports written) |
 | 2 | one or more scanners failed or timed out (reports written for the rest) |
-| 3 | usage or configuration error: bad flag value, missing source, missing explicit waiver file, invalid waiver file, scanner binary not on PATH |
+| 3 | usage or configuration error: bad flag value, missing source, missing explicit waiver file, invalid waiver file, scanner binary not on PATH, `--git_tracked_only` on a non-git source |
 
 Any non-zero code still means "do not pass". Pipelines that only check `!= 0` need no change.
 

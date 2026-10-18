@@ -19,17 +19,20 @@ class GrypeScanner(BaseScanner):
         report_directory: str = "reports",
         timeout: int | None = None,
         db_mode: str = "auto",
+        cwd: str | None = None,
     ) -> dict:
         """run the grype cli scan. db_mode=offline disables DB auto-update and fails clearly without a cached DB."""
         #check for syft.json in report_directory (could be tools_output or reports)
         syft_json_path = os.path.join(report_directory, "syft.json")
         if os.path.exists(syft_json_path):
+            if cwd:
+                syft_json_path = os.path.abspath(syft_json_path)
             args = [f"sbom:{syft_json_path}", "-o", "json"]
         else:
             args = [f"dir:{source_path}", "-o", "json"]
         args.extend(self._parse_extra_tool_args(extra_tool_args))
         env = {"GRYPE_DB_AUTO_UPDATE": "false", "GRYPE_DB_VALIDATE_AGE": "false"} if db_mode == "offline" else None
-        result = self._run_command(args, timeout=timeout, env=env)
+        result = self._run_command(args, timeout=timeout, env=env, cwd=cwd)
         if result.returncode == 0:
             json_result = json.loads(result.stdout.strip())
             self._write_json_report(json_result, report_directory, "grype.json")
