@@ -6,7 +6,7 @@
 ############################
 # Stage: tools (fetch CLIs)
 ############################
-FROM debian:trixie-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f AS tools
+FROM debian:trixie-slim@sha256:62bd423aeee912639ca8ee681c2b762cb3e25137e0a92b20be455898a9f034ad AS tools
 
 # Scanner versions are pinned so two builds of the same commit produce the same
 # image. Override at build time, e.g. --build-arg SYFT_VERSION=v1.54.1.
@@ -16,7 +16,7 @@ ARG SYFT_VERSION=v1.54.1
 # upstream: github-releases anchore/grype
 ARG GRYPE_VERSION=v0.120.1
 # upstream: github-releases opengrep/opengrep
-ARG OPENGREP_VERSION=v1.30.1
+ARG OPENGREP_VERSION=v1.31.0
 ARG TARGETARCH
 
 RUN apt-get update && \
@@ -56,10 +56,10 @@ RUN set -eux; \
 ############################
 # Stage: trufflehog (install script)
 ############################
-FROM debian:trixie-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f AS trufflehog-install
+FROM debian:trixie-slim@sha256:62bd423aeee912639ca8ee681c2b762cb3e25137e0a92b20be455898a9f034ad AS trufflehog-install
 
 # upstream: github-releases trufflesecurity/trufflehog
-ARG TRUFFLEHOG_VERSION=v3.99.0
+ARG TRUFFLEHOG_VERSION=v3.99.2
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl tar bash && \
     rm -rf /var/lib/apt/lists/*
 
@@ -73,10 +73,10 @@ RUN set -eux; \
 ############################
 # Stage: runtime
 ############################
-FROM python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1 AS runtime
+FROM python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704 AS runtime
 
 # upstream: pypi checkov
-ARG CHECKOV_VERSION=3.3.26
+ARG CHECKOV_VERSION=3.3.29
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
