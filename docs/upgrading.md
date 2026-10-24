@@ -1,6 +1,6 @@
 # Upgrading
 
-## 1.1.5 to the next release
+## 1.1.6 to 1.2.0
 
 The image now has a default Grype DB cache at `/var/cache/dsoinabox` (`DSOINABOX_DB_CACHE`); Grype's DB
 lives in `/var/cache/dsoinabox/grype`. Without a mount nothing changes: each container downloads the DB
