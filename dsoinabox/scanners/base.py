@@ -43,10 +43,11 @@ class BaseScanner:
         env: dict[str, str] | None = None,
         text: bool = True,
         timeout: int | None = None,
+        cwd: str | None = None,
     ) -> SimpleNamespace:
         """run the cli tool with the provided args."""
         command = [self.cli_name] + self._normalize_args(args)
-        returncode, stdout, stderr = run_cmd(command, env=env, text=text, timeout=timeout)
+        returncode, stdout, stderr = run_cmd(command, cwd=cwd, env=env, text=text, timeout=timeout)
         return SimpleNamespace(returncode=returncode, stdout=stdout, stderr=stderr)
 
     def get_version(self) -> str:

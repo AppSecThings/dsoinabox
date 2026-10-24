@@ -255,6 +255,33 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--db_cache",
+        action="store",
+        default=None,
+        help="directory that keeps scanner databases between runs (grype uses <db_cache>/grype). a cached DB is "
+             "reused without network access until grype last checked for updates 24h ago. relative paths are "
+             "resolved from the current working directory. default: unset (grype's own cache; "
+             "/var/cache/dsoinabox in docker).",
+    )
+
+    parser.add_argument(
+        "--always_update",
+        action="store_true",
+        default=False,
+        help="make grype check for a newer vulnerability DB on every run (downloads only when newer). "
+             "cannot be combined with --grype_db offline.",
+    )
+
+    parser.add_argument(
+        "--git_tracked_only",
+        action="store_true",
+        default=False,
+        help="scan only files git tracks (their working-tree content, uncommitted edits included); untracked and "
+             "ignored files such as virtualenvs and build output are skipped. TruffleHog's git history scan is "
+             "unaffected. requires a git repository.",
+    )
+
+    parser.add_argument(
         "--show_findings",
         type=normalize_show_findings,
         default="false",
@@ -548,7 +575,10 @@ def scan_main(argv: list[str]) -> int:
         fail_on_secrets_mode=fail_on_secrets_mode,
         verify_secrets=bool(args.verify_secrets) or fail_on_secrets_mode == "verified",
         grype_db=args.grype_db or "auto",
+        db_cache=os.path.abspath(os.path.expanduser(str(args.db_cache))) if args.db_cache else None,
+        always_update=bool(args.always_update),
         opengrep_rules=normalize_opengrep_rules(args.opengrep_rules),
+        git_tracked_only=bool(args.git_tracked_only),
         waiver_file=args.waiver_file or None,
         waiver_file_is_default=(args.waiver_file == default_waiver_file),
         waiver_grace_days=int(args.waiver_grace_days or 0),

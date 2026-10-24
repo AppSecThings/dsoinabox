@@ -221,6 +221,44 @@ cache: hardened container filesystems must retain a cache path that supports exe
 prewarms the cache for `appuser`; custom images, cache mounts, and read-only hardening must preserve
 an executable cache path.
 
+### Reuse the Grype vulnerability database
+
+Each fresh container downloads Grype's vulnerability database. The image keeps it under
+`/var/cache/dsoinabox` (`DSOINABOX_DB_CACHE`), so mounting a named volume there is all it takes to
+reuse it across runs:
+
+```bash
+docker volume create dsoinabox-db
+docker run --rm \
+  -v "$(pwd):/scan_target" \
+  -v "$(pwd)/reports:/reports" \
+  -v dsoinabox-db:/var/cache/dsoinabox \
+  appsecthings/dsoinabox:latest \
+  -t all
+```
+
+Grype reuses the cached DB without touching the network until its last update check is 24 hours old,
+then downloads only when a newer DB exists. Add `--always_update` to check on every run. Outside the
+image set `--db_cache PATH` (also `--db-cache`, `DSOINABOX_DB_CACHE`, `db_cache` key); Grype's DB lives
+in `PATH/grype`. A host directory mounted instead of a named volume must be writable by uid 1001 (the
+image's `appuser`). With a populated cache, `--grype_db offline` scans without network access.
+Grype trusts a DB it finds in the cache, so the cache directory must be writable only by the identity
+that runs scans. An explicit `GRYPE_DB_CACHE_DIR` still wins; see [runtime config](docs/config/README.md#grype-db-cache).
+
+### Scan only tracked files
+
+A local folder full of virtualenvs, `node_modules`, build output or caches scans as fast as a clean
+checkout with `--git_tracked_only` (env `DSOINABOX_GIT_TRACKED_ONLY`, config key `git_tracked_only`):
+
+```bash
+dsoinabox -t all -o html --git_tracked_only
+```
+
+Scanners see only the files git tracks, with their working-tree content, so uncommitted edits are
+scanned and untracked or ignored files are not. Fingerprints, waivers and baselines match a normal scan
+of the same content. TruffleHog's git history scan is unaffected. A non-git source is a usage error
+(exit 3). See the [CLI reference](docs/cli/README.md#scanner-behaviour).
+
 ## Typical CI Gate
 
 ```bash

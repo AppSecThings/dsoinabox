@@ -7,9 +7,13 @@ from __future__ import annotations
 import logging
 import os
 import shutil
+import signal
 import subprocess
+import threading
 import time
+from collections.abc import Iterator
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -21,8 +25,9 @@ from .scanners.base import ScannerError
 from .scanners.registry import RunContext, ScannerSpec, select_tools
 from .utils import environment
 from .utils.deterministic import utcnow
-from .utils.git import GitRepoInfo, set_git_safe_directory
+from .utils.git import GitRepoInfo, git_work_tree_problem, set_git_safe_directory
 from .utils.project_id import derive_project_id, is_git
+from .utils.tracked import NothingTrackedError, TrackedCopy
 from .waivers import generate_benchmark_yaml, load_waiver_file
 from .waivers.apply import WaiverEngine, WaiverUsage, apply_waivers_to_model
 from .waivers.baseline import apply_baseline
@@ -186,6 +191,23 @@ def _schedule(
     return ordered, total_usage
 
 
+def _exit_on_sigterm(signum: int, frame: Any) -> None:
+    raise SystemExit(128 + signum)
+
+
+@contextmanager
+def _sigterm_raises_exit(enabled: bool) -> Iterator[None]:
+    """While enabled (main thread only), SIGTERM raises SystemExit so ``finally`` cleanup still runs."""
+    if not enabled or threading.current_thread() is not threading.main_thread():
+        yield
+        return
+    previous = signal.signal(signal.SIGTERM, _exit_on_sigterm)
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGTERM, previous if previous is not None else signal.SIG_DFL)
+
+
 def _report_payload(result: ScanResult, report_threshold: Any) -> tuple[Any, int]:
     """Raw payload for reports with findings below report_threshold removed. Returns (payload, hidden)."""
     from .reporting.report_builder import _with_findings
@@ -219,6 +241,9 @@ def run_scan(options: ScanOptions) -> ScanRun:
         if fmt not in VALID_OUTPUTS:
             raise UsageError(f"Invalid output format: {fmt}. Supported formats: {', '.join(VALID_OUTPUTS)}")
 
+    if options.always_update and options.grype_db == "offline":
+        raise UsageError("--always_update cannot be combined with --grype_db offline (offline never checks for updates).")
+
     try:
         specs = select_tools(options.tools)
     except ValueError as exc:
@@ -230,6 +255,10 @@ def run_scan(options: ScanOptions) -> ScanRun:
 
     is_git_repo = is_git(options.source)
     logger.info(f"Source is {'a' if is_git_repo else 'not a'} git repository: {options.source}")
+    if options.git_tracked_only:
+        problem = git_work_tree_problem(options.source)
+        if problem:
+            raise UsageError(f"--git_tracked_only needs a git repository, but git rejected {options.source}: {problem}")
 
     os.makedirs(options.report_directory, exist_ok=True)
     tools_output_dir = os.path.join(options.report_directory, "tools_output")
@@ -260,6 +289,8 @@ def run_scan(options: ScanOptions) -> ScanRun:
 
     versions = _tool_versions(specs)
 
+    tracked: TrackedCopy | None = None
+
     def ctx_for(spec: ScannerSpec) -> RunContext:
         return RunContext(
             source=options.source,
@@ -270,17 +301,36 @@ def run_scan(options: ScanOptions) -> ScanRun:
             timeout=options.tool_timeouts.get(spec.name, options.scan_timeout),
             verify_secrets=options.verify_secrets,
             grype_db=options.grype_db,
+            db_cache=options.db_cache,
+            always_update=options.always_update,
             opengrep_rules=opengrep_rules,
+            tracked=tracked,
         )
 
-    results, usage = _schedule(specs, ctx_for, engine, fail_fast=options.fail_fast, max_workers=options.max_workers)
+    # the tracked copy lives only while scanners run; SIGTERM must not leave it behind
+    with _sigterm_raises_exit(options.git_tracked_only):
+        try:
+            if options.git_tracked_only:
+                try:
+                    tracked = TrackedCopy.create(options.source)
+                except NothingTrackedError as exc:
+                    raise UsageError(f"--git_tracked_only: {exc}") from None
+                except (OSError, subprocess.CalledProcessError) as exc:
+                    raise UsageError(
+                        f"--git_tracked_only could not copy the tracked files of {options.source}: {exc}"
+                    ) from None
+            results, usage = _schedule(specs, ctx_for, engine, fail_fast=options.fail_fast,
+                                       max_workers=options.max_workers)
+        finally:
+            if tracked is not None:
+                tracked.cleanup()
     for r in results:
         r.tool_version = versions.get(r.tool, "")
         if r.tool == "grype" and r.status == "ok":
             try:
                 from .scanners.sca import grype as grype_mod
 
-                status = grype_mod.db_status()
+                status = grype_mod.db_status(db_cache=options.db_cache, always_update=options.always_update)
                 if status:
                     r.tool_version = f"{r.tool_version} (db {status})".strip()
             except Exception as exc:  # best effort only

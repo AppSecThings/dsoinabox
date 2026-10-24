@@ -74,7 +74,34 @@ See [Waivers](../waivers/README.md).
 - `--verify_secrets`: let TruffleHog verify candidates against providers (network calls). Off by default,
   so every secret shows as unverified unless enabled.
 - `--grype_db auto|offline`: `offline` never downloads the vulnerability database and fails clearly when
-  none is cached.
+  none is cached, naming the cache directory in use.
+- `--db_cache PATH` (also `--db-cache`; env `DSOINABOX_DB_CACHE`): keep scanner databases between runs.
+  Grype's DB lives in `PATH/grype` and is reused without network access until Grype last checked for
+  an update 24 hours ago. Relative paths resolve from the current working directory. The image sets it
+  to `/var/cache/dsoinabox`; mount a named volume there to persist it. An unwritable directory is a
+  Grype failure (exit 2) that suggests a named volume or a host directory writable by uid 1001. The
+  directory must be writable only by the identity that runs scans, because Grype trusts a DB it finds
+  there. An explicit `GRYPE_DB_CACHE_DIR` in the environment wins over `--db_cache`.
+- `--always_update` (also `--always-update`; env `DSOINABOX_ALWAYS_UPDATE`): make Grype check for a
+  newer DB on every run; it downloads only when one exists. Combined with `--grype_db offline` it is a
+  usage error (exit 3).
+- `--git_tracked_only` (also `--git-tracked-only`): scanners that walk the source (OpenGrep, Checkov, Syft,
+  and Grype when it has no Syft SBOM) see only the files git tracks, with their working-tree content.
+  Uncommitted edits are scanned; untracked and ignored files (virtualenvs, `node_modules`, build output,
+  caches) are skipped, so a dirty working folder scans as fast as a clean checkout. dsoinabox copies the
+  tracked files to a temporary directory, scans the copy and maps paths back, so fingerprints, waivers,
+  baselines and reports match a normal scan of the same content. TruffleHog's git history scan is
+  unaffected. Submodule contents and tracked files deleted from the working tree are skipped; symlinks
+  are copied as links, never followed; relative symlinks that point outside the repository do not
+  resolve in the copy. Relative paths in `--<tool>_args` resolve inside the copy. Scanners run from a
+  working directory that holds only tracked files, so untracked tool config files (for example a
+  CI-generated `.checkov.yaml` or `.grype.yaml`) do not apply; commit them or pass the settings through
+  `--<tool>_args`. A non-git source, or a source with no tracked files under it (such as an untracked
+  or ignored subdirectory), is a usage error (exit 3); git's reason (for example dubious ownership) is
+  shown. Some scanner-internal values in the raw tool output can differ from a normal scan:
+  OpenGrep's own `extra.fingerprint` when `--source` is absolute (such as Docker's `/scan_target`), and
+  Syft's per-file uid/gid when ownership cannot be preserved. dsoinabox fingerprints, SARIF, waivers and
+  baselines are unaffected.
 - `--opengrep_rules auto|PATH[,PATH...]` (also `--opengrep-rules`; default `auto`): choose OpenGrep
   rules. `auto` contacts semgrep.dev and cannot be mixed with local paths. Each local file or directory
   becomes an OpenGrep `--config`; relative paths resolve against `--source`. A missing local path is a
@@ -107,7 +134,7 @@ the summary and reports. The default `auto` metadata and existing output remain 
 | 0 | scans completed and the policy passed |
 | 1 | policy failed: threshold exceeded or secrets found (reports written) |
 | 2 | one or more scanners failed or timed out (reports written for the rest) |
-| 3 | usage or configuration error: bad flag value, missing source, missing explicit waiver file, invalid waiver file, scanner binary not on PATH |
+| 3 | usage or configuration error: bad flag value, missing source, missing explicit waiver file, invalid waiver file, scanner binary not on PATH, `--always_update` with `--grype_db offline`, `--git_tracked_only` on a non-git source |
 
 Any non-zero code still means "do not pass". Pipelines that only check `!= 0` need no change.
 

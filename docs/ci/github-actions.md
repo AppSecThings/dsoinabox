@@ -94,6 +94,41 @@ jobs:
 - Persist artifacts: `actions/upload-artifact` with `path: reports/**`
 - Gate: `--failure_threshold high` exits 1; a scanner failure exits 2; both are non-zero
 
+## Cache the Grype DB
+
+Add these steps before the raw Docker run and mount the directory at the image's cache path. The key
+changes once a day, so the cache is saved at most daily, in step with Grype's 24-hour update check.
+GitHub-hosted Ubuntu runners run as uid 1001, the image's `appuser`, so the directory needs no chown.
+The composite action does not mount a cache; use the raw Docker run for this.
+
+```yaml
+      - name: Day stamp for the Grype DB cache
+        id: day
+        run: echo "day=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Grype DB cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/dsoinabox-db
+          key: dsoinabox-db-${{ steps.day.outputs.day }}
+          restore-keys: dsoinabox-db-
+
+      - name: Run dsoinabox (mount repo + threshold gate)
+        run: |
+          mkdir -p reports "$RUNNER_TEMP/dsoinabox-db"
+          docker run --rm \
+            -v "$PWD:/scan_target" \
+            -v "$PWD/reports:/reports" \
+            -v "$RUNNER_TEMP/dsoinabox-db:/var/cache/dsoinabox" \
+            appsecthings/dsoinabox:latest \
+            -t all \
+            -o sarif,html \
+            --report_name dsoinabox \
+            --failure_threshold high
+```
+
+The cache lives in `runner.temp`, outside the checkout, so it is never scanned.
+
 ## Release workflow
 
 This repository publishes without Git release tags.
