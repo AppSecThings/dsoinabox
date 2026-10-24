@@ -50,10 +50,30 @@ dsoinabox waivers add -p "og:1:RULE:python.lang.security.audit.dangerous-system-
 dsoinabox waivers prune .dsoinabox_waivers.yaml --in-place --report reports/latest/run.json
 ```
 
+## Reuse the Grype DB between runs
+
+```bash
+docker volume create dsoinabox-db
+docker run --rm -v $(pwd):/scan_target -v $(pwd)/reports:/reports \
+  -v dsoinabox-db:/var/cache/dsoinabox appsecthings/dsoinabox:latest -t all
+# installed CLI: dsoinabox -t all --db_cache ~/.cache/dsoinabox
+```
+
+The second run within 24 hours of Grype's last update check skips the download. Add `--always_update`
+to check for a newer DB every run.
+
+## Dirty working folder: scan only what git tracks
+
+```bash
+... -t all -o html --git_tracked_only
+# untracked/ignored venv/, node_modules/, build/ are skipped; uncommitted edits are scanned
+```
+
 ## Air-gapped runner
 
 ```bash
-... --grype_db offline --scan_timeout 900
+... -v dsoinabox-db:/var/cache/dsoinabox --grype_db offline --scan_timeout 900
+# the volume must already hold a DB from an online run
 ```
 
 ## Standalone SBOM

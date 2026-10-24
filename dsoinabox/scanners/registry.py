@@ -8,11 +8,13 @@ tool-specific.
 from __future__ import annotations
 
 import importlib
+import os
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
 from ..model import Category, Finding
+from ..utils.tracked import TrackedCopy
 
 # --- run context -----------------------------------------------------------
 
@@ -27,7 +29,11 @@ class RunContext:
     timeout: int | None = None
     verify_secrets: bool = False
     grype_db: str = "auto"
+    db_cache: str | None = None
+    always_update: bool = False
     opengrep_rules: list[str] = field(default_factory=lambda: ["auto"])
+    tracked: TrackedCopy | None = None
+    """--git_tracked_only: scanners that walk the source scan this copy instead."""
 
 
 # --- spec ------------------------------------------------------------------
@@ -67,41 +73,70 @@ class ScannerSpec:
 # --- per-tool glue ---------------------------------------------------------
 
 
+def _target(ctx: RunContext) -> tuple[str, dict[str, Any]]:
+    """Source to walk and extra run_scan kwargs: the tracked copy under --git_tracked_only."""
+    if ctx.tracked is None:
+        return ctx.source, {}
+    return ctx.tracked.source_arg, {"cwd": ctx.tracked.cwd}
+
+
+def _restored(ctx: RunContext, raw: Any, output_filename: str) -> Any:
+    """Map tracked-copy paths in a payload back to the original source (no-op without a copy)."""
+    if ctx.tracked is None:
+        return raw
+    return ctx.tracked.restore(raw, os.path.join(ctx.tools_output_dir, output_filename))
+
+
 def _run_trufflehog(ctx: RunContext) -> Any:
     from .secrets import trufflehog
 
-    return trufflehog.run_scan(ctx.source, ctx.extra_args, ctx.tools_output_dir, git_repo=ctx.is_git_repo,
-                               timeout=ctx.timeout, verify=ctx.verify_secrets)
+    if ctx.is_git_repo:  # git mode scans committed history, so the tracked copy does not apply
+        return trufflehog.run_scan(ctx.source, ctx.extra_args, ctx.tools_output_dir, git_repo=True,
+                                   timeout=ctx.timeout, verify=ctx.verify_secrets)
+    source, kwargs = _target(ctx)
+    raw = trufflehog.run_scan(source, ctx.extra_args, ctx.tools_output_dir, git_repo=False,
+                              timeout=ctx.timeout, verify=ctx.verify_secrets, **kwargs)
+    return _restored(ctx, raw, "trufflehog.json")
 
 
 def _run_opengrep(ctx: RunContext) -> Any:
     from .sast import opengrep
 
-    return opengrep.run_scan(
-        ctx.source,
+    source, kwargs = _target(ctx)
+    raw = opengrep.run_scan(
+        source,
         ctx.extra_args,
         ctx.tools_output_dir,
         timeout=ctx.timeout,
         opengrep_rules=ctx.opengrep_rules,
+        **kwargs,
     )
+    return _restored(ctx, raw, "opengrep.json")
 
 
 def _run_syft(ctx: RunContext) -> Any:
     from .sbom import syft
 
-    return syft.run_scan(ctx.source, ctx.extra_args, ctx.tools_output_dir, timeout=ctx.timeout)
+    source, kwargs = _target(ctx)
+    raw = syft.run_scan(source, ctx.extra_args, ctx.tools_output_dir, timeout=ctx.timeout, **kwargs)
+    return _restored(ctx, raw, "syft.json")
 
 
 def _run_grype(ctx: RunContext) -> Any:
     from .sca import grype
 
-    return grype.run_scan(ctx.source, ctx.extra_args, ctx.tools_output_dir, timeout=ctx.timeout, db_mode=ctx.grype_db)
+    source, kwargs = _target(ctx)
+    raw = grype.run_scan(source, ctx.extra_args, ctx.tools_output_dir, timeout=ctx.timeout, db_mode=ctx.grype_db,
+                         db_cache=ctx.db_cache, always_update=ctx.always_update, **kwargs)
+    return _restored(ctx, raw, "grype.json")
 
 
 def _run_checkov(ctx: RunContext) -> Any:
     from .iac import checkov
 
-    return checkov.run_scan(ctx.source, ctx.extra_args, ctx.tools_output_dir, timeout=ctx.timeout)
+    source, kwargs = _target(ctx)
+    raw = checkov.run_scan(source, ctx.extra_args, ctx.tools_output_dir, timeout=ctx.timeout, **kwargs)
+    return _restored(ctx, raw, "checkov.sarif")
 
 
 def _fp_trufflehog(raw: Any, ctx: RunContext) -> Any:

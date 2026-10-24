@@ -19,6 +19,7 @@ class CheckovScanner(BaseScanner):
         extra_tool_args: str | list[str] | tuple[str, ...] | None = "",
         report_directory: str = "reports",
         timeout: int | None = None,
+        cwd: str | None = None,
     ) -> dict:
         """run the checkov cli scan."""
         os.makedirs(report_directory, exist_ok=True)
@@ -43,7 +44,7 @@ class CheckovScanner(BaseScanner):
             checkov_output_dir_abs,
         ]
         args.extend(self._parse_extra_tool_args(extra_tool_args))
-        result = self._run_command(args, timeout=timeout)
+        result = self._run_command(args, timeout=timeout, cwd=cwd)
         
         if result.returncode == 0:
             #checkov creates files in the output directory as "results_sarif.sarif"
