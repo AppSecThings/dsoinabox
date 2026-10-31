@@ -153,6 +153,49 @@ def test_create_mirrors_absolute_source_and_cwd(repo, tmp_path, monkeypatch):
     assert os.listdir(tmp_path / "tmp") == []
 
 
+def test_absolute_source_with_dotdot_reaches_the_copy_from_any_cwd(repo, tmp_path, monkeypatch):
+    # the directory before ".." exists on disk but not in the copy, and the cwd is elsewhere
+    (tmp_path / "sibling").mkdir()
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    monkeypatch.chdir(elsewhere)
+    source = os.path.join(str(tmp_path), "sibling", "..", repo.name)
+    tracked = TrackedCopy.create(source)
+    try:
+        assert ".." not in tracked.source_arg.split(os.sep)
+        assert tracked.source_arg == tracked.root + str(repo)
+        with tracked_cwd(tracked):
+            assert os.path.isfile(os.path.join(tracked.source_arg, "app.py"))
+    finally:
+        tracked.cleanup()
+
+
+def test_relative_source_with_dotdot_through_untracked_dir_reaches_the_copy(repo, monkeypatch):
+    (repo / "untracked_dir").mkdir()
+    monkeypatch.chdir(repo.parent)
+    tracked = TrackedCopy.create(os.path.join("repo", "untracked_dir", ".."))
+    try:
+        assert tracked.source_arg == "repo"
+        with tracked_cwd(tracked):
+            assert os.path.isfile(os.path.join(tracked.source_arg, "app.py"))
+    finally:
+        tracked.cleanup()
+
+
+class tracked_cwd:
+    """Run a block from the copy's working directory, as scanners do."""
+
+    def __init__(self, tracked):
+        self.target = tracked.cwd
+
+    def __enter__(self):
+        self.previous = os.getcwd()
+        os.chdir(self.target)
+
+    def __exit__(self, *exc):
+        os.chdir(self.previous)
+
+
 def test_create_keeps_relative_source_relative_to_mirrored_cwd(repo, monkeypatch):
     monkeypatch.chdir(repo.parent)
     tracked = TrackedCopy.create("repo")
