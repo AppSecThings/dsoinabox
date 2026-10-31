@@ -77,7 +77,18 @@ class OpengrepScanner(BaseScanner):
                     "Set --opengrep_rules / DSOINABOX_OPENGREP_RULES / opengrep_rules to a local rules directory "
                     f"or file to run offline. Original error: {original}"
                 )
-            raise ScannerError(f"OpenGrep scan failed: {stderr}")
+            detail = stderr.strip() or self._json_error_messages(stdout) or f"exit code {result.returncode}, no error output"
+            raise ScannerError(f"OpenGrep scan failed: {detail}")
+
+    @staticmethod
+    def _json_error_messages(stdout: str) -> str:
+        """Error messages from OpenGrep's --json output, where it reports failures such as a missing target."""
+        try:
+            errors = json.loads(stdout).get("errors") or []
+        except (ValueError, AttributeError):
+            return stdout.strip()
+        messages = [str(e.get("message")).strip() for e in errors if isinstance(e, dict) and e.get("message")]
+        return "; ".join(dict.fromkeys(messages)) or stdout.strip()
 
     @staticmethod
     def _is_auto_network_error(stderr: str) -> bool:
