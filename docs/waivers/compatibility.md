@@ -61,7 +61,7 @@ Current fingerprint versions: OpenGrep (`og`) 2, every other tool 1.
 | Tool | Version | Changes |
 |---|---|---|
 | all | 1 | original algorithms, frozen by `tests/unit/fingerprints/golden_v1.json` |
-| `og` | 2 | rules from local `--opengrep_rules` paths hash the bare rule `id` instead of OpenGrep's path-prefixed `check_id`, so fingerprints no longer change when the rules move (another machine, a Docker `/rules` mount, `--git_tracked_only`, `rules.yaml` vs `rules/`). For registry (`auto`) rules only the version number differs from 1. Version 1 is still emitted under `fingerprints.legacy`. |
+| `og` | 2 (1.3.0) | rules from local `--opengrep_rules` paths hash the bare rule `id` instead of OpenGrep's path-prefixed `check_id`, so fingerprints no longer change when the rules move (another machine, a Docker `/rules` mount, `--git_tracked_only`, `rules.yaml` vs `rules/`). For registry (`auto`) rules only the version number differs from 1. Version 1 is still emitted under `fingerprints.legacy`. |
 
 ## Keys
 

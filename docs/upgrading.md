@@ -1,6 +1,6 @@
 # Upgrading
 
-## 1.2.x to next release: OpenGrep fingerprint version 2
+## 1.2.x to 1.3.0: OpenGrep fingerprint version 2
 
 OpenGrep prefixes the id of every rule loaded from a local file or folder with that rule file's location
 (`Users.me.rules.python.permissions.my-rule`), and the prefix also depends on OpenGrep's working directory.
