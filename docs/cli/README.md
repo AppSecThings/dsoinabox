@@ -107,7 +107,9 @@ See [Waivers](../waivers/README.md).
   becomes an OpenGrep `--config`; relative paths resolve against `--source`. A missing local path is a
   usage error (exit 3) before any scanner runs. In deny-egress environments, set local rules with this
   flag, `DSOINABOX_OPENGREP_RULES`, or the `opengrep_rules` config key. If `auto` cannot download,
-  OpenGrep returns a scanner failure (exit 2) with guidance to configure local rules.
+  OpenGrep returns a scanner failure (exit 2) with guidance to configure local rules. Findings from local
+  rules report the bare rule `id` (OpenGrep's location prefix is removed; the original is kept in the raw
+  result as `original_check_id`). An id defined in more than one rule file keeps its prefix, with a warning.
 - `--<tool>_args "..."`: extra arguments appended to a scanner's command line
   (`--trufflehog_args`, `--opengrep_args`, `--syft_args`, `--grype_args`, `--checkov_args`).
   Use the `--flag=value` form when the value itself starts with a dash: `--opengrep_args="--severity ERROR"`.

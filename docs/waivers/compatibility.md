@@ -56,7 +56,12 @@ the algorithm version.
 - Every JSON report records `metadata.fingerprint_aliases` (legacy to current). Rewrite a waiver file with
   `dsoinabox waivers migrate --from-report reports/latest/<name>.json --in-place`.
 
-Current fingerprint version for every tool: 1.
+Current fingerprint versions: OpenGrep (`og`) 2, every other tool 1.
+
+| Tool | Version | Changes |
+|---|---|---|
+| all | 1 | original algorithms, frozen by `tests/unit/fingerprints/golden_v1.json` |
+| `og` | 2 | rules from local `--opengrep_rules` paths hash the bare rule `id` instead of OpenGrep's path-prefixed `check_id`, so fingerprints no longer change when the rules move (another machine, a Docker `/rules` mount, `--git_tracked_only`, `rules.yaml` vs `rules/`). For registry (`auto`) rules only the version number differs from 1. Version 1 is still emitted under `fingerprints.legacy`. |
 
 ## Keys
 
