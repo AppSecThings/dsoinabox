@@ -21,12 +21,13 @@ from dsoinabox.utils.config import (
 from dsoinabox.waivers.apply import WaiverUsage
 
 
-def _capture_opengrep(monkeypatch, *, returncode=0, stderr=b""):
+def _capture_opengrep(monkeypatch, *, returncode=0, stderr=b"", stdout=None):
     calls: list[list[str]] = []
+    if stdout is None:
+        stdout = json.dumps({"results": []}).encode("utf-8")
 
     def fake_run_cmd(cmd, **kwargs):
         calls.append(list(cmd))
-        stdout = json.dumps({"results": []}).encode("utf-8")
         return returncode, stdout, stderr
 
     monkeypatch.setattr(base_module, "run_cmd", fake_run_cmd)
@@ -250,3 +251,42 @@ class TestValidationAndMetadata:
 
         assert run.results[0].tool_version == expected_version
         assert captured_rules == (["auto"] if rules[0].lower() == "auto" else [str(path.resolve())])
+
+
+def test_failure_with_empty_stderr_reports_json_errors(tmp_path, monkeypatch):
+    # with --json, OpenGrep reports errors such as a missing target inside stdout, not on stderr
+    stdout = json.dumps({
+        "results": [],
+        "errors": [
+            {"code": 2, "level": "error", "message": "File not found: /missing/target"},
+            {"code": 2, "level": "error", "message": "File not found: /missing/target"},
+            {"code": 2, "level": "error", "message": "Invalid rule schema"},
+        ],
+    }).encode("utf-8")
+    _capture_opengrep(monkeypatch, returncode=2, stdout=stdout)
+
+    with pytest.raises(base_module.ScannerError) as caught:
+        OpengrepScanner().run_scan(
+            str(tmp_path), report_directory=str(tmp_path / "reports"), opengrep_rules=["/local/rules"]
+        )
+
+    assert str(caught.value) == "OpenGrep scan failed: File not found: /missing/target; Invalid rule schema"
+
+
+@pytest.mark.parametrize(
+    "stdout, detail",
+    [
+        (b"not json at all", "not json at all"),
+        (b'{"results": [], "errors": []}', '{"results": [], "errors": []}'),
+        (b"", "exit code 2, no error output"),
+    ],
+)
+def test_failure_with_empty_stderr_and_no_json_errors_still_says_something(tmp_path, monkeypatch, stdout, detail):
+    _capture_opengrep(monkeypatch, returncode=2, stdout=stdout)
+
+    with pytest.raises(base_module.ScannerError) as caught:
+        OpengrepScanner().run_scan(
+            str(tmp_path), report_directory=str(tmp_path / "reports"), opengrep_rules=["/local/rules"]
+        )
+
+    assert str(caught.value) == f"OpenGrep scan failed: {detail}"

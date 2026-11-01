@@ -122,7 +122,9 @@ class TrackedCopy:
 
     def __init__(self, root: str, source: str, cwd: str):
         self.root = root
-        self.source_arg = root + source if os.path.isabs(source) else source
+        # the copy sits at the lexically normalized path; a raw ``..`` would walk the temp tree,
+        # where the directory before it exists only by accident
+        self.source_arg = _mirror(root, os.path.abspath(source)) if os.path.isabs(source) else os.path.normpath(source)
         self.cwd = cwd
 
     @classmethod
