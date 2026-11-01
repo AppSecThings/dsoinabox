@@ -16,7 +16,7 @@ from dsoinabox.fingerprints.registry import (
     resolve_project_key,
 )
 from dsoinabox.model import Finding
-from dsoinabox.run import fingerprint_aliases
+from dsoinabox.run import fingerprint_aliases, legacy_waiver_matches
 from dsoinabox.utils.project_id import derive_project_hmac_key
 from dsoinabox.waivers.apply import WaiverEngine, apply_waivers_to_model
 from dsoinabox.waivers.loader import load_waiver_data
@@ -47,7 +47,13 @@ class TestRegistry:
 
     @pytest.mark.parametrize(
         "value, status",
-        [("og:1:RULE:x:abc", "current"), ("og:9:RULE:x:abc", "unsupported"), ("garbage", "unknown")],
+        [
+            ("og:2:RULE:x:abc", "current"),
+            ("og:1:RULE:x:abc", "legacy"),
+            ("gy:1:PKG:x:abc", "current"),
+            ("og:9:RULE:x:abc", "unsupported"),
+            ("garbage", "unknown"),
+        ],
     )
     def test_version_status(self, value, status):
         assert fingerprint_version_status(value) == status
@@ -105,6 +111,18 @@ class TestLegacyMatching:
         f.fingerprints["ctx"] = "og:2:CTX:r:c2"
         f.legacy_fingerprints.append("og:1:CTX:r:c1")
         assert fingerprint_aliases([f]) == {"og:1:RULE:r:old": "og:2:RULE:r:new", "og:1:CTX:r:c1": "og:2:CTX:r:c2"}
+
+    def test_waivers_matched_through_legacy_fingerprints_are_listed(self):
+        ws = load_waiver_data({"schema_version": "1.1", "finding_waivers": [
+            {"fingerprint": "og:2:RULE:r:new", "type": "false_positive"},
+            {"fingerprint": "og:1:RULE:r2:old", "type": "false_positive"},
+        ]})
+        current, legacy = self._finding(), self._finding()
+        legacy.fingerprints = {"rule": "og:2:RULE:r2:new"}
+        legacy.legacy_fingerprints = ["og:1:RULE:r2:old"]
+        apply_waivers_to_model("opengrep", [current, legacy], WaiverEngine(ws))
+        assert current.waived and legacy.waived
+        assert legacy_waiver_matches([current, legacy]) == ["finding_waivers[1]"]
 
     def test_no_legacy_means_no_aliases(self):
         f = self._finding()

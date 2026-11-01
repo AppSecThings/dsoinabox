@@ -25,7 +25,7 @@ path_exclusions:
 
 # Finding-level waivers keyed by fingerprint (exact match against any tier: rule/secret/pkg, exact, ctx).
 finding_waivers:
-  - fingerprint: "og:1:CTX:html.security.audit.missing-integrity:0c065896:a9ef9d591c62c38b:R:a3d1696c"   # required
+  - fingerprint: "og:2:CTX:html.security.audit.missing-integrity:0c065896:a9ef9d591c62c38b:R:a3d1696c"   # required
     type: "false_positive"        # required: false_positive | risk_acceptance | policy_waiver
     reason: "Static context proved safe"
     expires_at: "2027-05-01"      # strongly recommended; expired waivers stop suppressing and are reported

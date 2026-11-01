@@ -45,7 +45,7 @@ dsoinabox baseline update --from reports/latest/run.json --file benchmark.yaml -
 ```bash
 dsoinabox waivers validate .dsoinabox_waivers.yaml --strict
 dsoinabox waivers migrate .dsoinabox_waivers.yaml --in-place
-dsoinabox waivers add -p "og:1:RULE:python.lang.security.audit.dangerous-system-call:...:R:3895f288" \
+dsoinabox waivers add -p "og:2:RULE:python.lang.security.audit.dangerous-system-call:...:R:3895f288" \
   -t risk_acceptance -r "Input is a fixed allow-list" -e 180d --ticket SEC-42
 dsoinabox waivers prune .dsoinabox_waivers.yaml --in-place --report reports/latest/run.json
 ```

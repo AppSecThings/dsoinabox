@@ -103,14 +103,15 @@ def build_cases(root: Path) -> dict[str, dict[str, str]]:
     }
     for name, finding in og_findings.items():
         rule_fp, exact_fp, ctx_fp = og.fingerprint_opengrep(
-            finding=finding, repo_root=str(root), project_key=key, repo_hint=PROJECT_ID
+            finding=finding, repo_root=str(root), project_key=key, repo_hint=PROJECT_ID, version=1
         )
         cases[name] = {"rule": rule_fp, "exact": exact_fp, "ctx": ctx_fp}
 
     # unlocatable path through the batch driver
+    # (opengrep's current version is 2; version 1 is still emitted under fingerprints.legacy)
     missing = {"results": [{"check_id": "x.rule", "path": "does/not/exist.py", "extra": {"lines": "foo()"}}]}
     og.fingerprint_findings(missing, str(root), project_id=PROJECT_ID)
-    cases["og_unlocatable"] = dict(missing["results"][0]["fingerprints"])
+    cases["og_unlocatable"] = dict(zip(("rule", "exact", "ctx"), missing["results"][0]["fingerprints"]["legacy"]))
 
     # ---------------- trufflehog ----------------
     # v1 quirk worth knowing: in filesystem mode the CTX and CTXSOFT tiers hash

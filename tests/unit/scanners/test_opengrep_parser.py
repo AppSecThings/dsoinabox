@@ -68,14 +68,17 @@ class TestOpenGrepParserNormalization:
         for finding in result["results"]:
             fps = finding["fingerprints"]
             
-            # Rule fingerprint format: og:1:RULE:<rule_id>:<hmac>[:R:<repo_hint>]
-            assert fps["rule"].startswith("og:1:RULE:")
-            
-            # Exact fingerprint format: og:1:EXACT:<rule_id>:<file_sha>:<start_b>:<end_b>[:R:<repo_hint>]
-            assert fps["exact"].startswith("og:1:EXACT:")
-            
-            # Context fingerprint format: og:1:CTX:<rule_id>:<path_sha>:<context_hash>[:R:<repo_hint>]
-            assert fps["ctx"].startswith("og:1:CTX:")
+            # current version 2: og:2:<TIER>:<rule_id>:...[:R:<repo_hint>]
+            assert fps["rule"].startswith("og:2:RULE:")
+            assert fps["exact"].startswith("og:2:EXACT:")
+            assert fps["ctx"].startswith("og:2:CTX:")
+
+            # version 1 is still emitted so waivers written against it keep matching
+            assert [fp.split(":")[:3] for fp in fps["legacy"]] == [
+                ["og", "1", "RULE"], ["og", "1", "EXACT"], ["og", "1", "CTX"]
+            ]
+            # without a path prefix to strip, both versions hash the same rule id
+            assert fps["legacy"][0].replace("og:1:", "og:2:", 1) == fps["rule"]
     
     def test_normalized_schema_fields(self, opengrep_fixture, tmp_source_dir):
         """Test that findings have all normalized schema fields."""

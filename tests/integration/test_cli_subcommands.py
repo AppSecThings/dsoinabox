@@ -78,9 +78,15 @@ def test_config_init_subcommand(tmp_path):
 
 
 class TestWaiversValidate:
-    def test_ok_file(self, capsys):
-        assert main(["waivers", "validate", str(FIXTURES / "v1.1" / "minimal.yaml")]) == 0
+    def test_ok_file(self, tmp_path, capsys):
+        current = tmp_path / "minimal.yaml"
+        current.write_text((FIXTURES / "v1.1" / "minimal.yaml").read_text().replace("og:1:", "og:2:"))
+        assert main(["waivers", "validate", str(current)]) == 0
         assert "ok" in capsys.readouterr().out
+
+    def test_legacy_opengrep_fingerprint_warns_but_passes(self, capsys):
+        assert main(["waivers", "validate", str(FIXTURES / "v1.1" / "minimal.yaml")]) == 0
+        assert "uses a legacy fingerprint version: og:1:RULE:test:abc" in capsys.readouterr().out
 
     def test_strict_fails_on_expired(self, capsys):
         path = str(FIXTURES / "v1.0" / "full.yaml")
