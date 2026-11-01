@@ -111,7 +111,7 @@ def build_cases(root: Path) -> dict[str, dict[str, str]]:
     # (opengrep's current version is 2; version 1 is still emitted under fingerprints.legacy)
     missing = {"results": [{"check_id": "x.rule", "path": "does/not/exist.py", "extra": {"lines": "foo()"}}]}
     og.fingerprint_findings(missing, str(root), project_id=PROJECT_ID)
-    cases["og_unlocatable"] = dict(zip(("rule", "exact", "ctx"), missing["results"][0]["fingerprints"]["legacy"]))
+    cases["og_unlocatable"] = dict(zip(("rule", "exact", "ctx"), missing["results"][0]["fingerprints"]["legacy"], strict=True))
 
     # ---------------- trufflehog ----------------
     # v1 quirk worth knowing: in filesystem mode the CTX and CTXSOFT tiers hash
