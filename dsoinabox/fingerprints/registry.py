@@ -34,9 +34,10 @@ TOOL_PREFIX: dict[str, str] = {
 }
 PREFIX_TOOL: dict[str, str] = {v: k for k, v in TOOL_PREFIX.items()}
 
-CURRENT_FP_VERSION: dict[str, int] = {"trufflehog": 1, "opengrep": 1, "grype": 1, "checkov": 1}
-EMIT_LEGACY_VERSIONS: dict[str, tuple[int, ...]] = {"trufflehog": (), "opengrep": (), "grype": (), "checkov": ()}
-SUPPORTED_FP_VERSIONS: dict[str, tuple[int, ...]] = {"trufflehog": (1,), "opengrep": (1,), "grype": (1,), "checkov": (1,)}
+# opengrep 2 (1.3.0): local rules hash the bare rule id instead of OpenGrep's path-prefixed check_id
+CURRENT_FP_VERSION: dict[str, int] = {"trufflehog": 1, "opengrep": 2, "grype": 1, "checkov": 1}
+EMIT_LEGACY_VERSIONS: dict[str, tuple[int, ...]] = {"trufflehog": (), "opengrep": (1,), "grype": (), "checkov": ()}
+SUPPORTED_FP_VERSIONS: dict[str, tuple[int, ...]] = {"trufflehog": (1,), "opengrep": (1, 2), "grype": (1,), "checkov": (1,)}
 
 ENV_KEY_OVERRIDE = "DSOB_PROJECT_HMAC_KEY"
 _env_key_warned = False

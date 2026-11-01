@@ -93,7 +93,7 @@ path_exclusions:
   - pattern: "third_party/**"
     reason: "Vendored code"
 finding_waivers:
-  - fingerprint: "og:1:RULE:python.lang.security.audit.dangerous-system-call:abc123...:R:3895f288"
+  - fingerprint: "og:2:RULE:python.lang.security.audit.dangerous-system-call:abc123...:R:3895f288"
     type: "risk_acceptance"
     reason: "Input comes from a fixed allow-list"
     expires_at: "2027-03-28"
@@ -216,7 +216,8 @@ scanning starts. If `auto` cannot download rules, the run returns scanner-failur
 message pointing to these local-rule settings.
 
 Custom rules add ` (rules <configured-source>)` to OpenGrep's tool-version metadata in summaries
-and reports. The default `auto` output remains unchanged. OpenGrep uses a self-extracted executable
+and reports. OpenGrep prefixes local rule ids with the rule file's location; dsoinabox reports the bare
+`id` from your YAML instead, so ids and fingerprints do not change when the rules move. The default `auto` output remains unchanged. OpenGrep uses a self-extracted executable
 cache: hardened container filesystems must retain a cache path that supports execution. This image
 prewarms the cache for `appuser`; custom images, cache mounts, and read-only hardening must preserve
 an executable cache path.

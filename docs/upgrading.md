@@ -1,5 +1,27 @@
 # Upgrading
 
+## 1.2.x to 1.3.0: OpenGrep fingerprint version 2
+
+OpenGrep prefixes the id of every rule loaded from a local file or folder with that rule file's location
+(`Users.me.rules.python.permissions.my-rule`), and the prefix also depends on OpenGrep's working directory.
+dsoinabox now reports the bare rule `id` from the YAML (`my-rule`) in every report, the console table and
+SARIF, and OpenGrep fingerprints move to version 2, which hashes that bare id. A finding now keeps its
+fingerprint when the rules move between a laptop, CI and a Docker `/rules` mount.
+
+Existing waivers and baselines keep working: version 1 fingerprints are still emitted under
+`fingerprints.legacy` and matched. `dsoinabox waivers validate` warns about `og:1` entries; rewrite them
+from a report with:
+
+```bash
+dsoinabox waivers migrate .dsoinabox_waivers.yaml --from-report reports/latest/<name>.json --in-place
+```
+
+With registry rules (`auto`) only the version number changes (`og:1:` becomes `og:2:`). Run the migration
+from a report produced the same way as the one the waivers were written from (same rules location, and
+`--git_tracked_only` on or off as before), because the version 1 fingerprints of local rules depend on it.
+Rule ids defined in more than one local rule file keep their prefix, with a warning, so different rules
+never share an id.
+
 ## 1.1.6 to 1.2.0
 
 The image now has a default Grype DB cache at `/var/cache/dsoinabox` (`DSOINABOX_DB_CACHE`); Grype's DB

@@ -24,7 +24,7 @@ path_exclusions:                         # gitignore-style globs, repo-root rela
     tools: ["sast", "secret"]            # optional: tool names or categories, default all
 
 finding_waivers:                         # exact fingerprint match, any tier
-  - fingerprint: "og:1:RULE:python.flask.security.xss...:8e50b606...:R:05e2617e"
+  - fingerprint: "og:2:RULE:python.flask.security.xss...:8e50b606...:R:05e2617e"
     type: "false_positive"               # false_positive | risk_acceptance | policy_waiver
     reason: "Offline template rendering, no request input"
     expires_at: "2026-12-31"             # strongly recommended
@@ -87,7 +87,7 @@ dsoinabox waivers validate .dsoinabox_waivers.yaml --strict      # CI / pre-comm
 dsoinabox waivers migrate .dsoinabox_waivers.yaml --dry-run      # show what upgrading to the current schema changes
 dsoinabox waivers migrate .dsoinabox_waivers.yaml --in-place     # upgrade, keeping comments; writes a .bak
 dsoinabox waivers prune .dsoinabox_waivers.yaml --in-place --report reports/latest/dsoinabox.json
-dsoinabox waivers add --fingerprint "og:1:RULE:..." --type false_positive --reason "..." --expires 90d --ticket SEC-1
+dsoinabox waivers add --fingerprint "og:2:RULE:..." --type false_positive --reason "..." --expires 90d --ticket SEC-1
 ```
 
 All writers use a round-trip YAML parser, so comments, ordering and quoting in a hand-maintained file survive.
@@ -117,7 +117,7 @@ legacy codebase can adopt the tool without waiving hundreds of findings while st
 ## Fingerprint format
 
 `<tool>:<fingerprint_version>:<TIER>:<data...>[:R:<repo8>]`, for example
-`og:1:RULE:python.lang.security.audit.dangerous-system-call:…:R:3895f288`. Tool prefixes are `th`
+`og:2:RULE:python.lang.security.audit.dangerous-system-call:…:R:3895f288`. Tool prefixes are `th`
 (TruffleHog), `og` (OpenGrep), `gy` (Grype), `ck` (Checkov). Fingerprints are HMAC-keyed per project so they
 never expose the underlying secret or code, and the same finding gets the same fingerprint on every machine
 that scans the same repository. See [compatibility.md](compatibility.md) for what happens when an

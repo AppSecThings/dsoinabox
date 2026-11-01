@@ -111,7 +111,9 @@ def _run_opengrep(ctx: RunContext) -> Any:
         opengrep_rules=ctx.opengrep_rules,
         **kwargs,
     )
-    return _restored(ctx, raw, "opengrep.json")
+    from .sast.opengrep_rule_ids import strip_rule_id_prefixes
+
+    return strip_rule_id_prefixes(_restored(ctx, raw, "opengrep.json"), ctx.opengrep_rules)
 
 
 def _run_syft(ctx: RunContext) -> Any:

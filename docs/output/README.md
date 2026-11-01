@@ -49,7 +49,7 @@ In Docker, when `/reports` is mounted, the timestamped directory is copied there
   },
   "findings": [
     {"tool": "opengrep", "category": "sast", "rule_id": "...", "severity": "high", "path": "src/app.py",
-     "start_line": 7, "fingerprints": {"rule": "og:1:RULE:...", "exact": "...", "ctx": "..."},
+     "start_line": 7, "fingerprints": {"rule": "og:2:RULE:...", "exact": "...", "ctx": "..."},
      "waived": false, "baseline_status": "new", "raw": {"...": "the untouched scanner record"}}
   ],
   "trufflehog_data": [], "opengrep_data": {}, "syft_data": {}, "grype_data": {}, "checkov_data": {}

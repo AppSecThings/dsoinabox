@@ -372,6 +372,14 @@ def run_scan(options: ScanOptions) -> ScanRun:
         )
         for ref in ws["unused"]:
             logger.debug(f"Unused waiver entry: {ref}")
+        legacy_refs = legacy_waiver_matches(run.findings)
+        if legacy_refs:
+            logger.warning(
+                f"{len(legacy_refs)} waiver entr{'y' if len(legacy_refs) == 1 else 'ies'} matched through an older "
+                f"fingerprint version ({', '.join(legacy_refs)}). They keep working; to update them, write a JSON "
+                f"report (-o json) and run: dsoinabox waivers migrate {options.waiver_file} --from-report "
+                "<report>.json --in-place"
+            )
 
     # benchmark of active findings
     if options.benchmark:
@@ -487,6 +495,16 @@ def _update_latest_pointer(options: ScanOptions) -> str | None:
     except OSError as exc:
         logger.warning(f"Could not update {latest}: {exc}")
         return None
+
+
+def legacy_waiver_matches(findings: list[Finding]) -> list[str]:
+    """Waiver entries (refs) that waived a finding through one of its legacy fingerprints."""
+    refs = {
+        f.waived_by["ref"]
+        for f in findings
+        if f.waived_by and f.waived_by.get("ref") and f.waived_by.get("fingerprint") in f.legacy_fingerprints
+    }
+    return sorted(refs)
 
 
 def fingerprint_aliases(findings: list[Finding]) -> dict[str, str]:
