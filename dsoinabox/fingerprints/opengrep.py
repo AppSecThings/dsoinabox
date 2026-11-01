@@ -7,8 +7,8 @@ from pathlib import PurePosixPath
 from types import SimpleNamespace
 from typing import Optional, Tuple
 
-from ..utils.git import run_git_cmd
 from ..scanners.sast.opengrep_rule_ids import ORIGINAL_KEY
+from ..utils.git import run_git_cmd
 from .registry import CURRENT_FP_VERSION, EMIT_LEGACY_VERSIONS, repo_hint_for, resolve_project_key
 
 CURRENT_VERSION = CURRENT_FP_VERSION["opengrep"]
