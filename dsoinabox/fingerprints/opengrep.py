@@ -8,7 +8,11 @@ from types import SimpleNamespace
 from typing import Optional, Tuple
 
 from ..utils.git import run_git_cmd
-from .registry import repo_hint_for, resolve_project_key
+from ..scanners.sast.opengrep_rule_ids import ORIGINAL_KEY
+from .registry import CURRENT_FP_VERSION, EMIT_LEGACY_VERSIONS, repo_hint_for, resolve_project_key
+
+CURRENT_VERSION = CURRENT_FP_VERSION["opengrep"]
+LEGACY_VERSIONS = EMIT_LEGACY_VERSIONS["opengrep"]
 
 #---------------- shared helpers ----------------
 
@@ -117,6 +121,12 @@ def _extract_rule_id(f: dict) -> str:
         "unknown_rule"
     )
 
+def rule_id_for_version(f: dict, version: int) -> str:
+    """Rule id a fingerprint version hashes: v1 the id as OpenGrep reported it, v2+ the bare id."""
+    if version == 1:
+        return f.get(ORIGINAL_KEY) or _extract_rule_id(f)
+    return _extract_rule_id(f)
+
 def _extract_repo_commit_hint(f: dict) -> Optional[str]:
     #if pipeline enriches findings with commit/repo info, pick it up
     sm = (f.get("source") or {})  #e.g. {"git": {"commit": "..."}}
@@ -222,11 +232,15 @@ def fingerprint_opengrep(
     repo_root: str,
     project_key: bytes,
     repo_hint: str = "",
+    version: int = CURRENT_VERSION,
 ) -> Tuple[str, str, str]:
     """
     produce (RULE, EXACT, CTX) fingerprints for an opengrep finding
+
+    version 1 hashes the check_id exactly as OpenGrep reported it, which embeds
+    the location of local rules; version 2 hashes the bare rule id.
     """
-    rule_id = _extract_rule_id(finding)
+    rule_id = rule_id_for_version(finding, version)
     rel_path = _extract_path(finding) or finding.get("file") or ""
     if not rel_path:
         raise KeyError("OpenGrep finding missing path")
@@ -263,9 +277,9 @@ def fingerprint_opengrep(
     norm_struct = _normalize_structural(snippet, metavars)
 
     #--------- build three tiers ---------
-    rule_fp  = f"og:1:RULE:{rule_id}:{hmac_structural(project_key, norm_struct)}"
-    exact_fp = f"og:1:EXACT:{rule_id}:{file_sha(file_bytes)}:{start_b}:{end_b}"
-    ctx_fp   = f"og:1:CTX:{rule_id}:{path_norm_sha(rel_path)}:{context_hash(file_bytes, start_b, end_b)}"
+    rule_fp  = f"og:{version}:RULE:{rule_id}:{hmac_structural(project_key, norm_struct)}"
+    exact_fp = f"og:{version}:EXACT:{rule_id}:{file_sha(file_bytes)}:{start_b}:{end_b}"
+    ctx_fp   = f"og:{version}:CTX:{rule_id}:{path_norm_sha(rel_path)}:{context_hash(file_bytes, start_b, end_b)}"
 
     if repo_hint:
         suffix = hashlib.sha256(_b(repo_hint)).hexdigest()[:8]
@@ -277,42 +291,59 @@ def fingerprint_opengrep(
 
 #---------------- batch driver ----------------
 
+def fingerprint_tiers(
+    finding: dict,
+    repo_root: str,
+    project_key: bytes,
+    repo_hint: str = "",
+    version: int = CURRENT_VERSION,
+) -> dict:
+    """``{"rule", "exact", "ctx"}`` for one finding at ``version``, including unlocatable findings."""
+    try:
+        rule_fp, exact_fp, ctx_fp = fingerprint_opengrep(
+            finding=finding,
+            repo_root=repo_root,
+            project_key=project_key,
+            repo_hint=repo_hint,
+            version=version,
+        )
+        return {"rule": rule_fp, "exact": exact_fp, "ctx": ctx_fp}
+    except (FileNotFoundError, KeyError):
+        #file not found or missing required metadata - mark as unlocatable
+        rule_id = rule_id_for_version(finding, version)
+        rel_path = _extract_path(finding) or finding.get("file") or "unknown"
+        #generate minimal rule fingerprint for waivers/deduplication
+        snippet = _extract_snippet(finding)
+        metavars = _collect_primary_metavars(finding)
+        norm_struct = _normalize_structural(snippet, metavars)
+        rule_fp = f"og:{version}:RULE:{rule_id}:{hmac_structural(project_key, norm_struct)}"
+        if repo_hint:
+            suffix = hashlib.sha256(_b(repo_hint)).hexdigest()[:8]
+            rule_fp += f":R:{suffix}"
+        return {
+            "rule": rule_fp,
+            "exact": f"og:{version}:EXACT:{rule_id}:<unlocatable>",
+            "ctx": f"og:{version}:CTX:{rule_id}:{path_norm_sha(rel_path)}:<unlocatable>",
+        }
+
+
 def fingerprint_findings(findings: dict, source_path: str, project_id: Optional[str] = None) -> dict:
     """
     given a list of opengrep findings, append:
-      finding["fingerprints"] = {"rule": ..., "exact": ..., "ctx": ...}
+      finding["fingerprints"] = {"rule": ..., "exact": ..., "ctx": ..., "legacy": [...]}
+    ``legacy`` holds the same tiers at every version in EMIT_LEGACY_VERSIONS, so
+    waivers written against them keep matching.
     """
     project_key = resolve_project_key(project_id)
     repo_hint = repo_hint_for(project_id)
 
     for f in findings.get('results') or []:
-        try:
-            rule_fp, exact_fp, ctx_fp = fingerprint_opengrep(
-                finding=f,
-                repo_root=source_path,
-                project_key=project_key,
-                repo_hint=repo_hint,
-            )
-            f["fingerprints"] = {
-                "rule": rule_fp,
-                "exact": exact_fp,
-                "ctx": ctx_fp,
-            }
-        except (FileNotFoundError, KeyError):
-            #file not found or missing required metadata - mark as unlocatable
-            rule_id = _extract_rule_id(f)
-            rel_path = _extract_path(f) or f.get("file") or "unknown"
-            #generate minimal rule fingerprint for waivers/deduplication
-            snippet = _extract_snippet(f)
-            metavars = _collect_primary_metavars(f)
-            norm_struct = _normalize_structural(snippet, metavars)
-            rule_fp = f"og:1:RULE:{rule_id}:{hmac_structural(project_key, norm_struct)}"
-            if repo_hint:
-                suffix = hashlib.sha256(_b(repo_hint)).hexdigest()[:8]
-                rule_fp += f":R:{suffix}"
-            f["fingerprints"] = {
-                "rule": rule_fp,
-                "exact": f"og:1:EXACT:{rule_id}:<unlocatable>",
-                "ctx": f"og:1:CTX:{rule_id}:{path_norm_sha(rel_path)}:<unlocatable>",
-            }
+        fps = fingerprint_tiers(f, source_path, project_key, repo_hint, CURRENT_VERSION)
+        legacy: list[str] = []
+        for version in LEGACY_VERSIONS:
+            older = fingerprint_tiers(f, source_path, project_key, repo_hint, version)
+            legacy.extend(older[tier] for tier in ("rule", "exact", "ctx"))
+        if legacy:
+            fps["legacy"] = legacy
+        f["fingerprints"] = fps
     return findings
